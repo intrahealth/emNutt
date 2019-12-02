@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<StructureDefinition xmlns="http://hl7.org/fhir">
+  <id value="mHeroWorkflows" />
+  <url value="http://mhero.org/fhir/StructureDefinition/mHeroWorkflows" />
+  <name value="Workflows" />
+  <status value="draft" />
+  <experimental value="false" />
+  <publisher value="Ally Shaban" />
+  <fhirVersion value="4.0.0" />
+  <mapping>
+    <identity value="rim" />
+    <uri value="http://hl7.org/v3" />
+    <name value="RIM Mapping" />
+  </mapping>
+  <mapping>
+    <identity value="w5" />
+    <uri value="http://hl7.org/fhir/fivews" />
+    <name value="FiveWs Pattern Mapping" />
+  </mapping>
+  <kind value="resource" />
+  <abstract value="false" />
+  <type value="Basic" />
+  <baseDefinition value="http://hl7.org/fhir/StructureDefinition/Basic" />
+  <derivation value="constraint" />
+  <differential>
+    <element id="Basic.extension">
+      <path value="Basic.extension" />
+      <slicing>
+        <discriminator>
+          <type value="value" />
+          <path value="url" />
+        </discriminator>
+        <rules value="open" />
+      </slicing>
+    </element>
+    <element id="Basic.extension:details">
+      <path value="Basic.extension" />
+      <sliceName value="details" />
+      <type>
+        <code value="Extension" />
+        <profile value="http://mhero.org/fhir/StructureDefinition/mHeroWorkflowsDetails" />
+      </type>
+    </element>
+  </differential>
+</StructureDefinition>
