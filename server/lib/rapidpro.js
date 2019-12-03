@@ -1,16 +1,18 @@
 'use strict';
 const URI = require('urijs');
-const async = require('async');
 const request = require('request');
+const async = require('async');
 const config = require('./config');
 const logger = require('./winston');
-module.exports = function() {
+module.exports = function () {
   return {
     /**
      *
      * @param {Date} since
      */
     getWorkflows(url, since, callback) {
+      let flows1 = require('./flows.json')
+      return callback(flows1.results)
       if (!url) {
         var url = URI(config.get('rapidpro:url'))
           .segment('api')
@@ -95,15 +97,15 @@ module.exports = function() {
                 var wait_time = parseInt(det) * 1000 + 5;
                 winston.warn(
                   'Rapidpro has throttled my requests,i will wait for ' +
-                    wait_time / 1000 +
-                    ' Seconds Before i proceed,please dont interrupt me'
+                  wait_time / 1000 +
+                  ' Seconds Before i proceed,please dont interrupt me'
                 );
-                setTimeout(function() {
+                setTimeout(function () {
                   return callback(true);
                 }, wait_time);
               } else return nxtDet();
             },
-            function() {
+            function () {
               return callback(false);
             }
           );

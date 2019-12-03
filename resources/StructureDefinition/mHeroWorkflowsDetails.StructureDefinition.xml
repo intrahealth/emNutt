@@ -47,6 +47,23 @@
         <code value="string" />
       </type>
     </element>
+    <element id="Extension.extension:uuid">
+      <path value="Extension.extension" />
+      <sliceName value="uuid" />
+      <min value="1" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:uuid.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="uuid" />
+    </element>
+    <element id="Extension.extension:uuid.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="string" />
+      </type>
+    </element>
     <element id="Extension.extension:type">
       <path value="Extension.extension" />
       <sliceName value="type" />
@@ -99,6 +116,7 @@
     <element id="Extension.extension:runs">
       <path value="Extension.extension" />
       <sliceName value="runs" />
+      <max value="1" />
     </element>
     <element id="Extension.extension:runs.extension">
       <path value="Extension.extension.extension" />
