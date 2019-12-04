@@ -9,6 +9,7 @@ const app = express();
 app.get('/test', (req, res) => {
   macm.rpFlowsToFHIR();
 });
+
 app.get('/syncWorkflows', (req, res) => {
   logger.info('Received a request to synchronize workflows');
   rapidpro.getWorkflows(null, null, flows => {
@@ -23,8 +24,14 @@ app.get('/syncWorkflows', (req, res) => {
   });
 });
 
+app.get('/checkCommunicationRequest', (req, res) => {
+  macm.getResource('CommunicationRequest', (commReqs) => {
+    rapidpro.processCommunications(commReqs, () => {
+
+    })
+  })
+})
+
 app.listen(config.get('server:port'), () => {
-  logger.info(
-    `Server is running and listening on port: ${config.get('server:port')}`
-  );
+  logger.info(`Server is running and listening on port: ${config.get('server:port')}`);
 });

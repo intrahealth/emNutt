@@ -2,6 +2,7 @@
 const URI = require('urijs');
 const request = require('request');
 const async = require('async');
+const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
 module.exports = function () {
@@ -78,11 +79,211 @@ module.exports = function () {
         }
       );
     },
+    processCommunications(commReqs, callback) {
+      let flowBody
+      let smsBody
+      let sendFailed = false
+      async.each(commReqs, (commReq, nxtComm) => {
+        let msg;
+        let workflows = [];
+        for (let payload of commReq.resource.payload) {
+          if (payload.contentString) {
+            msg = payload.contentString;
+          }
+          if (payload.contentAttachment && payload.contentAttachment.url) {
+            workflows.push(payload.contentAttachment.url);
+          }
+        }
+        if (!msg) {
+          for (let payload of commReq.resource.payload) {
+            if (payload.contentAttachment && payload.contentAttachment.title) {
+              msg = payload.contentAttachment.title;
+            }
+          }
+        }
+
+        if (!msg && workflows.length === 0) {
+          logger.warn(`No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`)
+          return nxtComm()
+        }
+        let recipients = []
+        let recPromises = []
+        for (let recipient of commReq.resource.recipient) {
+          recPromises.push(new Promise((resolve) => {
+            if (recipient.reference) {
+              let resource
+              let promise1 = new Promise((resolve1) => {
+                if (recipient.reference.startsWith('#')) {
+                  if (resource.contained) {
+                    let contained = resource.contained.find((contained) => {
+                      return contained.id === recipient.reference.substring(1)
+                    })
+                    if (contained) {
+                      resource = {
+                        resource: contained
+                      }
+                    } else {
+                      logger.error(`Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`)
+                    }
+                  } else {
+                    logger.error(`Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`)
+                  }
+                  resolve1()
+                } else {
+                  macm.getResource(recipient.reference, (recResource) => {
+                    if (Array.isArray(recResource) && recResource.length === 1) {
+                      resource = recResource[0]
+                    } else if (Array.isArray(recResource) && recResource.length === 0) {
+                      logger.error(`Reference ${recipient.reference} was not found on the server`)
+                    }
+                    resolve1()
+                  })
+                }
+              })
+              promise1.then(() => {
+                if (resource) {
+                  if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
+                    for (let telecom of recipient.telecom) {
+                      if (telecom.use && telecom.use === 'mobile') {
+                        recipients.push("tel:" + telecom.value)
+                      }
+                    }
+                  }
+                }
+                resolve()
+              }).catch((err) => {
+                logger.error(err)
+                resolve()
+              })
+            } else {
+              resolve()
+            }
+          }))
+        }
+
+        Promise.all(recPromises).then(() => {
+          if (workflows.length > 0) {
+            for (let workflow of workflows) {
+              flowBody.push({
+                "flow": workflow,
+                "urns": recipients
+              })
+            }
+          }
+          if (sms) {
+            smsBody = {
+              "text": sms,
+              "urns": recipients
+            }
+          }
+          async.parallel({
+            startFlow: (callback) => {
+              if (workflows.length > 0) {
+                for (let workflow of workflows) {
+                  let flowBody = {}
+                  flowBody.flow = workflow
+                  flowBody.urns = []
+                  let promises = []
+                  for (let recipient of recipients) {
+                    promises.push(new promises((resolve) => {
+                      flowBody.urns.push(recipient)
+                      if (flowBody.urns.length > 90) {
+                        let tmpFlowBody = {
+                          ...flowBody
+                        }
+                        flowBody.urns = []
+                        this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
+                          if (res.statusCode < 200 || res.statusCode > 299) {
+                            sendFailed = true
+                          }
+                          resolve()
+                        })
+                      }
+                      resolve()
+                    }))
+                  }
+                  Promise.all(promises).then(() => {
+                    if (flowBody.urns.length > 0) {
+                      flowBody.urns = []
+                      this.sendMessage(flowBody, 'workflow', (err, res, body) => {
+                        if (res.statusCode < 200 || res.statusCode > 299) {
+                          sendFailed = true
+                        }
+                        return callback(null)
+                      })
+                    } else {
+                      return callback(null)
+                    }
+                  })
+                }
+              } else {
+                return callback(null)
+              }
+            },
+            sendSMS: (callback) => {
+              if (!smsBody) {
+                return callback(null)
+              }
+              this.sendMessage(smsBody, 'sms', () => {
+                return callback(null)
+              })
+            }
+          }, () => {
+            // if alert sent successfuly then delete comm request
+            if (!sendFailed) {
+              macm.deleteResource(`${commReq.resource.resourceType}/${resource.id}`, () => {
+                return nxtComm()
+              })
+            } else {
+              return nxtComm()
+            }
+          })
+        }).catch((err) => {
+          logger.error(err)
+        })
+      })
+    },
+
+    sendMessage(flowBody, type, callback) {
+      let endPoint
+      if (type === 'sms') {
+        endPoint = 'broadcasts.json'
+      } else if (type === 'workflow') {
+        endPoint = 'flow_starts.json'
+      }
+      let url = URI(config.get('rapidpro:url'))
+        .segment('api')
+        .segment('v2')
+        .segment(endPoint)
+        .toString();
+      let options = {
+        url,
+        headers: {
+          Authorization: `Token ${config.get('rapidpro:token')}`,
+        },
+        body: flowBody,
+        json: true
+      };
+      request(options, (err, res, body) => {
+        if (err) {
+          logger.error(err);
+          return callback(err);
+        }
+        this.isThrottled(JSON.parse(body), wasThrottled => {
+          if (wasThrottled) {
+            startFlow(flowBody, type, (err, res, body) => {
+              return callback(err, res, body);
+            });
+          } else {
+            return callback(err, res, body);
+          }
+        })
+      })
+    },
+
     isThrottled(results, callback) {
       if (results === undefined || results === null || results === '') {
-        winston.error(
-          'An error has occured while checking throttling,empty rapidpro results were submitted'
-        );
+        winston.error('An error has occured while checking throttling,empty rapidpro results were submitted');
         return callback(true);
       }
       if (results.hasOwnProperty('detail')) {
