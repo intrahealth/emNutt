@@ -1,3 +1,4 @@
+/* eslint-disable promise/param-names */
 'use strict';
 const URI = require('urijs');
 const request = require('request');
@@ -9,13 +10,156 @@ module.exports = function () {
   return {
     /**
      *
+     * @param {*} callback
+     */
+    getContacts ({
+      url,
+      groupUUID
+    }, callback) {
+      if (!url) {
+        url = URI(config.get('rapidpro:url'))
+          .segment('api')
+          .segment('v2')
+          .segment('contacts.json');
+        if (groupUUID) {
+          url = url.addQuery('group', groupUUID);
+        }
+        url = url.toString();
+      }
+      // need to make this variable independent of this function so that to handle throttled
+      logger.info(url);
+      var contacts = [];
+      async.whilst(
+        callback => {
+          if (url) {
+            logger.info('Fetching contacts in ' + url);
+          }
+          return callback(null, url !== false);
+        }, (callback) => {
+          const options = {
+            url,
+            headers: {
+              Authorization: `Token ${config.get('rapidpro:token')}`,
+            }
+          };
+          request.get(options, (err, res, body) => {
+            if (err) {
+              logger.error(err);
+              return callback(err);
+            }
+            this.isThrottled(JSON.parse(body), (wasThrottled) => {
+              if (wasThrottled) {
+                // reprocess this contact
+                this.getContacts(url, groupUUID, (rp_contacts) => {
+                  contacts = contacts.concat(body.results);
+                  return callback(null);
+                });
+              } else {
+                body = JSON.parse(body);
+                if (!body.hasOwnProperty('results')) {
+                  logger.error(JSON.stringify(body));
+                  logger.error('An error occured while fetching contacts to rapidpro');
+                  return callback();
+                }
+                if (body.next) {
+                  url = body.next;
+                } else {
+                  url = false;
+                }
+                contacts = contacts.concat(body.results);
+                return callback(null, url);
+              }
+            });
+          });
+        }, () => {
+          return callback(contacts);
+        }
+      );
+    },
+    /**
+     *
+     * @param {Object} param0
+     * @param {*} callback
+     */
+    addContact ({
+      contact,
+      rpContacts
+    }, callback) {
+      let urns = generateURNS(contact);
+      const rpContactWithGlobalid = rpContacts.find((cntct) => {
+        return cntct.fields && cntct.fields.globalid === contact.id;
+      });
+      const rpContactWithoutGlobalid = rpContacts.find((cntct) => {
+        return cntct.urns.find((urn) => {
+          return urns.includes(urn);
+        });
+      });
+      let body = {};
+      let fullName;
+      if (Array.isArray(contact.name) && contact.name.length > 0) {
+        const name = contact.name[0];
+        if (name.text) {
+          fullName = name.text;
+        } else {
+          if (name.given) {
+            fullName = name.given;
+          }
+          if (name.family) {
+            fullName += name.family;
+          }
+        }
+      }
+      if (!rpContactWithGlobalid && !rpContactWithoutGlobalid) {
+        body.name = fullName;
+        body.fields = {};
+        body.fields.globalid = contact.id;
+        body.urns = urns;
+      } else {
+        if (rpContactWithGlobalid) {
+          body = rpContactWithGlobalid;
+        } else {
+          body = rpContactWithoutGlobalid;
+        }
+        body.name = fullName;
+        urns = body.urns.concat(urns);
+        // ensure urns are unique
+        const urnsSet = new Set(urns);
+        urns = [...urnsSet];
+        // end of ensuring urns are unique
+        body.urns = urns;
+        if (rpContactWithoutGlobalid && !rpContactWithGlobalid) {
+          body.fields.globalid = contact.id;
+        }
+      }
+      const url = URI(config.get('rapidpro:url'))
+        .segment('api')
+        .segment('v2')
+        .segment('contacts.json')
+        .toString();
+      const options = {
+        url,
+        headers: {
+          Authorization: `Token ${config.get('rapidpro:token')}`,
+        },
+        json: body,
+      };
+      request.post(options, (err, res, body) => {
+        logger.info(body);
+        if (err) {
+          logger.error(err);
+        }
+        return callback(err, res, body);
+      });
+    },
+    /**
+     *
      * @param {Date} since
      */
-    getWorkflows(url, since, callback) {
-      let flows1 = require('./flows.json')
-      return callback(flows1.results)
+    getWorkflows (url, since, callback) {
+      // const flows1 = require('./flows.json');
+      // return callback(flows1.results);
       if (!url) {
-        var url = URI(config.get('rapidpro:url'))
+        url = URI(config.get('rapidpro:url'))
           .segment('api')
           .segment('v2')
           .segment('flows.json');
@@ -24,7 +168,7 @@ module.exports = function () {
         }
         url = url.toString();
       }
-      //need to make this variable independent of this function so that to handle throttled
+      // need to make this variable independent of this function so that to handle throttled
       var flows = [];
       async.whilst(
         callback => {
@@ -34,20 +178,20 @@ module.exports = function () {
           return callback(null, url != false);
         },
         callback => {
-          let options = {
+          const options = {
             url,
             headers: {
               Authorization: `Token ${config.get('rapidpro:token')}`,
             },
           };
-          request(options, (err, res, body) => {
+          request.get(options, (err, res, body) => {
             if (err) {
               logger.error(err);
               return callback(err);
             }
             this.isThrottled(JSON.parse(body), wasThrottled => {
               if (wasThrottled) {
-                getWorkflows(url, since, flows => {
+                this.getWorkflows(url, since, flows => {
                   url = false;
                   return callback(false, false);
                 });
@@ -79,14 +223,13 @@ module.exports = function () {
         }
       );
     },
-    processCommunications(commReqs, callback) {
-      let flowBody
-      let smsBody
-      let sendFailed = false
+    processCommunications (commReqs, rpContacts, callback) {
+      let sendFailed = false;
+      logger.info(`Processing ${commReqs.length} communication requests`);
       async.each(commReqs, (commReq, nxtComm) => {
         let msg;
-        let workflows = [];
-        for (let payload of commReq.resource.payload) {
+        const workflows = [];
+        for (const payload of commReq.resource.payload) {
           if (payload.contentString) {
             msg = payload.contentString;
           }
@@ -95,7 +238,7 @@ module.exports = function () {
           }
         }
         if (!msg) {
-          for (let payload of commReq.resource.payload) {
+          for (const payload of commReq.resource.payload) {
             if (payload.contentAttachment && payload.contentAttachment.title) {
               msg = payload.contentAttachment.title;
             }
@@ -103,187 +246,235 @@ module.exports = function () {
         }
 
         if (!msg && workflows.length === 0) {
-          logger.warn(`No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`)
-          return nxtComm()
+          logger.warn(`No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`);
+          return nxtComm();
         }
-        let recipients = []
-        let recPromises = []
-        for (let recipient of commReq.resource.recipient) {
-          recPromises.push(new Promise((resolve) => {
+        const recipients = [];
+        const recPromises = [];
+        for (const recipient of commReq.resource.recipient) {
+          recPromises.push(new Promise(resolve => {
             if (recipient.reference) {
-              let resource
-              let promise1 = new Promise((resolve1) => {
+              let resource;
+              const promise1 = new Promise(resolve1 => {
                 if (recipient.reference.startsWith('#')) {
-                  if (resource.contained) {
-                    let contained = resource.contained.find((contained) => {
-                      return contained.id === recipient.reference.substring(1)
-                    })
+                  if (commReq.resource.contained) {
+                    const contained = commReq.resource.contained.find(contained => {
+                      return contained.id === recipient.reference.substring(1);
+                    });
                     if (contained) {
                       resource = {
-                        resource: contained
-                      }
+                        resource: contained,
+                      };
                     } else {
-                      logger.error(`Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`)
+                      logger.error(`Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`);
                     }
                   } else {
-                    logger.error(`Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`)
+                    logger.error(`Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`);
                   }
-                  resolve1()
+                  resolve1();
                 } else {
-                  macm.getResource(recipient.reference, (recResource) => {
+                  macm.getResource(recipient.reference, recResource => {
                     if (Array.isArray(recResource) && recResource.length === 1) {
-                      resource = recResource[0]
+                      resource = recResource[0];
                     } else if (Array.isArray(recResource) && recResource.length === 0) {
-                      logger.error(`Reference ${recipient.reference} was not found on the server`)
+                      logger.error(`Reference ${recipient.reference} was not found on the server`);
                     }
-                    resolve1()
-                  })
+                    resolve1();
+                  });
                 }
-              })
+              });
               promise1.then(() => {
                 if (resource) {
-                  if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
-                    for (let telecom of recipient.telecom) {
-                      if (telecom.use && telecom.use === 'mobile') {
-                        recipients.push("tel:" + telecom.value)
+                  if (resource.resource.telecom && Array.isArray(resource.resource.telecom) && resource.resource.telecom.length > 0) {
+                    for (const telecom of resource.resource.telecom) {
+                      if (telecom.system && telecom.system === 'phone') {
+                        recipients.push('tel:' + telecom.value);
                       }
                     }
                   }
                 }
-                resolve()
-              }).catch((err) => {
-                logger.error(err)
-                resolve()
-              })
+                if (resource && !config.get('rapidpro:syncAllContacts')) {
+                  this.addContact({
+                    contact: resource.resource,
+                    rpContacts
+                  }, () => {
+                    resolve();
+                  });
+                } else {
+                  resolve();
+                }
+              }).catch(err => {
+                logger.error(err);
+                resolve();
+              });
             } else {
-              resolve()
+              resolve();
             }
-          }))
+          }));
         }
-
         Promise.all(recPromises).then(() => {
-          if (workflows.length > 0) {
-            for (let workflow of workflows) {
-              flowBody.push({
-                "flow": workflow,
-                "urns": recipients
-              })
-            }
-          }
-          if (sms) {
-            smsBody = {
-              "text": sms,
-              "urns": recipients
-            }
-          }
           async.parallel({
-            startFlow: (callback) => {
+            startFlow: callback => {
               if (workflows.length > 0) {
-                for (let workflow of workflows) {
-                  let flowBody = {}
-                  flowBody.flow = workflow
-                  flowBody.urns = []
-                  let promises = []
-                  for (let recipient of recipients) {
-                    promises.push(new promises((resolve) => {
-                      flowBody.urns.push(recipient)
+                for (const workflow of workflows) {
+                  const flowBody = {};
+                  flowBody.flow = workflow;
+                  flowBody.urns = [];
+                  const promises = [];
+                  for (const recipient of recipients) {
+                    promises.push(new Promise(resolve => {
+                      flowBody.urns.push(recipient);
                       if (flowBody.urns.length > 90) {
-                        let tmpFlowBody = {
-                          ...flowBody
-                        }
-                        flowBody.urns = []
+                        const tmpFlowBody = {
+                          ...flowBody,
+                        };
+                        flowBody.urns = [];
                         this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
-                          if (res.statusCode < 200 || res.statusCode > 299) {
-                            sendFailed = true
+                          if (err) {
+                            logger.error(err);
+                            sendFailed = true;
                           }
-                          resolve()
-                        })
+                          if (res.statusCode < 200 || res.statusCode > 299) {
+                            sendFailed = true;
+                          }
+                          resolve();
+                        });
                       }
-                      resolve()
-                    }))
+                      resolve();
+                    }));
                   }
                   Promise.all(promises).then(() => {
                     if (flowBody.urns.length > 0) {
-                      flowBody.urns = []
                       this.sendMessage(flowBody, 'workflow', (err, res, body) => {
-                        if (res.statusCode < 200 || res.statusCode > 299) {
-                          sendFailed = true
+                        if (err) {
+                          logger.error(err);
+                          sendFailed = true;
                         }
-                        return callback(null)
-                      })
+                        if (res.statusCode < 200 || res.statusCode > 299) {
+                          sendFailed = true;
+                        }
+                        return callback(null);
+                      });
                     } else {
-                      return callback(null)
+                      return callback(null);
                     }
-                  })
+                  });
                 }
               } else {
-                return callback(null)
+                return callback(null);
               }
             },
-            sendSMS: (callback) => {
-              if (!smsBody) {
-                return callback(null)
+            sendSMS: callback => {
+              if (!msg) {
+                return callback(null);
               }
-              this.sendMessage(smsBody, 'sms', () => {
-                return callback(null)
-              })
-            }
+              const smsBody = {};
+              smsBody.text = msg;
+              smsBody.urns = [];
+              const promises = [];
+              for (const recipient of recipients) {
+                promises.push(new Promise(resolve => {
+                  smsBody.urns.push(recipient);
+                  if (smsBody.urns.length > 90) {
+                    const tmpSmsBody = {
+                      ...smsBody,
+                    };
+                    smsBody.urns = [];
+                    this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
+                      if (err) {
+                        logger.error(err);
+                        sendFailed = true;
+                      }
+                      if (res.statusCode < 200 || res.statusCode > 299) {
+                        sendFailed = true;
+                      }
+                      resolve();
+                    });
+                  }
+                  resolve();
+                }));
+              }
+              Promise.all(promises).then(() => {
+                if (smsBody.urns.length > 0) {
+                  this.sendMessage(smsBody, 'sms', (err, res, body) => {
+                    if (err) {
+                      logger.error(err);
+                      sendFailed = true;
+                    }
+                    if (res.statusCode < 200 || res.statusCode > 299) {
+                      sendFailed = true;
+                    }
+                    return callback(null);
+                  });
+                } else {
+                  return callback(null);
+                }
+              });
+            },
           }, () => {
             // if alert sent successfuly then delete comm request
             if (!sendFailed) {
-              macm.deleteResource(`${commReq.resource.resourceType}/${resource.id}`, () => {
-                return nxtComm()
-              })
+              // macm.deleteResource(`${commReq.resource.resourceType}/${commReq.resource.id}`, () => {
+              //   return nxtComm();
+              // });
             } else {
-              return nxtComm()
+              return nxtComm();
             }
-          })
-        }).catch((err) => {
-          logger.error(err)
-        })
-      })
+          });
+        }).catch(err => {
+          logger.error(err);
+        });
+      },
+      () => {
+        return callback();
+      }
+      );
     },
 
-    sendMessage(flowBody, type, callback) {
-      let endPoint
+    sendMessage (flowBody, type, callback) {
+      let endPoint;
       if (type === 'sms') {
-        endPoint = 'broadcasts.json'
+        endPoint = 'broadcasts.json';
       } else if (type === 'workflow') {
-        endPoint = 'flow_starts.json'
+        endPoint = 'flow_starts.json';
+      } else {
+        logger.error('Cant determine the message type ' + type);
+        return callback(true);
       }
-      let url = URI(config.get('rapidpro:url'))
+      const url = URI(config.get('rapidpro:url'))
         .segment('api')
         .segment('v2')
         .segment(endPoint)
         .toString();
-      let options = {
+      const options = {
         url,
         headers: {
           Authorization: `Token ${config.get('rapidpro:token')}`,
         },
-        body: flowBody,
-        json: true
+        json: flowBody,
       };
-      request(options, (err, res, body) => {
+      request.post(options, (err, res, body) => {
         if (err) {
           logger.error(err);
           return callback(err);
         }
-        this.isThrottled(JSON.parse(body), wasThrottled => {
+        this.isThrottled(body, wasThrottled => {
           if (wasThrottled) {
-            startFlow(flowBody, type, (err, res, body) => {
+            this.sendMessage(flowBody, type, (err, res, body) => {
               return callback(err, res, body);
             });
           } else {
             return callback(err, res, body);
           }
-        })
-      })
+        });
+      });
     },
 
-    isThrottled(results, callback) {
+    isThrottled (results, callback) {
       if (results === undefined || results === null || results === '') {
-        winston.error('An error has occured while checking throttling,empty rapidpro results were submitted');
+        logger.error(
+          'An error has occured while checking throttling,empty rapidpro results were submitted'
+        );
         return callback(true);
       }
       if (results.hasOwnProperty('detail')) {
@@ -294,9 +485,9 @@ module.exports = function () {
             detArr,
             (det, nxtDet) => {
               if (!isNaN(det)) {
-                //add 5 more seconds on top of the wait time expected by rapidpro then convert to miliseconds
+                // add 5 more seconds on top of the wait time expected by rapidpro then convert to miliseconds
                 var wait_time = parseInt(det) * 1000 + 5;
-                winston.warn(
+                logger.warn(
                   'Rapidpro has throttled my requests,i will wait for ' +
                   wait_time / 1000 +
                   ' Seconds Before i proceed,please dont interrupt me'
@@ -317,3 +508,15 @@ module.exports = function () {
     },
   };
 };
+
+function generateURNS (resource) {
+  const urns = [];
+  if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
+    for (const telecom of resource.telecom) {
+      if (resource.telecom.system && resource.telecom.system === 'phone') {
+        urns.push('tel:' + telecom.value);
+      }
+    }
+  }
+  return urns;
+}

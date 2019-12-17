@@ -1,13 +1,19 @@
 'use strict';
 const express = require('express');
+const bodyParser = require('body-parser');
+const async = require('async');
 const logger = require('./winston');
 const config = require('./config');
 const rapidpro = require('./rapidpro')();
 const macm = require('./macm')();
 const app = express();
 
+app.use(bodyParser.json());
+
 app.get('/test', (req, res) => {
-  macm.rpFlowsToFHIR();
+  rapidpro.getContacts({}, (cnt) => {
+    console.log(JSON.stringify(cnt, 0, 2));
+  });
 });
 
 app.get('/syncWorkflows', (req, res) => {
@@ -25,12 +31,77 @@ app.get('/syncWorkflows', (req, res) => {
 });
 
 app.get('/checkCommunicationRequest', (req, res) => {
-  macm.getResource('CommunicationRequest', (commReqs) => {
-    rapidpro.processCommunications(commReqs, () => {
+  const promise = new Promise((resolve, reject) => {
+    rapidpro.getContacts({}, (rpContacts) => {
+      resolve(rpContacts);
+    });
+  });
+  promise.then((rpContacts) => {
+    macm.getResource('CommunicationRequest', (commReqs) => {
+      rapidpro.processCommunications(commReqs, rpContacts, () => {
+        logger.info('Done checking communication requests');
+      });
+    });
+  });
+});
 
-    })
-  })
-})
+app.post('/syncContacts', (req, res) => {
+  logger.info('Received a bundle of contacts to be synchronized');
+  const bundle = req.body;
+  if (!bundle) {
+    logger.error('Received empty request');
+    res.status(400).send('Empty request body');
+    return;
+  }
+  if (bundle.resourceType !== 'Bundle') {
+    logger.error('Request is not a bundle');
+    res.status(400).send('Request is not a bundle');
+  }
+  rapidpro.getContacts({}, (rpContacts) => {
+    async.each(bundle.entry, (entry, nxtEntry) => {
+      rapidpro.addContact({
+        contact: entry.resource,
+        rpContacts
+      }, () => {
+        return nxtEntry();
+      });
+    }, () => {
+      logger.info('Contacts Sync Done');
+      res.status(200).send('Suceessfully');
+    });
+  });
+});
+
+app.get('/syncContacts', (req, res) => {
+  logger.info('Received a request to sync DB contacts');
+  let contacts = [];
+  async.series({
+    practitioners: (callback) => {
+      macm.getResource('Practitioner', (practs) => {
+        contacts = contacts.concat(practs);
+      });
+    },
+    person: (callback) => {
+      macm.getResource('Person', (pers) => {
+        contacts = contacts.concat(pers);
+      });
+    }
+  }, () => {
+    rapidpro.getContacts({}, (rpContacts) => {
+      async.each(contacts, (contact, nxtEntry) => {
+        rapidpro.addContact({
+          contact: contact.resource,
+          rpContacts
+        }, () => {
+          return nxtEntry();
+        });
+      }, () => {
+        logger.info('Contacts Sync Done');
+        res.status(200).send('Suceessfully');
+      });
+    });
+  });
+});
 
 app.listen(config.get('server:port'), () => {
   logger.info(`Server is running and listening on port: ${config.get('server:port')}`);
