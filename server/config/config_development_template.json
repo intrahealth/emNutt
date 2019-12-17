@@ -1,0 +1,20 @@
+{
+  "server": {
+    "port": 3000
+  },
+  "rapidpro": {
+    "url": "http://app.rapidpro.io",
+    "token": "369958889jk10930de856fc15lmefjkd73f0390c",
+    "syncAllContacts": true
+  },
+  "macm": {
+    "server": "http://scratchpad.ihris.org/hapi",
+    "username": "hapi",
+    "password": "hapi"
+  },
+  "elastic": {
+    "server": "http://localhost:9200",
+    "username": "",
+    "password": ""
+  }
+}
