@@ -32,9 +32,13 @@ app.get('/syncWorkflows', (req, res) => {
 
 app.get('/checkCommunicationRequest', (req, res) => {
   const promise = new Promise((resolve, reject) => {
-    rapidpro.getContacts({}, (rpContacts) => {
-      resolve(rpContacts);
-    });
+    if (!config.get('rapidpro:syncAllContacts')) {
+      rapidpro.getContacts({}, (rpContacts) => {
+        resolve(rpContacts);
+      });
+    } else {
+      return resolve([]);
+    }
   });
   promise.then((rpContacts) => {
     macm.getResource({
@@ -45,6 +49,8 @@ app.get('/checkCommunicationRequest', (req, res) => {
         res.status(200).send('Done');
       });
     });
+  }).catch((err) => {
+    throw err;
   });
 });
 

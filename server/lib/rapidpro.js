@@ -131,11 +131,14 @@ module.exports = function () {
           body.fields.globalid = contact.id;
         }
       }
-      const url = URI(config.get('rapidpro:url'))
+      let url = URI(config.get('rapidpro:url'))
         .segment('api')
         .segment('v2')
-        .segment('contacts.json')
-        .toString();
+        .segment('contacts.json');
+      if (body.uuid) {
+        url.addQuery('uuid', body.uuid);
+      }
+      url = url.toString();
       const options = {
         url,
         headers: {
@@ -306,6 +309,7 @@ module.exports = function () {
               }).catch(err => {
                 logger.error(err);
                 resolve();
+                throw err;
               });
             } else {
               resolve();
@@ -368,6 +372,8 @@ module.exports = function () {
                     } else {
                       return callback(null);
                     }
+                  }).catch((err) => {
+                    throw err;
                   });
                 }
               } else {
@@ -422,6 +428,8 @@ module.exports = function () {
                 } else {
                   return callback(null);
                 }
+              }).catch((err) => {
+                throw err;
               });
             },
           }, () => {
@@ -429,6 +437,7 @@ module.exports = function () {
           });
         }).catch(err => {
           logger.error(err);
+          throw err;
         });
       }, () => {
         return callback();
@@ -526,7 +535,9 @@ module.exports = function () {
         commReq.resource.extension = [];
       }
       commReq.resource.status = 'completed';
-
+      // commReq.resource.contained[0].name = [{
+      //   text: 'Ally Shaban'
+      // }];
       let extIndex = 0;
       for (const index in commReq.resource.extension) {
         const ext = commReq.resource.extension[index];
@@ -593,7 +604,7 @@ function generateURNS (resource) {
   const urns = [];
   if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
     for (const telecom of resource.telecom) {
-      if (resource.telecom.system && resource.telecom.system === 'phone') {
+      if (telecom.system && telecom.system === 'phone') {
         urns.push('tel:' + telecom.value);
       }
     }
