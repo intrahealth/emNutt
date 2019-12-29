@@ -37,9 +37,12 @@ app.get('/checkCommunicationRequest', (req, res) => {
     });
   });
   promise.then((rpContacts) => {
-    macm.getResource('CommunicationRequest', (commReqs) => {
+    macm.getResource({
+      resource: 'CommunicationRequest'
+    }, (commReqs) => {
       rapidpro.processCommunications(commReqs, rpContacts, () => {
         logger.info('Done checking communication requests');
+        res.status(200).send('Done');
       });
     });
   });
@@ -78,12 +81,12 @@ app.get('/syncContacts', (req, res) => {
   async.series({
     practitioners: (callback) => {
       macm.getResource('Practitioner', (practs) => {
-        contacts = contacts.concat(practs);
+        contacts = contacts.concat(practs.entry);
       });
     },
     person: (callback) => {
       macm.getResource('Person', (pers) => {
-        contacts = contacts.concat(pers);
+        contacts = contacts.concat(pers.entry);
       });
     }
   }, () => {
@@ -97,7 +100,7 @@ app.get('/syncContacts', (req, res) => {
         });
       }, () => {
         logger.info('Contacts Sync Done');
-        res.status(200).send('Suceessfully');
+        res.status(200).send('Successfully');
       });
     });
   });

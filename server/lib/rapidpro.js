@@ -3,6 +3,7 @@
 const URI = require('urijs');
 const request = require('request');
 const async = require('async');
+const uuid4 = require('uuid/v4');
 const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
@@ -27,7 +28,6 @@ module.exports = function () {
         url = url.toString();
       }
       // need to make this variable independent of this function so that to handle throttled
-      logger.info(url);
       var contacts = [];
       async.whilst(
         callback => {
@@ -225,8 +225,8 @@ module.exports = function () {
     },
     processCommunications (commReqs, rpContacts, callback) {
       let sendFailed = false;
-      logger.info(`Processing ${commReqs.length} communication requests`);
-      async.each(commReqs, (commReq, nxtComm) => {
+      logger.info(`Processing ${commReqs.entry.length} communication requests`);
+      async.each(commReqs.entry, (commReq, nxtComm) => {
         let msg;
         const workflows = [];
         for (const payload of commReq.resource.payload) {
@@ -316,7 +316,14 @@ module.exports = function () {
           async.parallel({
             startFlow: callback => {
               if (workflows.length > 0) {
+                let createNewReq = false;
+                let counter = 0;
                 for (const workflow of workflows) {
+                  logger.info('Starting workflow ' + workflow);
+                  if (counter > 0) {
+                    createNewReq = true;
+                  }
+                  counter += 1;
                   const flowBody = {};
                   flowBody.flow = workflow;
                   flowBody.urns = [];
@@ -337,8 +344,10 @@ module.exports = function () {
                           if (res.statusCode < 200 || res.statusCode > 299) {
                             sendFailed = true;
                           }
+                          this.updateCommunicationRequest(commReq, body, 'workflow', createNewReq);
                           resolve();
                         });
+                        createNewReq = true;
                       }
                       resolve();
                     }));
@@ -353,6 +362,7 @@ module.exports = function () {
                         if (res.statusCode < 200 || res.statusCode > 299) {
                           sendFailed = true;
                         }
+                        this.updateCommunicationRequest(commReq, body, 'workflow', createNewReq);
                         return callback(null);
                       });
                     } else {
@@ -372,6 +382,7 @@ module.exports = function () {
               smsBody.text = msg;
               smsBody.urns = [];
               const promises = [];
+              let createNewReq = false;
               for (const recipient of recipients) {
                 promises.push(new Promise(resolve => {
                   smsBody.urns.push(recipient);
@@ -381,6 +392,7 @@ module.exports = function () {
                     };
                     smsBody.urns = [];
                     this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
+                      this.updateCommunicationRequest(commReq, body, 'sms', createNewReq);
                       if (err) {
                         logger.error(err);
                         sendFailed = true;
@@ -390,6 +402,7 @@ module.exports = function () {
                       }
                       resolve();
                     });
+                    createNewReq = true;
                   }
                   resolve();
                 }));
@@ -412,23 +425,14 @@ module.exports = function () {
               });
             },
           }, () => {
-            // if alert sent successfuly then delete comm request
-            if (!sendFailed) {
-              // macm.deleteResource(`${commReq.resource.resourceType}/${commReq.resource.id}`, () => {
-              //   return nxtComm();
-              // });
-            } else {
-              return nxtComm();
-            }
+            return nxtComm();
           });
         }).catch(err => {
           logger.error(err);
         });
-      },
-      () => {
+      }, () => {
         return callback();
-      }
-      );
+      });
     },
 
     sendMessage (flowBody, type, callback) {
@@ -506,6 +510,82 @@ module.exports = function () {
         callback(false);
       }
     },
+
+    updateCommunicationRequest (commReq, rpRunStatus, type, createNewReq) {
+      logger.info('Updating communication request ' + commReq.resource.id + ' to completed');
+      let extUrl;
+      if (type === 'sms') {
+        extUrl = 'http://mhero.org/extensions/rp_broadcast_starts';
+      } else if (type === 'workflow') {
+        extUrl = 'http://mhero.org/extensions/rp_flow_starts';
+      }
+      if (createNewReq) {
+        commReq.resource.id = uuid4();
+      }
+      if (!commReq.resource.extension) {
+        commReq.resource.extension = [];
+      }
+      commReq.resource.status = 'completed';
+
+      let extIndex = 0;
+      for (const index in commReq.resource.extension) {
+        const ext = commReq.resource.extension[index];
+        if (ext.url === extUrl) {
+          extIndex = index;
+          break;
+        }
+      }
+
+      const contactsExt = [];
+      for (const rpCont of rpRunStatus.contacts) {
+        contactsExt.push({
+          url: 'uuid',
+          valueString: rpCont.uuid
+        });
+      }
+      commReq.resource.extension[extIndex] = {
+        url: extUrl,
+        extension: [{
+          url: 'id',
+          valueString: rpRunStatus.id
+        }, {
+          url: `${extUrl}/extension/contacts`,
+          extension: contactsExt
+        }, {
+          url: 'created_on',
+          valueDateTime: rpRunStatus.created_on
+        }]
+      };
+      if (type === 'workflow') {
+        commReq.resource.extension[extIndex].extension.push({
+          url: 'modified_on',
+          valueDateTime: rpRunStatus.modified_on
+        }, {
+          url: 'flow',
+          valueString: rpRunStatus.flow.uuid
+        }, {
+          url: 'status',
+          valueString: rpRunStatus.status
+        }, {
+          url: 'uuid',
+          valueString: rpRunStatus.uuid
+        });
+      }
+
+      const bundle = {};
+      bundle.type = 'batch';
+      bundle.resourceType = 'Bundle';
+      bundle.entry = [{
+        resource: commReq.resource,
+        request: {
+          method: 'PUT',
+          url: `CommunicationRequest/${commReq.resource.id}`,
+        }
+      }];
+      macm.saveResource(bundle, () => {
+
+      });
+    }
   };
 };
 

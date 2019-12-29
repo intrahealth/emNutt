@@ -124,9 +124,8 @@ module.exports = function () {
     },
 
     saveResource (resource, callback) {
-      const url = URI(config.get('macm:server'))
-        .segment('fhir')
-        .toString();
+      logger.info('Saving resource data');
+      const url = URI(config.get('macm:baseURL')).toString();
       const options = {
         url,
         withCredentials: true,
@@ -144,13 +143,13 @@ module.exports = function () {
           logger.error(err);
           return callback(err);
         }
+        logger.info('Resource(s) data saved successfully', JSON.stringify(options, 0, 2));
         callback(err, body);
       });
     },
 
     deleteResource (resource, callback) {
-      const url = URI(config.get('macm:server'))
-        .segment('fhir')
+      const url = URI(config.get('macm:baseURL'))
         .segment(resource)
         .toString();
       const options = {
@@ -172,20 +171,50 @@ module.exports = function () {
 
     /**
      *
-     * @param {resource} resource
-     * @param {Array} callback
+     * @param {FHIRResource} resource
+     * @param {FHIRURL} url
+     * @param {ResourceID} id // id of a resource
+     * @param {Integer} count
+     * @param {Object} callback
      */
-    getResource (resource, callback) {
-      let url = URI(config.get('macm:server'))
-        .segment('fhir')
-        .segment(resource)
-        .toString();
-      let resourceData = [];
-
+    getResource ({
+      resource,
+      url,
+      id,
+      query,
+      count
+    }, callback) {
+      const resourceData = {};
+      resourceData.entry = [];
+      if (!url) {
+        url = URI(config.get('macm:baseURL')).segment(resource);
+        if (id) {
+          url.segment(id);
+        }
+        if (count && !isNaN(count)) {
+          url.addQuery('_count', count);
+        } else {
+          count = 0;
+        }
+        if (query) {
+          const queries = query.split('&');
+          for (const qr of queries) {
+            const qrArr = qr.split('=');
+            if (qrArr.length !== 2) {
+              logger.error('Invalid query supplied, stop getting resources');
+              return callback(resourceData);
+            }
+            url.addQuery(qrArr[0], qrArr[1]);
+          }
+        }
+        url = url.toString();
+      } else {
+        count = true;
+      }
       logger.info(`Getting ${url} from server`);
       async.whilst(
-        callback => {
-          return callback(null, url != false);
+        callback1 => {
+          return callback1(null, url !== false);
         },
         callback => {
           const options = {
@@ -207,22 +236,22 @@ module.exports = function () {
             }
             body = JSON.parse(body);
             if (body.total === 0 && body.entry && body.entry.length > 0) {
-              logger.error(
-                'Non resource data returned for resource ' + resource
-              );
+              logger.error('Non resource data returned for resource ' + resource);
               return callback(null, false);
             }
-            const next = body.link.find(link => link.relation === 'next');
-            if (next) {
-              url = next.url;
-            }
             if (body.total > 0 && body.entry && body.entry.length > 0) {
-              resourceData = resourceData.concat(body.entry);
+              resourceData.entry = resourceData.entry.concat(body.entry);
             }
+            const next = body.link.find(link => link.relation === 'next');
+            if (!count || (count && !isNaN(count) && resourceData.entry.length < count)) {
+              if (next) {
+                url = next.url;
+              }
+            }
+            resourceData.next = next;
             return callback(null, url);
           });
-        },
-        () => {
+        }, () => {
           return callback(resourceData);
         }
       );
