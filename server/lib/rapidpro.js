@@ -11,73 +11,6 @@ module.exports = function () {
   return {
     /**
      *
-     * @param {*} callback
-     */
-    getContacts ({
-      url,
-      groupUUID
-    }, callback) {
-      if (!url) {
-        url = URI(config.get('rapidpro:url'))
-          .segment('api')
-          .segment('v2')
-          .segment('contacts.json');
-        if (groupUUID) {
-          url = url.addQuery('group', groupUUID);
-        }
-        url = url.toString();
-      }
-      // need to make this variable independent of this function so that to handle throttled
-      var contacts = [];
-      async.whilst(
-        callback => {
-          if (url) {
-            logger.info('Fetching contacts in ' + url);
-          }
-          return callback(null, url !== false);
-        }, (callback) => {
-          const options = {
-            url,
-            headers: {
-              Authorization: `Token ${config.get('rapidpro:token')}`,
-            }
-          };
-          request.get(options, (err, res, body) => {
-            if (err) {
-              logger.error(err);
-              return callback(err);
-            }
-            this.isThrottled(JSON.parse(body), (wasThrottled) => {
-              if (wasThrottled) {
-                // reprocess this contact
-                this.getContacts(url, groupUUID, (rp_contacts) => {
-                  contacts = contacts.concat(body.results);
-                  return callback(null);
-                });
-              } else {
-                body = JSON.parse(body);
-                if (!body.hasOwnProperty('results')) {
-                  logger.error(JSON.stringify(body));
-                  logger.error('An error occured while fetching contacts to rapidpro');
-                  return callback();
-                }
-                if (body.next) {
-                  url = body.next;
-                } else {
-                  url = false;
-                }
-                contacts = contacts.concat(body.results);
-                return callback(null, url);
-              }
-            });
-          });
-        }, () => {
-          return callback(contacts);
-        }
-      );
-    },
-    /**
-     *
      * @param {Object} param0
      * @param {*} callback
      */
@@ -153,78 +86,6 @@ module.exports = function () {
         }
         return callback(err, res, body);
       });
-    },
-    /**
-     *
-     * @param {Date} since
-     */
-    getWorkflows (url, since, callback) {
-      // const flows1 = require('./flows.json');
-      // return callback(flows1.results);
-      if (!url) {
-        url = URI(config.get('rapidpro:url'))
-          .segment('api')
-          .segment('v2')
-          .segment('flows.json');
-        if (since) {
-          url.addQuery('after', since);
-        }
-        url = url.toString();
-      }
-      // need to make this variable independent of this function so that to handle throttled
-      var flows = [];
-      async.whilst(
-        callback => {
-          if (url) {
-            logger.info(`Fetching Flows From ${url}`);
-          }
-          return callback(null, url != false);
-        },
-        callback => {
-          const options = {
-            url,
-            headers: {
-              Authorization: `Token ${config.get('rapidpro:token')}`,
-            },
-          };
-          request.get(options, (err, res, body) => {
-            if (err) {
-              logger.error(err);
-              return callback(err);
-            }
-            this.isThrottled(JSON.parse(body), wasThrottled => {
-              if (wasThrottled) {
-                this.getWorkflows(url, since, flows => {
-                  url = false;
-                  return callback(false, false);
-                });
-              } else {
-                if (err) {
-                  return callback(err);
-                }
-                body = JSON.parse(body);
-                if (!body.hasOwnProperty('results')) {
-                  logger.error(JSON.stringify(body));
-                  logger.error(
-                    'An error occured while fetching contacts to rapidpro'
-                  );
-                  return callback();
-                }
-                flows = flows.concat(body.results);
-                if (body.next) {
-                  url = body.next;
-                } else {
-                  url = false;
-                }
-                return callback(null, url);
-              }
-            });
-          });
-        },
-        () => {
-          return callback(flows);
-        }
-      );
     },
     processCommunications (commReqs, rpContacts, callback) {
       let sendFailed = false;
@@ -348,7 +209,9 @@ module.exports = function () {
                           if (res.statusCode < 200 || res.statusCode > 299) {
                             sendFailed = true;
                           }
-                          this.updateCommunicationRequest(commReq, body, 'workflow', createNewReq);
+                          if (!sendFailed) {
+                            this.updateCommunicationRequest(commReq, body, 'workflow', createNewReq);
+                          }
                           resolve();
                         });
                         createNewReq = true;
@@ -366,7 +229,9 @@ module.exports = function () {
                         if (res.statusCode < 200 || res.statusCode > 299) {
                           sendFailed = true;
                         }
-                        this.updateCommunicationRequest(commReq, body, 'workflow', createNewReq);
+                        if (!sendFailed) {
+                          this.updateCommunicationRequest(commReq, body, 'workflow', createNewReq);
+                        }
                         return callback(null);
                       });
                     } else {
@@ -398,13 +263,15 @@ module.exports = function () {
                     };
                     smsBody.urns = [];
                     this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
-                      this.updateCommunicationRequest(commReq, body, 'sms', createNewReq);
                       if (err) {
                         logger.error(err);
                         sendFailed = true;
                       }
                       if (res.statusCode < 200 || res.statusCode > 299) {
                         sendFailed = true;
+                      }
+                      if (!sendFailed) {
+                        this.updateCommunicationRequest(commReq, body, 'sms', createNewReq);
                       }
                       resolve();
                     });
@@ -422,6 +289,9 @@ module.exports = function () {
                     }
                     if (res.statusCode < 200 || res.statusCode > 299) {
                       sendFailed = true;
+                    }
+                    if (!sendFailed) {
+                      this.updateCommunicationRequest(commReq, body, 'sms', createNewReq);
                     }
                     return callback(null);
                   });
@@ -596,6 +466,86 @@ module.exports = function () {
       macm.saveResource(bundle, () => {
 
       });
+    },
+
+    /**
+     *
+     * @param {Array} queries // i.e [{uuid: 'aa9e1550-d913-435e-2lec-k856bb9ec349'}]
+     * @param {*} callback
+     */
+    getEndPointData ({
+      queries,
+      url,
+      endPoint
+    }, callback) {
+      if (!url) {
+        url = URI(config.get('rapidpro:url'))
+          .segment('api')
+          .segment('v2')
+          .segment(endPoint);
+        if (queries && Array.isArray(queries)) {
+          for (const query of queries) {
+            if (!Object.prototype.hasOwnProperty.call(query, 'name') || !Object.prototype.hasOwnProperty.call(query, 'value')) {
+              logger.error('Query must have name and value');
+              continue;
+            }
+            url = url.addQuery(query.name, query.value);
+          }
+        }
+        url = url.toString();
+      }
+      // need to make this variable independent of this function so that to handle throttled
+      var endPointData = [];
+      async.whilst(
+        callback => {
+          if (url) {
+            logger.info('Fetching endpoint data from ' + url);
+          }
+          return callback(null, url !== false);
+        }, (callback) => {
+          const options = {
+            url,
+            headers: {
+              Authorization: `Token ${config.get('rapidpro:token')}`,
+            }
+          };
+          request.get(options, (err, res, body) => {
+            if (err) {
+              logger.error(err);
+              return callback(err);
+            }
+            this.isThrottled(JSON.parse(body), (wasThrottled) => {
+              if (wasThrottled) {
+                // reprocess this contact
+                this.getEndPointData({
+                  queries,
+                  url,
+                  endPoint
+                }, (data) => {
+                  endPointData = endPointData.concat(data);
+                  return callback(null);
+                });
+              } else {
+                body = JSON.parse(body);
+                if (!Object.prototype.hasOwnProperty.call(body, 'results')) {
+                  logger.error(JSON.stringify(body));
+                  logger.error('An error occured while fetching end point data from rapidpro');
+                  return callback();
+                }
+                if (body.next) {
+                  url = body.next;
+                } else {
+                  url = false;
+                }
+                endPointData = endPointData.concat(body.results);
+                return callback(null, url);
+              }
+            });
+          });
+        }, () => {
+          return callback(endPointData);
+        }
+      );
     }
   };
 };

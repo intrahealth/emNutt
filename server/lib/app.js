@@ -11,14 +11,18 @@ const app = express();
 app.use(bodyParser.json());
 
 app.get('/test', (req, res) => {
-  rapidpro.getContacts({}, (cnt) => {
+  rapidpro.getEndPointData({
+    endPoint: 'contacts.json'
+  }, (cnt) => {
     console.log(JSON.stringify(cnt, 0, 2));
   });
 });
 
 app.get('/syncWorkflows', (req, res) => {
   logger.info('Received a request to synchronize workflows');
-  rapidpro.getWorkflows(null, null, flows => {
+  rapidpro.getEndPointData({
+    endPoint: 'flows.json'
+  }, flows => {
     macm.rpFlowsToFHIR(flows, (err, body) => {
       logger.info('Done Synchronizing flows');
       if (err) {
@@ -33,7 +37,9 @@ app.get('/syncWorkflows', (req, res) => {
 app.get('/checkCommunicationRequest', (req, res) => {
   const promise = new Promise((resolve, reject) => {
     if (!config.get('rapidpro:syncAllContacts')) {
-      rapidpro.getContacts({}, (rpContacts) => {
+      rapidpro.getEndPointData({
+        endPoint: 'contacts.json'
+      }, (rpContacts) => {
         resolve(rpContacts);
       });
     } else {
@@ -66,7 +72,9 @@ app.post('/syncContacts', (req, res) => {
     logger.error('Request is not a bundle');
     res.status(400).send('Request is not a bundle');
   }
-  rapidpro.getContacts({}, (rpContacts) => {
+  rapidpro.getEndPointData({
+    endPoint: 'contacts.json'
+  }, (rpContacts) => {
     async.each(bundle.entry, (entry, nxtEntry) => {
       rapidpro.addContact({
         contact: entry.resource,
@@ -96,7 +104,9 @@ app.get('/syncContacts', (req, res) => {
       });
     }
   }, () => {
-    rapidpro.getContacts({}, (rpContacts) => {
+    rapidpro.getEndPointData({
+      endPoint: 'contacts.json'
+    }, (rpContacts) => {
       async.each(contacts, (contact, nxtEntry) => {
         rapidpro.addContact({
           contact: contact.resource,
