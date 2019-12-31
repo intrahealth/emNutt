@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<StructureDefinition xmlns="http://hl7.org/fhir">
+  <url value="http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails" />
+  <name value="FlowRunDetails" />
+  <status value="draft" />
+  <fhirVersion value="4.0.0" />
+  <mapping>
+    <identity value="rim" />
+    <uri value="http://hl7.org/v3" />
+    <name value="RIM Mapping" />
+  </mapping>
+  <kind value="complex-type" />
+  <abstract value="false" />
+  <type value="Extension" />
+  <baseDefinition value="http://hl7.org/fhir/StructureDefinition/Extension" />
+  <derivation value="constraint" />
+  <differential>
+    <element id="Extension.extension">
+      <path value="Extension.extension" />
+      <slicing>
+        <discriminator>
+          <type value="value" />
+          <path value="url" />
+        </discriminator>
+        <rules value="open" />
+      </slicing>
+    </element>
+    <element id="Extension.extension:flow">
+      <path value="Extension.extension" />
+      <sliceName value="flow" />
+      <min value="1" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:flow.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="flow" />
+    </element>
+    <element id="Extension.extension:flow.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="string" />
+      </type>
+    </element>
+    <element id="Extension.extension:responded">
+      <path value="Extension.extension" />
+      <sliceName value="responded" />
+      <min value="1" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:responded.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="responded" />
+    </element>
+    <element id="Extension.extension:responded.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="boolean" />
+      </type>
+    </element>
+    <element id="Extension.extension:exit_type">
+      <path value="Extension.extension" />
+      <sliceName value="exit_type" />
+      <min value="1" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:exit_type.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="exit_type" />
+    </element>
+    <element id="Extension.extension:exit_type.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="string" />
+      </type>
+    </element>
+    <element id="Extension.extension:exited_on">
+      <path value="Extension.extension" />
+      <sliceName value="exited_on" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:exited_on.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="exited_on" />
+    </element>
+    <element id="Extension.extension:exited_on.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <type>
+        <code value="dateTime" />
+      </type>
+    </element>
+    <element id="Extension.extension:created_on">
+      <path value="Extension.extension" />
+      <sliceName value="created_on" />
+      <min value="1" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:created_on.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="created_on" />
+    </element>
+    <element id="Extension.extension:created_on.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="dateTime" />
+      </type>
+    </element>
+    <element id="Extension.extension:modified_on">
+      <path value="Extension.extension" />
+      <sliceName value="modified_on" />
+      <min value="1" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:modified_on.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="modified_on" />
+    </element>
+    <element id="Extension.extension:modified_on.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="dateTime" />
+      </type>
+    </element>
+    <element id="Extension.url">
+      <path value="Extension.url" />
+      <fixedUri value="http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails" />
+    </element>
+    <element id="Extension.value[x]">
+      <path value="Extension.value[x]" />
+      <label value="flow" />
+      <max value="0" />
+    </element>
+  </differential>
+</StructureDefinition>

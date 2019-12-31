@@ -19,11 +19,11 @@ module.exports = function () {
       rpContacts
     }, callback) {
       let urns = generateURNS(contact);
-      const rpContactWithGlobalid = rpContacts.find((cntct) => {
+      const rpContactWithGlobalid = rpContacts.find(cntct => {
         return cntct.fields && cntct.fields.globalid === contact.id;
       });
-      const rpContactWithoutGlobalid = rpContacts.find((cntct) => {
-        return cntct.urns.find((urn) => {
+      const rpContactWithoutGlobalid = rpContacts.find(cntct => {
+        return cntct.urns.find(urn => {
           return urns.includes(urn);
         });
       });
@@ -45,7 +45,7 @@ module.exports = function () {
       if (!rpContactWithGlobalid && !rpContactWithoutGlobalid) {
         body.name = fullName;
         body.fields = {};
-        body.fields.globalid = contact.id;
+        body.fields.globalid = `${contact.resourceType}/${contact.id}`;
         body.urns = urns;
       } else {
         if (rpContactWithGlobalid) {
@@ -61,7 +61,7 @@ module.exports = function () {
         // end of ensuring urns are unique
         body.urns = urns;
         if (rpContactWithoutGlobalid && !rpContactWithGlobalid) {
-          body.fields.globalid = contact.id;
+          body.fields.globalid = `${contact.resourceType}/${contact.id}`;
         }
       }
       let url = URI(config.get('rapidpro:url'))
@@ -110,7 +110,9 @@ module.exports = function () {
         }
 
         if (!msg && workflows.length === 0) {
-          logger.warn(`No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`);
+          logger.warn(
+            `No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`
+          );
           return nxtComm();
         }
         const recipients = [];
@@ -123,17 +125,21 @@ module.exports = function () {
                 if (recipient.reference.startsWith('#')) {
                   if (commReq.resource.contained) {
                     const contained = commReq.resource.contained.find(contained => {
-                      return contained.id === recipient.reference.substring(1);
+                      return (contained.id === recipient.reference.substring(1));
                     });
                     if (contained) {
                       resource = {
                         resource: contained,
                       };
                     } else {
-                      logger.error(`Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`);
+                      logger.error(
+                        `Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`
+                      );
                     }
                   } else {
-                    logger.error(`Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`);
+                    logger.error(
+                      `Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`
+                    );
                   }
                   resolve1();
                 } else {
@@ -160,8 +166,33 @@ module.exports = function () {
                 if (resource && !config.get('rapidpro:syncAllContacts')) {
                   this.addContact({
                     contact: resource.resource,
-                    rpContacts
-                  }, () => {
+                    rpContacts,
+                  }, (err, res, body) => {
+                    if (!err) {
+                      const rpUUID = body.uuid;
+                      if (rpUUID) {
+                        if (!resource.resource.identifier) {
+                          resource.resource.identifier = [];
+                        }
+                        resource.resource.identifier.push({
+                          system: 'http://app.rapidpro.io/contact-uuid',
+                          value: rpUUID
+                        });
+                        const bundle = {};
+                        bundle.type = 'batch';
+                        bundle.resourceType = 'Bundle';
+                        bundle.entry = [{
+                          resource: resource.resource,
+                          request: {
+                            method: 'PUT',
+                            url: `${resource.resource.resourceType}/${resource.resource.id}`,
+                          }
+                        }];
+                        macm.saveResource(bundle, () => {
+
+                        });
+                      }
+                    }
                     resolve();
                   });
                 } else {
@@ -237,7 +268,7 @@ module.exports = function () {
                     } else {
                       return callback(null);
                     }
-                  }).catch((err) => {
+                  }).catch(err => {
                     throw err;
                   });
                 }
@@ -298,7 +329,7 @@ module.exports = function () {
                 } else {
                   return callback(null);
                 }
-              }).catch((err) => {
+              }).catch(err => {
                 throw err;
               });
             },
@@ -360,7 +391,7 @@ module.exports = function () {
         );
         return callback(true);
       }
-      if (results.hasOwnProperty('detail')) {
+      if (Object.prototype.hasOwnProperty.call(results, 'detail')) {
         var detail = results.detail.toLowerCase();
         if (detail.indexOf('throttled') != -1) {
           var detArr = detail.split(' ');
@@ -370,11 +401,7 @@ module.exports = function () {
               if (!isNaN(det)) {
                 // add 5 more seconds on top of the wait time expected by rapidpro then convert to miliseconds
                 var wait_time = parseInt(det) * 1000 + 5;
-                logger.warn(
-                  'Rapidpro has throttled my requests,i will wait for ' +
-                  wait_time / 1000 +
-                  ' Seconds Before i proceed,please dont interrupt me'
-                );
+                logger.warn('Rapidpro has throttled my requests,i will wait for ' + wait_time / 1000 + ' Seconds Before i proceed,please dont interrupt me');
                 setTimeout(function () {
                   return callback(true);
                 }, wait_time);
@@ -405,9 +432,6 @@ module.exports = function () {
         commReq.resource.extension = [];
       }
       commReq.resource.status = 'completed';
-      // commReq.resource.contained[0].name = [{
-      //   text: 'Ally Shaban'
-      // }];
       let extIndex = 0;
       for (const index in commReq.resource.extension) {
         const ext = commReq.resource.extension[index];
@@ -476,7 +500,8 @@ module.exports = function () {
     getEndPointData ({
       queries,
       url,
-      endPoint
+      endPoint,
+      hasResultsKey = true
     }, callback) {
       if (!url) {
         url = URI(config.get('rapidpro:url'))
@@ -485,7 +510,10 @@ module.exports = function () {
           .segment(endPoint);
         if (queries && Array.isArray(queries)) {
           for (const query of queries) {
-            if (!Object.prototype.hasOwnProperty.call(query, 'name') || !Object.prototype.hasOwnProperty.call(query, 'value')) {
+            if (
+              !Object.prototype.hasOwnProperty.call(query, 'name') ||
+              !Object.prototype.hasOwnProperty.call(query, 'value')
+            ) {
               logger.error('Query must have name and value');
               continue;
             }
@@ -495,14 +523,14 @@ module.exports = function () {
         url = url.toString();
       }
       // need to make this variable independent of this function so that to handle throttled
+      logger.info(
+        `Getting data for end point ${endPoint} from server ${config.get('rapidpro:url')}`
+      );
       var endPointData = [];
       async.whilst(
         callback => {
-          if (url) {
-            logger.info('Fetching endpoint data from ' + url);
-          }
           return callback(null, url !== false);
-        }, (callback) => {
+        }, callback => {
           const options = {
             url,
             headers: {
@@ -514,22 +542,22 @@ module.exports = function () {
               logger.error(err);
               return callback(err);
             }
-            this.isThrottled(JSON.parse(body), (wasThrottled) => {
+            this.isThrottled(JSON.parse(body), wasThrottled => {
               if (wasThrottled) {
                 // reprocess this contact
                 this.getEndPointData({
                   queries,
                   url,
                   endPoint
-                }, (data) => {
+                }, data => {
                   endPointData = endPointData.concat(data);
                   return callback(null);
                 });
               } else {
                 body = JSON.parse(body);
-                if (!Object.prototype.hasOwnProperty.call(body, 'results')) {
+                if (hasResultsKey && !Object.prototype.hasOwnProperty.call(body, 'results')) {
                   logger.error(JSON.stringify(body));
-                  logger.error('An error occured while fetching end point data from rapidpro');
+                  logger.error(`An error occured while fetching end point data ${endPoint} from rapidpro`);
                   return callback();
                 }
                 if (body.next) {
@@ -537,12 +565,21 @@ module.exports = function () {
                 } else {
                   url = false;
                 }
-                endPointData = endPointData.concat(body.results);
+                if (hasResultsKey) {
+                  endPointData = endPointData.concat(body.results);
+                } else {
+                  endPointData.push(body);
+                }
                 return callback(null, url);
               }
             });
           });
         }, () => {
+          logger.info(
+            `Done Getting data for end point ${endPoint} from server ${config.get(
+              'rapidpro:url'
+            )}`
+          );
           return callback(endPointData);
         }
       );

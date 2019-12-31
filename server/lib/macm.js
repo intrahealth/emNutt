@@ -20,7 +20,7 @@ module.exports = function () {
         promises.push(
           new Promise((resolve, reject) => {
             const resource = {};
-            resource.id = uuid4();
+            resource.id = flow.uuid;
             resource.resourceType = 'Basic';
             resource.meta = {};
             resource.meta.profile = [];
@@ -161,6 +161,7 @@ module.exports = function () {
         },
       };
       request.delete(options, (err, res, body) => {
+        logger.info(body + ' ' + url);
         if (err) {
           logger.error(err);
           return callback(err);
@@ -195,6 +196,7 @@ module.exports = function () {
           url.addQuery('_count', count);
         } else {
           count = 0;
+          url.addQuery('_count', 500);
         }
         if (query) {
           const queries = query.split('&');
@@ -211,10 +213,11 @@ module.exports = function () {
       } else {
         count = true;
       }
-      logger.info(`Getting ${url} from server`);
+
+      logger.info(`Getting data for resource ${resource} from server ${config.get('macm:baseURL')}`);
       async.whilst(
-        callback1 => {
-          return callback1(null, url !== false);
+        callback => {
+          return callback(null, url !== false);
         },
         callback => {
           const options = {
@@ -225,8 +228,9 @@ module.exports = function () {
               password: config.get('macm:password'),
             },
           };
-          url = false;
           request.get(options, (err, res, body) => {
+            logger.error('response');
+            url = false;
             if (err) {
               logger.error(err);
             }
@@ -252,9 +256,91 @@ module.exports = function () {
             return callback(null, url);
           });
         }, () => {
+          logger.info(`Done Getting data for resource ${resource} from server ${config.get('macm:baseURL')}`);
           return callback(resourceData);
         }
       );
     },
+
+    createCommunicationsFromRPRuns (run, definition, callback) {
+      let resourceParentId;
+      const bundle = {};
+      bundle.entry = [];
+      for (const path of run.path) {
+        const values = Object.keys(run.values);
+        const texts = [];
+        // these are user replies
+        for (const valueKey of values) {
+          if (run.values[valueKey].node === path.node) {
+            const id = uuid4();
+            texts.push({
+              id,
+              parent: resourceParentId,
+              nodeUUID: path.node,
+              type: 'reply',
+              time: run.values[valueKey].time,
+              msg: run.values[valueKey].input
+            });
+            resourceParentId = id;
+          }
+        }
+        if (texts.length === 0) {
+          // these are sent to user from the system
+          const flowDef = definition.flows[0];
+          for (const actionSet of flowDef.action_sets) {
+            if (actionSet.uuid === path.node) {
+              let id;
+              for (const action of actionSet.actions) {
+                if (action.type === 'reply') {
+                  id = uuid4();
+                  texts.push({
+                    id,
+                    parent: resourceParentId,
+                    nodeUUID: action.uuid,
+                    type: 'sent',
+                    time: path.time,
+                    msg: action.msg.eng
+                  });
+                }
+              }
+              if (id) {
+                resourceParentId = id;
+              }
+            }
+          }
+        }
+        for (const text of texts) {
+          const commResource = {};
+          commResource.resourceType = 'Communication';
+          commResource.id = text.id;
+          if (text.parent) {
+            commResource.inResponseTo = 'Communication/' + text.parent;
+          }
+          commResource.payload = [{
+            contentString: text.msg
+          }];
+          if (text.type === 'sent') {
+            commResource.sent = text.time;
+            commResource.recipient = [{
+              reference: run.contact.globalid
+            }];
+          } else if (text.type === 'reply') {
+            commResource.received = text.time;
+          }
+
+          commResource.basedOn = 'CommunicationRequest/';
+          bundle.entry.push({
+            resource: commResource,
+            request: {
+              method: 'PUT',
+              url: `${commResource.resourceType}/${commResource.id}`
+            }
+          });
+        }
+      }
+      this.saveResource(bundle, () => {
+        return callback();
+      });
+    }
   };
 };
