@@ -230,7 +230,6 @@ module.exports = function () {
             },
           };
           request.get(options, (err, res, body) => {
-            logger.error('response');
             url = false;
             if (err) {
               logger.error(err);

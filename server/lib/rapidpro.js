@@ -3,7 +3,6 @@
 const URI = require('urijs');
 const request = require('request');
 const async = require('async');
-const uuid4 = require('uuid/v4');
 const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
@@ -64,7 +63,7 @@ module.exports = function () {
           body.fields.globalid = `${contact.resourceType}/${contact.id}`;
         }
       }
-      let url = URI(config.get('rapidpro:url'))
+      let url = URI(config.get('rapidpro:baseURL'))
         .segment('api')
         .segment('v2')
         .segment('contacts.json');
@@ -365,7 +364,7 @@ module.exports = function () {
         logger.error('Cant determine the message type ' + type);
         return callback(true);
       }
-      const url = URI(config.get('rapidpro:url'))
+      const url = URI(config.get('rapidpro:baseURL'))
         .segment('api')
         .segment('v2')
         .segment(endPoint)
@@ -518,7 +517,7 @@ module.exports = function () {
       hasResultsKey = true
     }, callback) {
       if (!url) {
-        url = URI(config.get('rapidpro:url'))
+        url = URI(config.get('rapidpro:baseURL'))
           .segment('api')
           .segment('v2')
           .segment(endPoint);
@@ -538,7 +537,7 @@ module.exports = function () {
       }
       // need to make this variable independent of this function so that to handle throttled
       logger.info(
-        `Getting data for end point ${endPoint} from server ${config.get('rapidpro:url')}`
+        `Getting data for end point ${endPoint} from server ${config.get('rapidpro:baseURL')}`
       );
       var endPointData = [];
       async.whilst(
@@ -591,7 +590,7 @@ module.exports = function () {
         }, () => {
           logger.info(
             `Done Getting data for end point ${endPoint} from server ${config.get(
-              'rapidpro:url'
+              'rapidpro:baseURL'
             )}`
           );
           return callback(endPointData);

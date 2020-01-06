@@ -1,20 +1,45 @@
 {
   "server": {
-    "port": 3000
+    "port": 3000,
+    "installed": true
+  },
+  "mediator": {
+    "api": {
+      "username": "root@openhim.org",
+      "password": "openhim-password",
+      "apiURL": "https://localhost:8080",
+      "trustSelfSigned": true,
+      "urn": ""
+    },
+    "register": false
   },
   "rapidpro": {
-    "url": "http://app.rapidpro.io",
+    "baseURL": "http://app.rapidpro.io",
     "token": "369958889jk10930de856fc15lmefjkd73f0390c",
     "syncAllContacts": true
   },
   "macm": {
-    "server": "http://scratchpad.ihris.org/hapi",
-    "username": "hapi",
-    "password": "hapi"
-  },
-  "elastic": {
-    "server": "http://localhost:9200",
+    "baseURL": "http://localhost:8080/fhir",
     "username": "",
     "password": ""
+  },
+  "elastic": {
+    "baseURL": "http://localhost:9200",
+    "username": "",
+    "password": ""
+  },
+  "lastSync": {
+    "syncWorkflows": {
+      "time": "1970-01-01T00:00:00"
+    },
+    "syncWorkflowRunMessages": {
+      "time": "1970-01-01T00:00:00"
+    },
+    "checkCommunicationRequest": {
+      "time": "1970-01-01T00:00:00"
+    },
+    "syncContacts": {
+      "time": "1970-01-01T00:00:00"
+    }
   }
 }
