@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <StructureDefinition xmlns="http://hl7.org/fhir">
+  <id value="mHeroFlowRun" />
   <url value="http://mhero.org/fhir/StructureDefinition/mHeroFlowRun" />
   <name value="FlowRun" />
   <status value="draft" />
@@ -19,4 +20,24 @@
   <type value="Basic" />
   <baseDefinition value="http://hl7.org/fhir/StructureDefinition/Basic" />
   <derivation value="constraint" />
+  <differential>
+    <element id="Basic.extension">
+      <path value="Basic.extension" />
+      <slicing>
+        <discriminator>
+          <type value="value" />
+          <path value="url" />
+        </discriminator>
+        <rules value="open" />
+      </slicing>
+    </element>
+    <element id="Basic.extension:FlowRunDetails">
+      <path value="Basic.extension" />
+      <sliceName value="FlowRunDetails" />
+      <type>
+        <code value="Extension" />
+        <profile value="http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails" />
+      </type>
+    </element>
+  </differential>
 </StructureDefinition>

@@ -90,9 +90,13 @@ app.get('/syncWorkflowRunMessages', (req, res) => {
               return nxtRun();
             });
           });
+        }, () => {
+          return nxtFlow();
         });
-        return nxtFlow();
       });
+    }, () => {
+      logger.info('Done synchronizing flow messages');
+      res.status(200).send('Done');
     });
   });
 });

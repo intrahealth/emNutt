@@ -1,5 +1,6 @@
 'use strict';
 const uuid4 = require('uuid/v4');
+const uuid5 = require('uuid/v5');
 const URI = require('urijs');
 const request = require('request');
 const async = require('async');
@@ -263,83 +264,167 @@ module.exports = function () {
     },
 
     createCommunicationsFromRPRuns (run, definition, callback) {
-      let resourceParentId;
-      const bundle = {};
-      bundle.entry = [];
-      for (const path of run.path) {
-        const values = Object.keys(run.values);
-        const texts = [];
-        // these are user replies
-        for (const valueKey of values) {
-          if (run.values[valueKey].node === path.node) {
-            const id = uuid4();
-            texts.push({
-              id,
-              parent: resourceParentId,
-              nodeUUID: path.node,
-              type: 'reply',
-              time: run.values[valueKey].time,
-              msg: run.values[valueKey].input
-            });
-            resourceParentId = id;
-          }
+      const query = `rpflowstarts=${run.start.uuid}`;
+      this.getResource({
+        resource: 'CommunicationRequest',
+        query
+      }, (resourceData) => {
+        if (!resourceData.entry) {
+          logger.error('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);
+          return callback();
         }
-        if (texts.length === 0) {
-          // these are sent to user from the system
-          const flowDef = definition.flows[0];
-          for (const actionSet of flowDef.action_sets) {
-            if (actionSet.uuid === path.node) {
-              let id;
-              for (const action of actionSet.actions) {
-                if (action.type === 'reply') {
-                  id = uuid4();
-                  texts.push({
-                    id,
-                    parent: resourceParentId,
-                    nodeUUID: action.uuid,
-                    type: 'sent',
-                    time: path.time,
-                    msg: action.msg.eng
-                  });
-                }
-              }
-              if (id) {
+        if (resourceData.entry.length === 0) {
+          logger.error('No communication request found for flow run ' + run.start.uuid);
+          return callback();
+        }
+        if (resourceData.entry.length > 1) {
+          logger.error(`Multiple CommunicationRequest resources found with flow start ${run.start.uuid}`);
+        }
+
+        const commReqId = resourceData.entry[0].resource.id;
+
+        const bundle = {};
+        bundle.entry = [];
+        bundle.type = 'batch';
+        bundle.resourceType = 'Bundle';
+        // create flowRun resource first
+        const extension = [{
+          url: 'CommunicationRequest',
+          valueReference: {
+            reference: `${resourceData.entry[0].resource.resourceType}/${commReqId}`
+          }
+        }, {
+          url: 'flow',
+          valueString: run.flow.uuid
+        }, {
+          url: 'responded',
+          valueString: run.responded
+        }, {
+          url: 'created_on',
+          valueString: run.created_on
+        }, {
+          url: 'modified_on',
+          valueString: run.modified_on
+        }];
+        if (run.exit_type) {
+          extension.push({
+            url: 'exit_type',
+            valueString: run.exit_type
+          });
+          extension.push({
+            url: 'exited_on',
+            valueString: run.exited_on
+          });
+        }
+        bundle.entry.push({
+          resource: {
+            resourceType: 'Basic',
+            id: run.uuid,
+            profile: ['http://mhero.org/fhir/StructureDefinition/mHeroFlowRun'],
+            extension: [{
+              url: 'http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails',
+              extension
+            }]
+          },
+          request: {
+            method: 'PUT',
+            url: `Basic/${run.uuid}`
+          }
+        });
+        this.saveResource(bundle, () => {
+          let resourceParentId;
+          bundle.entry = [];
+          for (const path of run.path) {
+            const values = Object.keys(run.values);
+            const texts = [];
+            // these are user replies
+            for (const valueKey of values) {
+              if (run.values[valueKey].node === path.node) {
+                // const id = uuid4();
+                const id = uuid5(path.node, run.uuid);
+                texts.push({
+                  id,
+                  parent: resourceParentId,
+                  nodeUUID: path.node,
+                  type: 'reply',
+                  time: run.values[valueKey].time,
+                  msg: run.values[valueKey].input
+                });
                 resourceParentId = id;
               }
             }
-          }
-        }
-        for (const text of texts) {
-          const commResource = {};
-          commResource.resourceType = 'Communication';
-          commResource.id = text.id;
-          if (text.parent) {
-            commResource.inResponseTo = 'Communication/' + text.parent;
-          }
-          commResource.payload = [{
-            contentString: text.msg
-          }];
-          if (text.type === 'sent') {
-            commResource.sent = text.time;
-            commResource.recipient = [{
-              reference: run.contact.globalid
-            }];
-          } else if (text.type === 'reply') {
-            commResource.received = text.time;
-          }
-
-          commResource.basedOn = 'CommunicationRequest/';
-          bundle.entry.push({
-            resource: commResource,
-            request: {
-              method: 'PUT',
-              url: `${commResource.resourceType}/${commResource.id}`
+            if (texts.length === 0) {
+              // these are sent to user from the system
+              const flowDef = definition.flows[0];
+              for (const actionSet of flowDef.action_sets) {
+                if (actionSet.uuid === path.node) {
+                  let id;
+                  for (const action of actionSet.actions) {
+                    if (action.type === 'reply') {
+                      id = uuid5(action.uuid, run.uuid);
+                      texts.push({
+                        id,
+                        parent: resourceParentId,
+                        nodeUUID: action.uuid,
+                        type: 'sent',
+                        time: path.time,
+                        msg: action.msg.eng
+                      });
+                    }
+                  }
+                  if (id) {
+                    resourceParentId = id;
+                  }
+                }
+              }
             }
+            for (const text of texts) {
+              const commResource = {};
+              commResource.profile = [];
+              commResource.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunication');
+              commResource.resourceType = 'Communication';
+              commResource.id = text.id;
+              if (text.parent) {
+                commResource.inResponseTo = 'Communication/' + text.parent;
+              }
+              commResource.payload = [{
+                contentString: text.msg
+              }];
+              if (text.type === 'sent') {
+                commResource.sent = text.time;
+                commResource.recipient = [{
+                  reference: run.contact.globalid
+                }];
+              } else if (text.type === 'reply') {
+                commResource.received = text.time;
+              }
+
+              commResource.basedOn = `CommunicationRequest/${commReqId}`;
+              if (!commResource.extension) {
+                commResource.extension = [];
+              }
+              commResource.extension.push({
+                url: 'http://mhero.org/fhir/StructureDefinition/mHeroCommunicationDetails',
+                extension: [{
+                  url: 'mHeroFlowRun',
+                  valueReference: {
+                    reference: `Basic/${run.uuid}`
+                  }
+                }]
+              });
+              bundle.entry.push({
+                resource: commResource,
+                request: {
+                  method: 'PUT',
+                  url: `${commResource.resourceType}/${commResource.id}`
+                }
+              });
+            }
+          }
+          this.saveResource(bundle, () => {
+            return callback();
           });
-        }
-      }
-      this.saveResource(bundle, () => {
-        return callback();
+        });
       });
     }
   };

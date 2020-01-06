@@ -158,7 +158,10 @@ module.exports = function () {
                   if (resource.resource.telecom && Array.isArray(resource.resource.telecom) && resource.resource.telecom.length > 0) {
                     for (const telecom of resource.resource.telecom) {
                       if (telecom.system && telecom.system === 'phone') {
-                        recipients.push('tel:' + telecom.value);
+                        recipients.push({
+                          urns: 'tel:' + telecom.value,
+                          id: resource.resource.id
+                        });
                       }
                     }
                   }
@@ -223,14 +226,18 @@ module.exports = function () {
                   const flowBody = {};
                   flowBody.flow = workflow;
                   flowBody.urns = [];
+                  let ids = [];
                   const promises = [];
                   for (const recipient of recipients) {
                     promises.push(new Promise(resolve => {
-                      flowBody.urns.push(recipient);
+                      flowBody.urns.push(recipient.urns);
+                      ids.push(recipient.id);
                       if (flowBody.urns.length > 90) {
                         const tmpFlowBody = {
                           ...flowBody,
                         };
+                        const tmpIds = [...ids];
+                        ids = [];
                         flowBody.urns = [];
                         this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
                           if (err) {
@@ -241,7 +248,7 @@ module.exports = function () {
                             sendFailed = true;
                           }
                           if (!sendFailed) {
-                            this.updateCommunicationRequest(commReq, body, 'workflow', createNewReq);
+                            this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq);
                           }
                           resolve();
                         });
@@ -261,7 +268,7 @@ module.exports = function () {
                           sendFailed = true;
                         }
                         if (!sendFailed) {
-                          this.updateCommunicationRequest(commReq, body, 'workflow', createNewReq);
+                          this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq);
                         }
                         return callback(null);
                       });
@@ -283,6 +290,7 @@ module.exports = function () {
               const smsBody = {};
               smsBody.text = msg;
               smsBody.urns = [];
+              let ids;
               const promises = [];
               let createNewReq = false;
               for (const recipient of recipients) {
@@ -292,6 +300,8 @@ module.exports = function () {
                     const tmpSmsBody = {
                       ...smsBody,
                     };
+                    const tmpIds = [...ids];
+                    ids = [];
                     smsBody.urns = [];
                     this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
                       if (err) {
@@ -302,7 +312,7 @@ module.exports = function () {
                         sendFailed = true;
                       }
                       if (!sendFailed) {
-                        this.updateCommunicationRequest(commReq, body, 'sms', createNewReq);
+                        this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq);
                       }
                       resolve();
                     });
@@ -322,7 +332,7 @@ module.exports = function () {
                       sendFailed = true;
                     }
                     if (!sendFailed) {
-                      this.updateCommunicationRequest(commReq, body, 'sms', createNewReq);
+                      this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq);
                     }
                     return callback(null);
                   });
@@ -417,17 +427,21 @@ module.exports = function () {
       }
     },
 
-    updateCommunicationRequest (commReq, rpRunStatus, type, createNewReq) {
+    updateCommunicationRequest (commReq, rpRunStatus, type, ids, createNewReq) {
       logger.info('Updating communication request ' + commReq.resource.id + ' to completed');
       let extUrl;
       if (type === 'sms') {
-        extUrl = 'http://mhero.org/extensions/rp_broadcast_starts';
+        extUrl = 'http://mhero.org/fhir/StructureDefinition/mHeroBroadcastStarts';
       } else if (type === 'workflow') {
-        extUrl = 'http://mhero.org/extensions/rp_flow_starts';
+        extUrl = 'http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts';
       }
       if (createNewReq) {
-        commReq.resource.id = uuid4();
+        commReq.resource.id = rpRunStatus.uuid;
       }
+      if (!commReq.resource.profile) {
+        commReq.resource.profile = [];
+      }
+      commReq.resource.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunicationRequest');
       if (!commReq.resource.extension) {
         commReq.resource.extension = [];
       }
@@ -442,10 +456,10 @@ module.exports = function () {
       }
 
       const contactsExt = [];
-      for (const rpCont of rpRunStatus.contacts) {
+      for (const id of ids) {
         contactsExt.push({
-          url: 'uuid',
-          valueString: rpCont.uuid
+          url: 'globalid',
+          valueString: id
         });
       }
       commReq.resource.extension[extIndex] = {
@@ -454,7 +468,7 @@ module.exports = function () {
           url: 'id',
           valueString: rpRunStatus.id
         }, {
-          url: `${extUrl}/extension/contacts`,
+          url: 'http://mhero.org/fhir/StructureDefinition/contacts',
           extension: contactsExt
         }, {
           url: 'created_on',

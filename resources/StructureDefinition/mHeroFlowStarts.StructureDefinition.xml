@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <StructureDefinition xmlns="http://hl7.org/fhir">
-  <id value="mHeroFlowRunDetails" />
-  <url value="http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails" />
-  <name value="FlowRunDetails" />
+  <id value="mHeroFlowStarts" />
+  <url value="http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts" />
+  <name value="FlowStarts" />
   <status value="draft" />
   <fhirVersion value="4.0.0" />
   <mapping>
@@ -14,7 +14,7 @@
   <abstract value="false" />
   <context>
     <type value="element" />
-    <expression value="Basic" />
+    <expression value="CommunicationRequest" />
   </context>
   <type value="Extension" />
   <baseDefinition value="http://hl7.org/fhir/StructureDefinition/Extension" />
@@ -30,6 +30,23 @@
         <rules value="open" />
       </slicing>
     </element>
+    <element id="Extension.extension:uuid">
+      <path value="Extension.extension" />
+      <sliceName value="uuid" />
+      <min value="1" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:uuid.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="uuid" />
+    </element>
+    <element id="Extension.extension:uuid.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="string" />
+      </type>
+    </element>
     <element id="Extension.extension:flow">
       <path value="Extension.extension" />
       <sliceName value="flow" />
@@ -43,54 +60,74 @@
     <element id="Extension.extension:flow.value[x]">
       <path value="Extension.extension.value[x]" />
       <min value="1" />
-      <type>
-        <code value="string" />
-      </type>
     </element>
-    <element id="Extension.extension:responded">
+    <element id="Extension.extension:contacts">
       <path value="Extension.extension" />
-      <sliceName value="responded" />
+      <sliceName value="contacts" />
       <min value="1" />
       <max value="1" />
     </element>
-    <element id="Extension.extension:responded.url">
-      <path value="Extension.extension.url" />
-      <fixedUri value="responded" />
+    <element id="Extension.extension:contacts.extension">
+      <path value="Extension.extension.extension" />
+      <slicing>
+        <discriminator>
+          <type value="value" />
+          <path value="url" />
+        </discriminator>
+        <rules value="open" />
+      </slicing>
     </element>
-    <element id="Extension.extension:responded.value[x]">
-      <path value="Extension.extension.value[x]" />
+    <element id="Extension.extension:contacts.extension:globalid">
+      <path value="Extension.extension.extension" />
+      <sliceName value="globalid" />
       <min value="1" />
-      <type>
-        <code value="boolean" />
-      </type>
     </element>
-    <element id="Extension.extension:exit_type">
-      <path value="Extension.extension" />
-      <sliceName value="exit_type" />
-      <min value="1" />
-      <max value="1" />
+    <element id="Extension.extension:contacts.extension:globalid.url">
+      <path value="Extension.extension.extension.url" />
+      <fixedUri value="globalid" />
     </element>
-    <element id="Extension.extension:exit_type.url">
-      <path value="Extension.extension.url" />
-      <fixedUri value="exit_type" />
-    </element>
-    <element id="Extension.extension:exit_type.value[x]">
-      <path value="Extension.extension.value[x]" />
+    <element id="Extension.extension:contacts.extension:globalid.value[x]">
+      <path value="Extension.extension.extension.value[x]" />
       <min value="1" />
       <type>
         <code value="string" />
       </type>
     </element>
-    <element id="Extension.extension:exited_on">
+    <element id="Extension.extension:contacts.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="contacts" />
+    </element>
+    <element id="Extension.extension:contacts.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <max value="0" />
+    </element>
+    <element id="Extension.extension:status">
       <path value="Extension.extension" />
-      <sliceName value="exited_on" />
+      <sliceName value="status" />
+      <min value="1" />
       <max value="1" />
     </element>
-    <element id="Extension.extension:exited_on.url">
+    <element id="Extension.extension:status.url">
       <path value="Extension.extension.url" />
-      <fixedUri value="exited_on" />
+      <fixedUri value="status" />
     </element>
-    <element id="Extension.extension:exited_on.value[x]">
+    <element id="Extension.extension:status.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="string" />
+      </type>
+    </element>
+    <element id="Extension.extension:modified_on">
+      <path value="Extension.extension" />
+      <sliceName value="modified_on" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:modified_on.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="modified_on" />
+    </element>
+    <element id="Extension.extension:modified_on.value[x]">
       <path value="Extension.extension.value[x]" />
       <type>
         <code value="dateTime" />
@@ -113,52 +150,29 @@
         <code value="dateTime" />
       </type>
     </element>
-    <element id="Extension.extension:modified_on">
+    <element id="Extension.extension:id">
       <path value="Extension.extension" />
-      <sliceName value="modified_on" />
+      <sliceName value="id" />
       <min value="1" />
       <max value="1" />
     </element>
-    <element id="Extension.extension:modified_on.url">
+    <element id="Extension.extension:id.url">
       <path value="Extension.extension.url" />
-      <fixedUri value="modified_on" />
+      <fixedUri value="id" />
     </element>
-    <element id="Extension.extension:modified_on.value[x]">
+    <element id="Extension.extension:id.value[x]">
       <path value="Extension.extension.value[x]" />
       <min value="1" />
       <type>
-        <code value="dateTime" />
+        <code value="string" />
       </type>
-    </element>
-    <element id="Extension.extension:CommunicationRequest">
-      <path value="Extension.extension" />
-      <sliceName value="CommunicationRequest" />
-      <min value="1" />
-      <max value="1" />
-    </element>
-    <element id="Extension.extension:CommunicationRequest.url">
-      <path value="Extension.extension.url" />
-      <fixedUri value="CommunicationRequest" />
-    </element>
-    <element id="Extension.extension:CommunicationRequest.value[x]">
-      <path value="Extension.extension.value[x]" />
-      <min value="1" />
-      <type>
-        <code value="Reference" />
-        <targetProfile value="CommunicationRequest" />
-      </type>
-    </element>
-    <element id="Extension.extension:CommunicationRequest.value[x].reference">
-      <path value="Extension.extension.value[x].reference" />
-      <min value="1" />
     </element>
     <element id="Extension.url">
       <path value="Extension.url" />
-      <fixedUri value="http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails" />
+      <fixedUri value="http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts" />
     </element>
     <element id="Extension.value[x]">
       <path value="Extension.value[x]" />
-      <label value="flow" />
       <max value="0" />
     </element>
   </differential>

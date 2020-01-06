@@ -1,0 +1,22 @@
+{
+  "resourceType": "SearchParameter",
+  "id": "communication-request-mHeroFlowStarts",
+  "name": "Search Parameter on CommunicationRequest Details flow starts",
+  "status": "active",
+  "experimental": false,
+  "publisher": "mhero.org",
+  "contact": [{
+    "telecom": [{
+      "system": "url",
+      "value": "http://mhero.org/"
+    }]
+  }],
+  "description": "Search for the position of a practitioner role",
+  "code": "rpflowstarts",
+  "base": ["CommunicationRequest"],
+  "type": "string",
+  "expression": "CommunicationRequest.extension('http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts').extension('uuid')",
+  "xpath": "f:CommunicationRequest/f:extension[@url='http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts']/f:extension[@url='uuid']",
+  "xpathUsage": "normal",
+  "target": ["CommunicationRequest"]
+}
