@@ -13,10 +13,13 @@ module.exports = function () {
      * @param {Object} param0
      * @param {*} callback
      */
-    addContact ({
+    addContact({
       contact,
       rpContacts
     }, callback) {
+      if (!Array.isArray(rpContacts)) {
+        return callback(true)
+      }
       let urns = generateURNS(contact);
       const rpContactWithGlobalid = rpContacts.find(cntct => {
         return cntct.fields && cntct.fields.globalid === contact.id;
@@ -79,6 +82,9 @@ module.exports = function () {
         json: body,
       };
       request.post(options, (err, res, body) => {
+        if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+          err = true
+        }
         logger.info(body);
         if (err) {
           logger.error(err);
@@ -86,7 +92,8 @@ module.exports = function () {
         return callback(err, res, body);
       });
     },
-    processCommunications (commReqs, rpContacts, callback) {
+    processCommunications(commReqs, rpContacts, callback) {
+      let processingError = false
       let sendFailed = false;
       logger.info(`Processing ${commReqs.entry.length} communication requests`);
       async.each(commReqs.entry, (commReq, nxtComm) => {
@@ -142,11 +149,14 @@ module.exports = function () {
                   }
                   resolve1();
                 } else {
-                  macm.getResource(recipient.reference, recResource => {
+                  macm.getResource(recipient.reference, (err, recResource) => {
                     if (Array.isArray(recResource) && recResource.length === 1) {
                       resource = recResource[0];
                     } else if (Array.isArray(recResource) && recResource.length === 0) {
                       logger.error(`Reference ${recipient.reference} was not found on the server`);
+                    } else if (err) {
+                      logger.error('An error has occured while getting resource ' + recipient.reference)
+                      processingError = true
                     }
                     resolve1();
                   });
@@ -201,6 +211,7 @@ module.exports = function () {
                   resolve();
                 }
               }).catch(err => {
+                processingError = true
                 logger.error(err);
                 resolve();
                 throw err;
@@ -242,9 +253,11 @@ module.exports = function () {
                           if (err) {
                             logger.error(err);
                             sendFailed = true;
+                            processingError = true
                           }
-                          if (res.statusCode < 200 || res.statusCode > 299) {
+                          if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                             sendFailed = true;
+                            processingError = true
                           }
                           if (!sendFailed) {
                             this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq);
@@ -262,9 +275,11 @@ module.exports = function () {
                         if (err) {
                           logger.error(err);
                           sendFailed = true;
+                          processingError = true
                         }
-                        if (res.statusCode < 200 || res.statusCode > 299) {
+                        if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                           sendFailed = true;
+                          processingError = true
                         }
                         if (!sendFailed) {
                           this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq);
@@ -306,9 +321,11 @@ module.exports = function () {
                       if (err) {
                         logger.error(err);
                         sendFailed = true;
+                        processingError = true
                       }
-                      if (res.statusCode < 200 || res.statusCode > 299) {
+                      if (res.statusCode && res.statusCode < 200 || res.statusCode > 299) {
                         sendFailed = true;
+                        processingError = true
                       }
                       if (!sendFailed) {
                         this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq);
@@ -326,9 +343,11 @@ module.exports = function () {
                     if (err) {
                       logger.error(err);
                       sendFailed = true;
+                      processingError = true
                     }
-                    if (res.statusCode < 200 || res.statusCode > 299) {
+                    if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                       sendFailed = true;
+                      processingError = true
                     }
                     if (!sendFailed) {
                       this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq);
@@ -339,6 +358,7 @@ module.exports = function () {
                   return callback(null);
                 }
               }).catch(err => {
+                processingError = true
                 throw err;
               });
             },
@@ -346,15 +366,16 @@ module.exports = function () {
             return nxtComm();
           });
         }).catch(err => {
+          processingError = true
           logger.error(err);
           throw err;
         });
       }, () => {
-        return callback();
+        return callback(processingError);
       });
     },
 
-    sendMessage (flowBody, type, callback) {
+    sendMessage(flowBody, type, callback) {
       let endPoint;
       if (type === 'sms') {
         endPoint = 'broadcasts.json';
@@ -393,7 +414,7 @@ module.exports = function () {
       });
     },
 
-    isThrottled (results, callback) {
+    isThrottled(results, callback) {
       if (results === undefined || results === null || results === '') {
         logger.error(
           'An error has occured while checking throttling,empty rapidpro results were submitted'
@@ -404,9 +425,7 @@ module.exports = function () {
         var detail = results.detail.toLowerCase();
         if (detail.indexOf('throttled') != -1) {
           var detArr = detail.split(' ');
-          async.eachSeries(
-            detArr,
-            (det, nxtDet) => {
+          async.eachSeries(detArr, (det, nxtDet) => {
               if (!isNaN(det)) {
                 // add 5 more seconds on top of the wait time expected by rapidpro then convert to miliseconds
                 var wait_time = parseInt(det) * 1000 + 5;
@@ -426,7 +445,7 @@ module.exports = function () {
       }
     },
 
-    updateCommunicationRequest (commReq, rpRunStatus, type, ids, createNewReq) {
+    updateCommunicationRequest(commReq, rpRunStatus, type, ids, createNewReq) {
       logger.info('Updating communication request ' + commReq.resource.id + ' to completed');
       let extUrl;
       if (type === 'sms') {
@@ -500,7 +519,7 @@ module.exports = function () {
           url: `CommunicationRequest/${commReq.resource.id}`,
         }
       }];
-      macm.saveResource(bundle, () => {
+      macm.saveResource(bundle, (err) => {
 
       });
     },
@@ -510,7 +529,7 @@ module.exports = function () {
      * @param {Array} queries // i.e [{uuid: 'aa9e1550-d913-435e-2lec-k856bb9ec349'}]
      * @param {*} callback
      */
-    getEndPointData ({
+    getEndPointData({
       queries,
       url,
       endPoint,
@@ -562,8 +581,13 @@ module.exports = function () {
                   queries,
                   url,
                   endPoint
-                }, data => {
-                  endPointData = endPointData.concat(data);
+                }, (err, data) => {
+                  if (Array.isArray(data)) {
+                    endPointData = endPointData.concat(data);
+                  }
+                  if (err) {
+                    return callback(err)
+                  }
                   return callback(null);
                 });
               } else {
@@ -571,7 +595,7 @@ module.exports = function () {
                 if (hasResultsKey && !Object.prototype.hasOwnProperty.call(body, 'results')) {
                   logger.error(JSON.stringify(body));
                   logger.error(`An error occured while fetching end point data ${endPoint} from rapidpro`);
-                  return callback();
+                  return callback(true);
                 }
                 if (body.next) {
                   url = body.next;
@@ -587,20 +611,16 @@ module.exports = function () {
               }
             });
           });
-        }, () => {
-          logger.info(
-            `Done Getting data for end point ${endPoint} from server ${config.get(
-              'rapidpro:baseURL'
-            )}`
-          );
-          return callback(endPointData);
+        }, (err) => {
+          logger.info(`Done Getting data for end point ${endPoint} from server ${config.get('rapidpro:baseURL')}`);
+          return callback(err, endPointData);
         }
       );
     }
   };
 };
 
-function generateURNS (resource) {
+function generateURNS(resource) {
   const urns = [];
   if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
     for (const telecom of resource.telecom) {

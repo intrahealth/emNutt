@@ -21,18 +21,40 @@ if (config.get('mediator:register')) {
 /**
  * @returns {express.app}
  */
-function appRoutes () {
+function appRoutes() {
   const app = express();
   app.use(bodyParser.json());
 
   app.get('/syncWorkflows', (req, res) => {
     logger.info('Received a request to synchronize workflows');
+    let processingError = false
+    let runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
+    const isValid = moment(runsLastSync, 'Y-MM-DDTH:mm:ss').isValid();
+    if (!isValid) {
+      runsLastSync = moment('1970-01-01').format('Y-MM-DDTH:mm:ss');
+    }
+    const queries = [{
+      name: 'flow',
+      value: flow.resource.id,
+    }, {
+      name: 'after',
+      value: runsLastSync,
+    }];
     rapidpro.getEndPointData({
       endPoint: 'flows.json',
-    },
-    flows => {
-      macm.rpFlowsToFHIR(flows, (err, body) => {
-        logger.error(body);
+      queries
+    }, (err, flows) => {
+      runsLastSync = moment().subtract('30', 'minutes').format('Y-MM-DDTH:mm:ss');
+      if (err) {
+        processingError = true;
+      }
+      macm.rpFlowsToFHIR(flows, (err) => {
+        if (err) {
+          processingError = true;
+        }
+        if (!processingError) {
+          mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], runsLastSync, () => {});
+        }
         logger.info('Done Synchronizing flows');
         if (err) {
           res.status(500).send(err);
@@ -40,18 +62,21 @@ function appRoutes () {
           res.status(200).send('Done');
         }
       });
-    }
-    );
+    });
   });
 
   app.get('/syncWorkflowRunMessages', (req, res) => {
     logger.info('Received a request to sync workflow messages');
     const query = '_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows';
     let runsLastSync = moment('1970-01-01').format('Y-MM-DDTH:mm:ss');
+    let processingError = false
     macm.getResource({
       resource: 'Basic',
       query,
-    }, flows => {
+    }, (err, flows) => {
+      if (err) {
+        processingError = true
+      }
       async.eachSeries(flows.entry, (flow, nxtFlow) => {
         const promise1 = new Promise(resolve => {
           runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
@@ -69,7 +94,10 @@ function appRoutes () {
           rapidpro.getEndPointData({
             endPoint: 'runs.json',
             queries,
-          }, runs => {
+          }, (err, runs) => {
+            if (err) {
+              processingError = true
+            }
             runsLastSync = moment().subtract('10', 'minutes').format('Y-MM-DDTH:mm:ss');
             resolve(runs);
           });
@@ -83,7 +111,10 @@ function appRoutes () {
             endPoint: 'definitions.json',
             queries,
             hasResultsKey: false,
-          }, definitions => {
+          }, (err, definitions) => {
+            if (err) {
+              processingError = true
+            }
             resolve(definitions);
           });
         });
@@ -98,12 +129,18 @@ function appRoutes () {
             rapidpro.getEndPointData({
               endPoint: 'contacts.json',
               queries,
-            }, contact => {
+            }, (err, contact) => {
+              if (err) {
+                processingError = true
+              }
               if (!Array.isArray(contact) || contact.length !== 1 || !contact[0].fields.globalid) {
                 return;
               }
               run.contact.globalid = contact[0].fields.globalid;
-              macm.createCommunicationsFromRPRuns(run, definitions[0], () => {
+              macm.createCommunicationsFromRPRuns(run, definitions[0], (err) => {
+                if (err) {
+                  processingError = true;
+                }
                 return nxtRun();
               });
             });
@@ -112,7 +149,9 @@ function appRoutes () {
           });
         });
       }, () => {
-        mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], runsLastSync, () => {});
+        if (!processingError) {
+          mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], runsLastSync, () => {});
+        }
         logger.info('Done synchronizing flow messages');
         res.status(200).send('Done');
       });
@@ -120,11 +159,22 @@ function appRoutes () {
   });
 
   app.get('/checkCommunicationRequest', (req, res) => {
+    let processingError = false;
+    let runsLastSync = config.get('lastSync:syncContacts:time');
+    const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
+    if (!isValid) {
+      runsLastSync = moment('1970-01-01').format('Y-MM-DD');
+    }
     const promise = new Promise((resolve, reject) => {
       if (!config.get('rapidpro:syncAllContacts')) {
         rapidpro.getEndPointData({
           endPoint: 'contacts.json',
-        }, rpContacts => {
+        }, (err, rpContacts) => {
+          if (err) {
+            processingError = true
+            logger.error('An error has occured while getting rapidpro contacts, checking communication requests has been stopped')
+            return res.status(500).send('An error has occured while getting rapidpro contacts, checking communication requests has been stopped')
+          }
           resolve(rpContacts);
         });
       } else {
@@ -132,10 +182,22 @@ function appRoutes () {
       }
     });
     promise.then(rpContacts => {
+      let query = `_lastUpdated=${runsLastSync}`
       macm.getResource({
         resource: 'CommunicationRequest',
-      }, commReqs => {
-        rapidpro.processCommunications(commReqs, rpContacts, () => {
+        query
+      }, (err, commReqs) => {
+        if (err) {
+          processingError = true;
+        }
+        runsLastSync = moment().subtract('30', 'minutes').format('Y-MM-DDTH:mm:ss');
+        rapidpro.processCommunications(commReqs, rpContacts, (err) => {
+          if (err) {
+            processingError = true;
+          }
+          if (!processingError) {
+            mixin.updateConfigFile(['lastSync', 'checkCommunicationRequest', 'time'], runsLastSync, () => {});
+          }
           logger.info('Done checking communication requests');
           res.status(200).send('Done');
         });
@@ -160,139 +222,150 @@ function appRoutes () {
     if (bundle.resourceType !== 'Bundle') {
       logger.error('Request is not a bundle');
       res.status(400).send('Request is not a bundle');
+      return;
     }
     rapidpro.getEndPointData({
       endPoint: 'contacts.json',
-    },
-    rpContacts => {
+    }, (err, rpContacts) => {
       let bundleModified = false;
-      async.eachOf(
-        bundle.entry,
-        (entry, index, nxtEntry) => {
-          rapidpro.addContact({
-            contact: entry.resource,
-            rpContacts,
-          },
-          (err, response, body) => {
-            if (!err) {
-              const rpUUID = body.uuid;
-              if (rpUUID) {
-                bundleModified = true;
-                if (!bundle.entry[index].resource.identifier) {
-                  bundle.entry[index].resource.identifier = [];
-                }
-                bundle.entry[index].resource.identifier.push({
-                  system: 'http://app.rapidpro.io/contact-uuid',
-                  value: rpUUID,
-                });
-                bundle.entry[index].request = {
-                  method: 'PUT',
-                  url: `${bundle.entry[index].resource.resourceType}/${bundle.entry[index].resource.id}`,
-                };
+      async.eachOf(bundle.entry, (entry, index, nxtEntry) => {
+        rapidpro.addContact({
+          contact: entry.resource,
+          rpContacts,
+        }, (err, response, body) => {
+          if (!err) {
+            const rpUUID = body.uuid;
+            if (rpUUID) {
+              bundleModified = true;
+              if (!bundle.entry[index].resource.identifier) {
+                bundle.entry[index].resource.identifier = [];
               }
+              bundle.entry[index].resource.identifier.push({
+                system: 'http://app.rapidpro.io/contact-uuid',
+                value: rpUUID,
+              });
+              bundle.entry[index].request = {
+                method: 'PUT',
+                url: `${bundle.entry[index].resource.resourceType}/${bundle.entry[index].resource.id}`,
+              };
             }
-            return nxtEntry();
           }
-          );
-        },
-        () => {
-          if (bundleModified) {
-            bundle.type = 'batch';
-            macm.saveResource(bundle, () => {
-              logger.info('Contacts Sync Done');
-              res.status(200).send('Suceessfully');
-            });
-          } else {
+          return nxtEntry();
+        });
+      }, () => {
+        if (bundleModified) {
+          bundle.type = 'batch';
+          macm.saveResource(bundle, () => {
             logger.info('Contacts Sync Done');
             res.status(200).send('Suceessfully');
-          }
+          });
+        } else {
+          logger.info('Contacts Sync Done');
+          res.status(200).send('Suceessfully');
         }
-      );
-    }
-    );
+      });
+    });
   });
 
   app.get('/syncContacts', (req, res) => {
     logger.info('Received a request to sync DB contacts');
+    let runsLastSync = config.get('lastSync:syncContacts:time');
+    const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
+    if (!isValid) {
+      runsLastSync = moment('1970-01-01').format('Y-MM-DD');
+    }
     if (!config.get('rapidpro:syncAllContacts')) {
       logger.warn(
         'All Contacts sync is disabled, the server will sync only communicated contacts'
       );
-      res
-        .status(403)
-        .send(
-          'All Contacts sync is disabled, the server will sync only communicated contacts'
-        );
+      res.status(403).send('All Contacts sync is disabled, the server will sync only communicated contacts');
     }
+    let processingError = false;
     let contacts = [];
     async.series({
       practitioners: callback => {
-        macm.getResource('Practitioner', practs => {
+        let query = `_lastUpdated=${runsLastSync}`
+        macm.getResource({
+          resource: 'Practitioner',
+          query
+        }, (err, practs) => {
+          if (err) {
+            processingError = true
+          }
           contacts = contacts.concat(practs.entry);
         });
       },
       person: callback => {
-        macm.getResource('Person', pers => {
+        let query = `_lastUpdated=${runsLastSync}`
+        macm.getResource({
+          resource: 'Person',
+          query
+        }, (err, pers) => {
+          if (err) {
+            processingError = true
+          }
           contacts = contacts.concat(pers.entry);
         });
       },
-    },
-    () => {
+    }, () => {
       rapidpro.getEndPointData({
         endPoint: 'contacts.json',
-      },
-      rpContacts => {
+      }, (err, rpContacts) => {
+        if (err) {
+          processingError = true
+        }
         let contModified = false;
-        async.eachOf(
-          contacts,
-          (contact, index, nxtEntry) => {
-            rapidpro.addContact({
-              contact: contact.resource,
-              rpContacts,
-            },
-            (err, response, body) => {
-              if (!err) {
-                const rpUUID = body.uuid;
-                if (rpUUID) {
-                  contModified = true;
-                  if (!contacts[index].resource.identifier) {
-                    contacts[index].resource.identifier = [];
-                  }
-                  contacts[index].resource.identifier.push({
-                    system: 'http://app.rapidpro.io/contact-uuid',
-                    value: rpUUID,
-                  });
-                  contacts[index].request = {
-                    method: 'PUT',
-                    url: `${contacts[index].resource.resourceType}/${contacts[index].resource.id}`,
-                  };
+        async.eachOf(contacts, (contact, index, nxtEntry) => {
+          rapidpro.addContact({
+            contact: contact.resource,
+            rpContacts,
+          }, (err, response, body) => {
+            if (!err) {
+              const rpUUID = body.uuid;
+              if (rpUUID) {
+                contModified = true;
+                if (!contacts[index].resource.identifier) {
+                  contacts[index].resource.identifier = [];
                 }
+                contacts[index].resource.identifier.push({
+                  system: 'http://app.rapidpro.io/contact-uuid',
+                  value: rpUUID,
+                });
+                contacts[index].request = {
+                  method: 'PUT',
+                  url: `${contacts[index].resource.resourceType}/${contacts[index].resource.id}`,
+                };
               }
-              return nxtEntry();
-            }
-            );
-          },
-          () => {
-            if (contModified) {
-              const bundle = {};
-              bundle.type = 'batch';
-              bundle.resourceType = 'Bundle';
-              bundle.entry = [];
-              bundle.entry = bundle.entry.concat(contacts);
-              macm.saveResource(bundle, () => {
-                logger.info('Contacts Sync Done');
-                res.status(200).send('Suceessfully');
-              });
             } else {
-              logger.info('Contacts Sync Done');
-              res.status(200).send('Successfully');
+              processingError = true
             }
+            return nxtEntry();
+          });
+        }, () => {
+          runsLastSync = moment().subtract('30', 'minutes').format('Y-MM-DDTH:mm:ss');
+          if (contModified) {
+            const bundle = {};
+            bundle.type = 'batch';
+            bundle.resourceType = 'Bundle';
+            bundle.entry = [];
+            bundle.entry = bundle.entry.concat(contacts);
+            macm.saveResource(bundle, (err) => {
+              if (!err && !processingError) {
+                mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], runsLastSync, () => {});
+              }
+              logger.info('Contacts Sync Done');
+              res.status(200).send('Suceessfully');
+            });
+          } else {
+            if (!processingError) {
+              mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], runsLastSync, () => {});
+            }
+            logger.info('Contacts Sync Done');
+            res.status(200).send('Successfully');
           }
-        );
-      }
-      );
-    }
-    );
+        });
+      });
+    });
   });
   return app;
 }
@@ -303,7 +376,7 @@ function appRoutes () {
  * @param  {Function} callback a node style callback that is called once the
  * server is started
  */
-function reloadConfig (data, callback) {
+function reloadConfig(data, callback) {
   const tmpFile = `${__dirname}/../config/tmpConfig.json`;
   fs.writeFile(tmpFile, JSON.stringify(data, 0, 2), err => {
     if (err) {
@@ -314,7 +387,7 @@ function reloadConfig (data, callback) {
   });
 }
 
-function start (callback) {
+function start(callback) {
   if (config.get('mediator:register')) {
     logger.info('Running emNutt as a mediator');
     medUtils.registerMediator(
@@ -340,7 +413,11 @@ function start (callback) {
             logger.info('Received initial config:', newConfig);
             logger.info('Successfully registered emNutt mediator!');
             if (!config.get('app:installed')) {
-              prerequisites.loadResources();
+              prerequisites.loadResources((err) => {
+                if (!err) {
+                  mixin.updateConfigFile(['app', 'installed'], true, () => {});
+                }
+              });
             }
             const app = appRoutes();
             const server = app.listen(config.get('app:port'), () => {
@@ -352,7 +429,11 @@ function start (callback) {
                 const updatedConfig = Object.assign(configFile, newConfig);
                 reloadConfig(updatedConfig, () => {
                   if (!config.get('app:installed')) {
-                    prerequisites.loadResources();
+                    prerequisites.loadResources((err) => {
+                      if (!err) {
+                        mixin.updateConfigFile(['app', 'installed'], true, () => {});
+                      }
+                    });
                   }
                   config.set('mediator:api:urn', mediatorConfig.urn);
                 });

@@ -9,7 +9,12 @@ const logger = require('./winston');
 const config = require('./config');
 module.exports = function () {
   return {
-    rpFlowsToFHIR (flows, callback) {
+    rpFlowsToFHIR(flows, callback) {
+      if (!Array.isArray(flows)) {
+        logger.error('Flows isnt an array')
+        return callback(true)
+      }
+      let processingError = false;
       const promises = [];
       let saveBundleFlows = {
         id: uuid4(),
@@ -18,26 +23,25 @@ module.exports = function () {
         entry: [],
       };
       for (const flow of flows) {
-        promises.push(
-          new Promise((resolve, reject) => {
-            const resource = {};
-            resource.id = flow.uuid;
-            resource.resourceType = 'Basic';
-            resource.meta = {};
-            resource.meta.profile = [];
-            resource.meta.profile.push(
-              'http://mhero.org/fhir/StructureDefinition/mHeroWorkflows'
-            );
-            resource.meta.code = {
-              coding: [{
-                system: 'http://mhero.org/fhir/CodeSystem/mhero-resource',
-                code: 'mHeroWorkflows',
-              },],
-              text: 'mHeroWorkflows',
-            };
-            resource.extension = [{
-              url: 'http://mhero.org/fhir/StructureDefinition/mHeroWorkflowsDetails',
-              extension: [{
+        promises.push(new Promise((resolve, reject) => {
+          const resource = {};
+          resource.id = flow.uuid;
+          resource.resourceType = 'Basic';
+          resource.meta = {};
+          resource.meta.profile = [];
+          resource.meta.profile.push(
+            'http://mhero.org/fhir/StructureDefinition/mHeroWorkflows'
+          );
+          resource.meta.code = {
+            coding: [{
+              system: 'http://mhero.org/fhir/CodeSystem/mhero-resource',
+              code: 'mHeroWorkflows',
+            }, ],
+            text: 'mHeroWorkflows',
+          };
+          resource.extension = [{
+            url: 'http://mhero.org/fhir/StructureDefinition/mHeroWorkflowsDetails',
+            extension: [{
                 url: 'name',
                 valueString: flow.name,
               },
@@ -60,21 +64,21 @@ module.exports = function () {
               {
                 url: 'http://mhero.org/fhir/StructureDefinition/mHeroWorkflowsRuns',
                 extension: [{
-                  url: 'active',
-                  valueInteger: flow.runs.active,
-                },
-                {
-                  url: 'completed',
-                  valueInteger: flow.runs.completed,
-                },
-                {
-                  url: 'interrupted',
-                  valueInteger: flow.runs.interrupted,
-                },
-                {
-                  url: 'expired',
-                  valueInteger: flow.runs.expired,
-                },
+                    url: 'active',
+                    valueInteger: flow.runs.active,
+                  },
+                  {
+                    url: 'completed',
+                    valueInteger: flow.runs.completed,
+                  },
+                  {
+                    url: 'interrupted',
+                    valueInteger: flow.runs.interrupted,
+                  },
+                  {
+                    url: 'expired',
+                    valueInteger: flow.runs.expired,
+                  },
                 ],
               },
               {
@@ -85,46 +89,51 @@ module.exports = function () {
                 url: 'modified_on',
                 valueString: flow.modified_on,
               },
-              ],
-            },];
-            saveBundleFlows.entry.push({
-              resource,
-              request: {
-                method: 'PUT',
-                url: `Basic/${resource.id}`,
-              },
-            });
-            if (saveBundleFlows.entry.length >= 250) {
-              const tmpBundle = {
-                ...saveBundleFlows,
-              };
-              saveBundleFlows = {
-                id: uuid4(),
-                resourceType: 'Bundle',
-                type: 'batch',
-                entry: [],
-              };
-              this.saveResource(tmpBundle, () => {
-                resolve();
-              });
-            } else {
+            ],
+          }, ];
+          saveBundleFlows.entry.push({
+            resource,
+            request: {
+              method: 'PUT',
+              url: `Basic/${resource.id}`,
+            },
+          });
+          if (saveBundleFlows.entry.length >= 250) {
+            const tmpBundle = {
+              ...saveBundleFlows,
+            };
+            saveBundleFlows = {
+              id: uuid4(),
+              resourceType: 'Bundle',
+              type: 'batch',
+              entry: [],
+            };
+            this.saveResource(tmpBundle, (err) => {
+              if (err) {
+                processingError = true
+              }
               resolve();
-            }
-          })
-        );
+            });
+          } else {
+            resolve();
+          }
+        }));
       }
       Promise.all(promises).then(() => {
         if (saveBundleFlows.entry.length > 0) {
-          this.saveResource(saveBundleFlows, () => {
-            return callback();
+          this.saveResource(saveBundleFlows, (err) => {
+            if (err) {
+              processingError = true
+            }
+            return callback(processingError);
           });
         } else {
-          return callback();
+          return callback(processingError);
         }
       });
     },
 
-    saveResource (resource, callback) {
+    saveResource(resource, callback) {
       logger.info('Saving resource data');
       const url = URI(config.get('macm:baseURL')).toString();
       const options = {
@@ -144,12 +153,15 @@ module.exports = function () {
           logger.error(err);
           return callback(err);
         }
+        if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+          return callback(true)
+        }
         logger.info('Resource(s) data saved successfully', JSON.stringify(options, 0, 2));
         callback(err, body);
       });
     },
 
-    deleteResource (resource, callback) {
+    deleteResource(resource, callback) {
       const url = URI(config.get('macm:baseURL'))
         .segment(resource)
         .toString();
@@ -162,10 +174,12 @@ module.exports = function () {
         },
       };
       request.delete(options, (err, res, body) => {
-        logger.info(body + ' ' + url);
         if (err) {
           logger.error(err);
           return callback(err);
+        }
+        if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+          return callback(true)
         }
         callback(err, body);
       });
@@ -179,7 +193,7 @@ module.exports = function () {
      * @param {Integer} count
      * @param {Object} callback
      */
-    getResource ({
+    getResource({
       resource,
       url,
       id,
@@ -236,17 +250,24 @@ module.exports = function () {
             }
             if (!isJSON(body)) {
               logger.error('Non JSON has been returned while getting data for resource ' + resource);
-              return callback(null, false);
+              return callback(true, false);
+            }
+            if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+              return callback(true, false)
             }
             body = JSON.parse(body);
+            if (!body.entry) {
+              logger.error('Invalid resource data returned by FHIR server')
+              return callback(true, false)
+            }
             if (body.total === 0 && body.entry && body.entry.length > 0) {
               logger.error('Non resource data returned for resource ' + resource);
-              return callback(null, false);
+              return callback(true, false);
             }
             if (body.total > 0 && body.entry && body.entry.length > 0) {
               resourceData.entry = resourceData.entry.concat(body.entry);
             }
-            const next = body.link.find(link => link.relation === 'next');
+            const next = body.link && body.link.find(link => link.relation === 'next');
             if (!count || (count && !isNaN(count) && resourceData.entry.length < count)) {
               if (next) {
                 url = next.url;
@@ -255,22 +276,26 @@ module.exports = function () {
             resourceData.next = next;
             return callback(null, url);
           });
-        }, () => {
+        }, (err) => {
           logger.info(`Done Getting data for resource ${resource} from server ${config.get('macm:baseURL')}`);
-          return callback(resourceData);
+          return callback(err, resourceData);
         }
       );
     },
 
-    createCommunicationsFromRPRuns (run, definition, callback) {
+    createCommunicationsFromRPRuns(run, definition, callback) {
+      let processingError = false;
       const query = `rpflowstarts=${run.start.uuid}`;
       this.getResource({
         resource: 'CommunicationRequest',
         query
-      }, (resourceData) => {
+      }, (err, resourceData) => {
+        if (err) {
+          return callback(true)
+        }
         if (!resourceData.entry) {
           logger.error('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);
-          return callback();
+          return callback(true);
         }
         if (resourceData.entry.length === 0) {
           logger.error('No communication request found for flow run ' + run.start.uuid);
@@ -330,7 +355,10 @@ module.exports = function () {
             url: `Basic/${run.uuid}`
           }
         });
-        this.saveResource(bundle, () => {
+        this.saveResource(bundle, (err) => {
+          if (err) {
+            processingError = true
+          }
           let resourceParentId;
           bundle.entry = [];
           for (const path of run.path) {
@@ -420,7 +448,10 @@ module.exports = function () {
               });
             }
           }
-          this.saveResource(bundle, () => {
+          this.saveResource(bundle, (err) => {
+            if (err || processingError) {
+              return callback(true);
+            }
             return callback();
           });
         });
