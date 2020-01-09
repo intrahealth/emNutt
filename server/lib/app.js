@@ -367,6 +367,87 @@ function appRoutes() {
       });
     });
   });
+
+  app.get('/syncContactGroups', (req, res) => {
+    logger.info('Received a request to sync contacts groups')
+    let bundle = {}
+    bundle.type = 'batch';
+    bundle.resourceType = 'Bundle';
+    bundle.entry = []
+    rapidpro.getEndPointData({
+      endPoint: 'groups.json'
+    }, (err, grps) => {
+      async.each(grps, (grp, nxtGrp) => {
+        let queries = [{
+          name: 'group',
+          value: grp.uuid
+        }]
+        rapidpro.getEndPointData({
+          endPoint: 'contacts.json',
+          queries
+        }, (err, contacts) => {
+          let promises = []
+          let contactsExt = []
+          for (let contact of contacts) {
+            promises.push(new Promise((resolve) => {
+              if (!contact.fields.globalid) {
+                return resolve();
+              }
+              contactsExt.push({
+                url: 'http://mhero.org/fhir/StructureDefinition/mHeroContactDetails',
+                extension: [{
+                  url: 'uuid',
+                  valueString: contact.uuid
+                }, {
+                  url: 'globalid',
+                  valueString: contact.fields.globalid
+                }]
+              })
+              resolve()
+            }))
+          }
+          Promise.all(promises).then(() => {
+            bundle.entry.push({
+              resource: {
+                id: grp.uuid,
+                resourceType: 'Basic',
+                meta: {
+                  profile: ['http://mhero.org/fhir/StructureDefinition/mHeroContactGroup']
+                },
+                extension: [{
+                  url: 'http://mhero.org/fhir/StructureDefinition/mHeroContactGroupDetails',
+                  extension: [{
+                    url: 'uuid',
+                    valueString: grp.uuid
+                  }, {
+                    url: 'name',
+                    valueString: grp.name
+                  }]
+                }, {
+                  url: 'http://mhero.org/fhir/StructureDefinition/mHeroContactsDetails',
+                  extension: contactsExt
+                }]
+              },
+              request: {
+                method: 'PUT',
+                url: `Basic/${grp.uuid}`
+              }
+            })
+            return nxtGrp()
+          })
+        })
+      }, () => {
+        macm.saveResource(bundle, (err, body) => {
+          if (err) {
+            res.status(500).send()
+          } else {
+            res.status(200).send('Done')
+          }
+          logger.info('Done synchronizing contact groups')
+        })
+      })
+    })
+  })
   return app;
 }
 

@@ -407,7 +407,8 @@ module.exports = function () {
             }
             for (const text of texts) {
               const commResource = {};
-              commResource.profile = [];
+              commResource.meta = {}
+              commResource.meta.profile = [];
               commResource.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunication');
               commResource.resourceType = 'Communication';
               commResource.id = text.id;

@@ -106,7 +106,7 @@
         "matchContentXpath": null,
         "matchContentValue": null,
         "matchContentJson": null,
-        "pollingSchedule": null,
+        "pollingSchedule": "0 */1 * * *",
         "tcpHost": null,
         "tcpPort": null,
         "autoRetryPeriodMinutes": 60,
@@ -138,7 +138,7 @@
         "authType": "public",
         "whitelist": [],
         "allow": [],
-        "type": "http",
+        "type": "polling",
         "methods": [
           "GET"
         ]
@@ -152,7 +152,7 @@
         "matchContentXpath": null,
         "matchContentValue": null,
         "matchContentJson": null,
-        "pollingSchedule": null,
+        "pollingSchedule": "0 7 * * *",
         "tcpHost": null,
         "tcpPort": null,
         "autoRetryPeriodMinutes": 60,
@@ -184,7 +184,7 @@
         "authType": "public",
         "whitelist": [],
         "allow": [],
-        "type": "http",
+        "type": "polling",
         "methods": [
           "GET"
         ]
@@ -198,7 +198,7 @@
         "matchContentXpath": null,
         "matchContentValue": null,
         "matchContentJson": null,
-        "pollingSchedule": null,
+        "pollingSchedule": "*/10 * * * *",
         "tcpHost": null,
         "tcpPort": null,
         "autoRetryPeriodMinutes": 60,
@@ -230,7 +230,53 @@
         "authType": "public",
         "whitelist": [],
         "allow": [],
-        "type": "http",
+        "type": "polling",
+        "methods": [
+          "GET"
+        ]
+      }, {
+        "requestBody": true,
+        "responseBody": true,
+        "name": "Synchronize rapidpro contact groups",
+        "description": "Synchronize rapidpro contact groups",
+        "urlPattern": "/syncContactGroups",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": "0 */6 * * *",
+        "tcpHost": null,
+        "tcpPort": null,
+        "autoRetryPeriodMinutes": 60,
+        "autoRetryEnabled": false,
+        "rewriteUrlsConfig": [],
+        "addAutoRewriteRules": true,
+        "rewriteUrls": false,
+        "status": "enabled",
+        "alerts": [],
+        "txRerunAcl": [],
+        "txViewFullAcl": [],
+        "txViewAcl": [],
+        "properties": [],
+        "matchContentTypes": [],
+        "routes": [{
+          "name": "Synchronize rapidpro contact groups",
+          "secured": false,
+          "host": "localhost",
+          "port": 3000,
+          "path": "/syncContactGroups",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "status": "enabled",
+          "type": "http"
+        }],
+        "authType": "public",
+        "whitelist": [],
+        "allow": [],
+        "type": "polling",
         "methods": [
           "GET"
         ]
@@ -290,7 +336,7 @@
         "matchContentXpath": null,
         "matchContentValue": null,
         "matchContentJson": null,
-        "pollingSchedule": null,
+        "pollingSchedule": "0 10 * * *",
         "tcpHost": null,
         "tcpPort": null,
         "autoRetryPeriodMinutes": 60,
@@ -322,7 +368,7 @@
         "authType": "public",
         "whitelist": [],
         "allow": [],
-        "type": "http",
+        "type": "polling",
         "methods": [
           "GET"
         ]
