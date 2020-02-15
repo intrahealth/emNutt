@@ -264,7 +264,7 @@ module.exports = function () {
               logger.error('Non resource data returned for resource ' + resource);
               return callback(true, false);
             }
-            if (body.total > 0 && body.entry && body.entry.length > 0) {
+            if (body.entry && body.entry.length > 0) {
               resourceData.entry = resourceData.entry.concat(body.entry);
             }
             const next = body.link && body.link.find(link => link.relation === 'next');

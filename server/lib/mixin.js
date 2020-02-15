@@ -5,6 +5,7 @@ const env = process.env.NODE_ENV || 'development';
 
 const setNestedKey = (obj, path, value, callback) => {
   if (path.length === 1) {
+    logger.error(JSON.stringify(obj))
     obj[path] = value;
     return callback();
   }
