@@ -1,7 +1,8 @@
 {
   "app": {
     "port": 3000,
-    "installed": true
+    "installed": true,
+    "baseURL": "http://localhost:3000"
   },
   "mediator": {
     "api": {

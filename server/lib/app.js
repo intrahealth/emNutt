@@ -5,6 +5,9 @@ const async = require('async');
 const medUtils = require('openhim-mediator-utils');
 const fs = require('fs');
 const moment = require('moment');
+const request = require('request');
+const isJSON = require('is-json');
+const URI = require('urijs');
 const logger = require('./winston');
 const config = require('./config');
 const rapidpro = require('./rapidpro')();
@@ -24,6 +27,92 @@ if (config.get('mediator:register')) {
 function appRoutes() {
   const app = express();
   app.use(bodyParser.json());
+
+  app.post('/fhir/CommunicationRequest', (req, res) => {
+    let resource = req.body
+    if (!resource) {
+      return res.status(400).send()
+    }
+    macm.saveResource(resource, (err, response, body) => {
+      let statusCode
+      if (response.statusCode) {
+        statusCode = response.statusCode
+      }
+      if (err) {
+        if (!statusCode) {
+          statusCode = 500
+        }
+        return res.status(statusCode).send(body)
+      }
+      if (!statusCode) {
+        statusCode = 201
+      }
+      return res.status(statusCode).json(body)
+    })
+  });
+
+  app.post('/fhir', (req, res) => {
+    let resource = req.body
+    if (!resource) {
+      return res.status(400).send()
+    }
+    macm.saveResource(resource, (err, response, body) => {
+      let statusCode
+      if (response.statusCode) {
+        statusCode = response.statusCode
+      }
+      if (err) {
+        if (!statusCode) {
+          statusCode = 500
+        }
+        return res.status(statusCode).send(body)
+      }
+      if (!statusCode) {
+        statusCode = 201
+      }
+      return res.status(statusCode).json(body)
+    })
+  });
+
+  app.get('/fhir/:resource?', (req, res) => {
+    const resource = req.params.resource;
+    let url = URI(config.get('macm:baseURL'));
+    if (resource) {
+      url = url.segment(resource);
+    }
+    for (const param in req.query) {
+      url.addQuery(param, req.query[param]);
+    }
+    url = url.toString();
+    const options = {
+      url,
+      withCredentials: true,
+      auth: {
+        username: config.get('macm:username'),
+        password: config.get('macm:password'),
+      },
+    };
+    request.get(options, (err, response, body) => {
+      let statusCode
+      if (response.statusCode) {
+        statusCode = response.statusCode
+      } else if (body.entry) {
+        statusCode = 200
+      } else {
+        statusCode = 500
+      }
+      if (isJSON(body)) {
+        body = JSON.parse(body)
+      }
+      if (body.link) {
+        const baseURL = URI(config.get('macm:baseURL')).toString().replace('/fhir', '');
+        for (const index in body.link) {
+          body.link[index].url = body.link[index].url.replace(baseURL, config.get('app:baseURL'));
+        }
+      }
+      return res.status(statusCode).send(body)
+    })
+  });
 
   app.get('/syncWorkflows', (req, res) => {
     logger.info('Received a request to synchronize workflows');
@@ -437,7 +526,7 @@ function appRoutes() {
           })
         })
       }, () => {
-        macm.saveResource(bundle, (err, body) => {
+        macm.saveResource(bundle, (err, response, body) => {
           if (err) {
             res.status(500).send()
           } else {

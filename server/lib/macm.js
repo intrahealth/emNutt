@@ -136,6 +136,9 @@ module.exports = function () {
     saveResource(resource, callback) {
       logger.info('Saving resource data');
       const url = URI(config.get('macm:baseURL')).toString();
+      if(resource.resourceType && resource.resourceType === 'Bundle') {
+        url = url.segment(resource.resourceType)
+      }
       const options = {
         url,
         withCredentials: true,
@@ -151,13 +154,13 @@ module.exports = function () {
       request.post(options, (err, res, body) => {
         if (err) {
           logger.error(err);
-          return callback(err);
+          return callback(err, res, body);
         }
         if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
-          return callback(true)
+          return callback(true, res, body)
         }
         logger.info('Resource(s) data saved successfully', JSON.stringify(options, 0, 2));
-        callback(err, body);
+        callback(err, res, body);
       });
     },
 
@@ -222,6 +225,9 @@ module.exports = function () {
               return callback(resourceData);
             }
             url.addQuery(qrArr[0], qrArr[1]);
+            if(qrArr[0] === '_count') {
+              count = true;
+            }
           }
         }
         url = url.toString();
@@ -265,7 +271,13 @@ module.exports = function () {
               return callback(true, false);
             }
             if (body.entry && body.entry.length > 0) {
-              resourceData.entry = resourceData.entry.concat(body.entry);
+              if (count) {
+                resourceData = {
+                  ...body
+                };
+              } else {
+                resourceData.entry = resourceData.entry.concat(body.entry);
+              }
             }
             const next = body.link && body.link.find(link => link.relation === 'next');
             if (!count || (count && !isNaN(count) && resourceData.entry.length < count)) {
