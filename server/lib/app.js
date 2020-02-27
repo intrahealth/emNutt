@@ -33,22 +33,18 @@ function appRoutes() {
     if (!resource) {
       return res.status(400).send()
     }
-    macm.saveResource(resource, (err, response, body) => {
-      let statusCode
-      if (response.statusCode) {
-        statusCode = response.statusCode
-      }
+    let commBundle = {
+      entry: [{
+        resource
+      }]
+    }
+    rapidpro.processCommunications(commBundle, (err) => {
       if (err) {
-        if (!statusCode) {
-          statusCode = 500
-        }
-        return res.status(statusCode).send(body)
+        return res.status(500).send('Done');
       }
-      if (!statusCode) {
-        statusCode = 201
-      }
-      return res.status(statusCode).json(body)
-    })
+      logger.info('Done checking communication requests');
+      res.status(200).send();
+    });
   });
 
   app.post('/fhir', (req, res) => {
@@ -75,6 +71,7 @@ function appRoutes() {
   });
 
   app.get('/fhir/:resource?', (req, res) => {
+    logger.info('Received a request to get data for resource ' + req.params.resource);
     const resource = req.params.resource;
     let url = URI(config.get('macm:baseURL'));
     if (resource) {
@@ -123,9 +120,6 @@ function appRoutes() {
       runsLastSync = moment('1970-01-01').format('Y-MM-DDTH:mm:ss');
     }
     const queries = [{
-      name: 'flow',
-      value: flow.resource.id,
-    }, {
       name: 'after',
       value: runsLastSync,
     }];
@@ -249,11 +243,27 @@ function appRoutes() {
 
   app.get('/checkCommunicationRequest', (req, res) => {
     let processingError = false;
-    let runsLastSync = config.get('lastSync:syncContacts:time');
-    const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
-    if (!isValid) {
-      runsLastSync = moment('1970-01-01').format('Y-MM-DD');
-    }
+    let query = `status:not=completed`
+    macm.getResource({
+      resource: 'CommunicationRequest',
+      query
+    }, (err, commReqs) => {
+      if (err) {
+        processingError = true;
+      }
+      rapidpro.processCommunications(commReqs, (err) => {
+        if (err) {
+          processingError = true;
+          return res.status(500).send('Done');
+        }
+        logger.info('Done checking communication requests');
+        res.status(200).send();
+      });
+    });
+  });
+
+  function checkCommunicationRequest(commReqResource, req, res) {
+    let processingError = false;
     const promise = new Promise((resolve, reject) => {
       if (!config.get('rapidpro:syncAllContacts')) {
         rapidpro.getEndPointData({
@@ -270,31 +280,11 @@ function appRoutes() {
         return resolve([]);
       }
     });
+
     promise.then(rpContacts => {
-      let query = `_lastUpdated=${runsLastSync}`
-      macm.getResource({
-        resource: 'CommunicationRequest',
-        query
-      }, (err, commReqs) => {
-        if (err) {
-          processingError = true;
-        }
-        runsLastSync = moment().subtract('30', 'minutes').format('Y-MM-DDTH:mm:ss');
-        rapidpro.processCommunications(commReqs, rpContacts, (err) => {
-          if (err) {
-            processingError = true;
-          }
-          if (!processingError) {
-            mixin.updateConfigFile(['lastSync', 'checkCommunicationRequest', 'time'], runsLastSync, () => {});
-          }
-          logger.info('Done checking communication requests');
-          res.status(200).send('Done');
-        });
-      });
-    }).catch(err => {
-      throw err;
-    });
-  });
+
+    })
+  }
 
   app.post('/syncContacts', (req, res) => {
     logger.info('Received a bundle of contacts to be synchronized');

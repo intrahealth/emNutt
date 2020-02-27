@@ -135,10 +135,11 @@ module.exports = function () {
 
     saveResource(resource, callback) {
       logger.info('Saving resource data');
-      const url = URI(config.get('macm:baseURL')).toString();
-      if(resource.resourceType && resource.resourceType === 'Bundle') {
+      let url = URI(config.get('macm:baseURL'));
+      if(resource.resourceType && resource.resourceType !== 'Bundle') {
         url = url.segment(resource.resourceType)
       }
+      url = url.toString();
       const options = {
         url,
         withCredentials: true,
@@ -203,11 +204,14 @@ module.exports = function () {
       query,
       count
     }, callback) {
-      const resourceData = {};
-      resourceData.entry = [];
+      let resourceData = {};
+      if(!id) {
+        resourceData.entry = [];
+      }
       if (!url) {
         url = URI(config.get('macm:baseURL')).segment(resource);
         if (id) {
+          id = id.toString();
           url.segment(id);
         }
         if (count && !isNaN(count)) {
@@ -235,7 +239,7 @@ module.exports = function () {
         count = true;
       }
 
-      logger.info(`Getting data for resource ${resource} from server ${config.get('macm:baseURL')}`);
+      logger.info(`Getting data for resource from server ${config.get('macm:baseURL')}`);
       async.whilst(
         callback => {
           return callback(null, url !== false);
@@ -256,21 +260,25 @@ module.exports = function () {
             }
             if (!isJSON(body)) {
               logger.error('Non JSON has been returned while getting data for resource ' + resource);
+              logger.error(body)
               return callback(true, false);
             }
             if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+              logger.error('Getting resource Err Code ' + res.statusCode)
               return callback(true, false)
             }
             body = JSON.parse(body);
-            if (!body.entry) {
+            if(body.hasOwnProperty('total') && body.total === 0) {
+              return callback(null, false)
+            }
+            if (!id && !body.entry) {
               logger.error('Invalid resource data returned by FHIR server')
+              logger.error(body)
               return callback(true, false)
             }
-            if (body.total === 0 && body.entry && body.entry.length > 0) {
-              logger.error('Non resource data returned for resource ' + resource);
-              return callback(true, false);
-            }
-            if (body.entry && body.entry.length > 0) {
+            if (id && body) {
+              resourceData = body;
+            } else if (body.entry && body.entry.length > 0) {
               if (count) {
                 resourceData = {
                   ...body
