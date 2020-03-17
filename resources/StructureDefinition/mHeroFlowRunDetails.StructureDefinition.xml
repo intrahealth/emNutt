@@ -44,8 +44,34 @@
       <path value="Extension.extension.value[x]" />
       <min value="1" />
       <type>
-        <code value="string" />
+        <code value="Reference" />
+        <targetProfile value="Basic" />
       </type>
+    </element>
+    <element id="Extension.extension:flow.value[x].reference">
+      <path value="Extension.extension.value[x].reference" />
+      <min value="1" />
+    </element>
+    <element id="Extension.extension:recipient">
+      <path value="Extension.extension" />
+      <sliceName value="recipient" />
+      <min value="1" />
+      <max value="1" />
+    </element>
+    <element id="Extension.extension:recipient.url">
+      <path value="Extension.extension.url" />
+      <fixedUri value="recipient" />
+    </element>
+    <element id="Extension.extension:recipient.value[x]">
+      <path value="Extension.extension.value[x]" />
+      <min value="1" />
+      <type>
+        <code value="Reference" />
+      </type>
+    </element>
+    <element id="Extension.extension:recipient.value[x].reference">
+      <path value="Extension.extension.value[x].reference" />
+      <min value="1" />
     </element>
     <element id="Extension.extension:responded">
       <path value="Extension.extension" />

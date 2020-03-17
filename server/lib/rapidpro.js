@@ -95,8 +95,8 @@ module.exports = function () {
         return callback(err, res, body);
       });
     },
-    processCommunications(commReqs, callback) {
-      let processingError = false
+    processCommunications (commReqs, callback) {
+      let processingError = false;
       let sendFailed = false;
       logger.info(`Processing ${commReqs.entry.length} communication requests`);
       const promise = new Promise((resolve, reject) => {
@@ -496,10 +496,13 @@ module.exports = function () {
         extUrl = 'http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts';
       }
       commReq.resource.id = rpRunStatus.uuid;
-      if (!commReq.resource.profile) {
-        commReq.resource.profile = [];
+      if (!commReq.resource.meta) {
+        commReq.resource.meta = {};
       }
-      commReq.resource.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunicationRequest');
+      if (!commReq.resource.meta.profile) {
+        commReq.resource.meta.profile = [];
+      }
+      commReq.resource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunicationRequest');
       if (!commReq.resource.extension) {
         commReq.resource.extension = [];
       }

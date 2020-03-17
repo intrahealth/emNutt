@@ -152,13 +152,13 @@ function appRoutes() {
     logger.info('Received a request to sync workflow messages');
     const query = '_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows';
     let runsLastSync = moment('1970-01-01').format('Y-MM-DDTH:mm:ss');
-    let processingError = false
+    let processingError = false;
     macm.getResource({
       resource: 'Basic',
       query,
     }, (err, flows) => {
       if (err) {
-        processingError = true
+        processingError = true;
       }
       async.eachSeries(flows.entry, (flow, nxtFlow) => {
         const promise1 = new Promise(resolve => {
@@ -179,7 +179,7 @@ function appRoutes() {
             queries,
           }, (err, runs) => {
             if (err) {
-              processingError = true
+              processingError = true;
             }
             runsLastSync = moment().subtract('10', 'minutes').format('Y-MM-DDTH:mm:ss');
             resolve(runs);
@@ -196,7 +196,7 @@ function appRoutes() {
             hasResultsKey: false,
           }, (err, definitions) => {
             if (err) {
-              processingError = true
+              processingError = true;
             }
             resolve(definitions);
           });
@@ -214,7 +214,7 @@ function appRoutes() {
               queries,
             }, (err, contact) => {
               if (err) {
-                processingError = true
+                processingError = true;
               }
               if (!Array.isArray(contact) || contact.length !== 1 || !contact[0].fields.globalid) {
                 return;
@@ -261,30 +261,6 @@ function appRoutes() {
       });
     });
   });
-
-  function checkCommunicationRequest(commReqResource, req, res) {
-    let processingError = false;
-    const promise = new Promise((resolve, reject) => {
-      if (!config.get('rapidpro:syncAllContacts')) {
-        rapidpro.getEndPointData({
-          endPoint: 'contacts.json',
-        }, (err, rpContacts) => {
-          if (err) {
-            processingError = true
-            logger.error('An error has occured while getting rapidpro contacts, checking communication requests has been stopped')
-            return res.status(500).send('An error has occured while getting rapidpro contacts, checking communication requests has been stopped')
-          }
-          resolve(rpContacts);
-        });
-      } else {
-        return resolve([]);
-      }
-    });
-
-    promise.then(rpContacts => {
-
-    })
-  }
 
   app.post('/syncContacts', (req, res) => {
     logger.info('Received a bundle of contacts to be synchronized');
@@ -449,24 +425,30 @@ function appRoutes() {
 
   app.get('/syncContactGroups', (req, res) => {
     logger.info('Received a request to sync contacts groups')
-    let bundle = {}
+    const bundle = {};
     bundle.type = 'batch';
     bundle.resourceType = 'Bundle';
     bundle.entry = []
     rapidpro.getEndPointData({
       endPoint: 'groups.json'
     }, (err, grps) => {
+      if(err) {
+        return res.status(500).send();
+      }
       async.each(grps, (grp, nxtGrp) => {
-        let queries = [{
+        const queries = [{
           name: 'group',
           value: grp.uuid
-        }]
+        }];
         rapidpro.getEndPointData({
           endPoint: 'contacts.json',
           queries
         }, (err, contacts) => {
-          let promises = []
-          let contactsExt = []
+          if(err) {
+            logger.error(err);
+          }
+          let promises = [];
+          let contactsExt = [];
           for (let contact of contacts) {
             promises.push(new Promise((resolve) => {
               if (!contact.fields.globalid) {
@@ -481,9 +463,9 @@ function appRoutes() {
                   url: 'globalid',
                   valueString: contact.fields.globalid
                 }]
-              })
-              resolve()
-            }))
+              });
+              resolve();
+            }));
           }
           Promise.all(promises).then(() => {
             bundle.entry.push({

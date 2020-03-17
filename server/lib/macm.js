@@ -133,7 +133,7 @@ module.exports = function () {
       });
     },
 
-    saveResource(resource, callback) {
+    saveResource (resource, callback) {
       logger.info('Saving resource data');
       let url = URI(config.get('macm:baseURL'));
       if(resource.resourceType && resource.resourceType !== 'Bundle') {
@@ -155,9 +155,11 @@ module.exports = function () {
       request.post(options, (err, res, body) => {
         if (err) {
           logger.error(err);
+          logger.error(body);
           return callback(err, res, body);
         }
         if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+          logger.error(body);
           return callback(true, res, body)
         }
         logger.info('Resource(s) data saved successfully', JSON.stringify(options, 0, 2));
@@ -264,6 +266,7 @@ module.exports = function () {
               return callback(true, false);
             }
             if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+              logger.error(body);
               logger.error('Getting resource Err Code ' + res.statusCode)
               return callback(true, false)
             }
@@ -303,7 +306,7 @@ module.exports = function () {
       );
     },
 
-    createCommunicationsFromRPRuns(run, definition, callback) {
+    createCommunicationsFromRPRuns (run, definition, callback) {
       let processingError = false;
       const query = `rpflowstarts=${run.start.uuid}`;
       this.getResource({
@@ -324,7 +327,6 @@ module.exports = function () {
         if (resourceData.entry.length > 1) {
           logger.error(`Multiple CommunicationRequest resources found with flow start ${run.start.uuid}`);
         }
-
         const commReqId = resourceData.entry[0].resource.id;
 
         const bundle = {};
@@ -339,7 +341,14 @@ module.exports = function () {
           }
         }, {
           url: 'flow',
-          valueString: run.flow.uuid
+          valueReference: {
+            reference: `Basic/${resourceData.entry[0].resource.payload[0].contentAttachment.url}`
+          }
+        }, {
+          url: 'recipient',
+          valueReference: {
+            reference: run.contact.globalid
+          }
         }, {
           url: 'responded',
           valueString: run.responded
@@ -364,7 +373,9 @@ module.exports = function () {
           resource: {
             resourceType: 'Basic',
             id: run.uuid,
-            profile: ['http://mhero.org/fhir/StructureDefinition/mHeroFlowRun'],
+            meta: {
+              profile: ['http://mhero.org/fhir/StructureDefinition/mHeroFlowRun'],
+            },
             extension: [{
               url: 'http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails',
               extension
@@ -377,7 +388,7 @@ module.exports = function () {
         });
         this.saveResource(bundle, (err) => {
           if (err) {
-            processingError = true
+            processingError = true;
           }
           let resourceParentId;
           bundle.entry = [];
@@ -427,9 +438,9 @@ module.exports = function () {
             }
             for (const text of texts) {
               const commResource = {};
-              commResource.meta = {}
+              commResource.meta = {};
               commResource.meta.profile = [];
-              commResource.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunication');
+              commResource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunication');
               commResource.resourceType = 'Communication';
               commResource.id = text.id;
               if (text.parent) {
@@ -440,11 +451,16 @@ module.exports = function () {
               }];
               if (text.type === 'sent') {
                 commResource.sent = text.time;
+                commResource.received = text.time;
                 commResource.recipient = [{
                   reference: run.contact.globalid
                 }];
               } else if (text.type === 'reply') {
                 commResource.received = text.time;
+                commResource.sent = text.time;
+                commResource.sender = {
+                  reference: run.contact.globalid
+                };
               }
 
               commResource.basedOn = `CommunicationRequest/${commReqId}`;
