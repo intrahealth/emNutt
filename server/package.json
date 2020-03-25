@@ -12,7 +12,7 @@
     "async": "^3.1.0",
     "axios": "^0.19.2",
     "express": "^4.17.1",
-    "fhir": "^4.7.0",
+    "fhir": "^4.7.2",
     "is-json": "^2.0.1",
     "moment": "^2.24.0",
     "nconf": "^0.10.0",
@@ -23,11 +23,13 @@
     "winston-daily-rotate-file": "^4.4.2"
   },
   "devDependencies": {
+    "acorn": ">=7.1.1",
     "eslint": "^6.7.2",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1"
+    "eslint-plugin-standard": "^4.0.1",
+    "minimist": ">=1.2.2"
   }
 }
