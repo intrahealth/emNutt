@@ -1,0 +1,8 @@
+# Dependency directories
+node_modules/
+
+# VIM swp files
+*.swp
+
+# Config files
+config_development.json
