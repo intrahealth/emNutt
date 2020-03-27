@@ -162,7 +162,7 @@ Use this end point to synchronize workflows between emNutt and Rapidpro
 ```
 
 ```
-/fhir/Basic?_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows
+/fhir/Basic?_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows - GET
 Use this end point to get all workflows from emNutt
 ```
 
