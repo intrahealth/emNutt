@@ -86,3 +86,107 @@ Run the server
 ```
 node lib/app.js
 ```
+
+# End Points
+```
+/fhir/CommunicationRequest - POST
+Use this end point to POST CommunicationRequest (sending Messages or Starting a workflow)
+Below is a sample CommunicationRequest - When emNutt and POS are using the same FHIR Server i.e emNutt knows where to get Practitioner/P6194
+{
+  "resourceType": "CommunicationRequest",
+  "payload": [{
+    "contentAttachment": {
+      "url": "b7a4770c-d034-4055-9f21-b17632ef311e"
+    }
+  }],
+  "recipient": [{
+      "reference": "Practitioner/P6194"
+    }, {
+      "reference": "Practitioner/P8699"
+    }
+  ]
+}
+
+OR (This is mostly when emNutt and POS are using different FHIR server - i.e emNutt does not know how to respolve Practitioner/P6194
+{
+  "resourceType": "CommunicationRequest",
+  "contained": [{
+    "resourceType": "Practitioner",
+    "id": "P6194",
+    "name": [{
+      "use": "official",
+      "text": "Jousaesto Joutousle",
+      "family": "Joutousle",
+      "given": [
+        "Jousaesto"
+      ]
+    }],
+    "telecom": [{
+      "system": "phone",
+      "value": "+27-555-8344-23"
+    }]
+  }, {
+    "resourceType": "Practitioner",
+    "id": "P8699",
+    "name": [{
+      "use": "official",
+      "text": "Taraeceaf Thiuaewiasou",
+      "family": "Thiuaewiasou",
+      "given": [
+        "Taraeceaf"
+      ]
+    }],
+    "telecom": [{
+      "system": "phone",
+      "value": "+27-555-9621-44"
+    }]
+  }],
+  "payload": [{
+    "contentAttachment": {
+      "url": "b7a4770c-d034-4055-9f21-b17632ef311e"
+    }
+  }],
+  "recipient": [{
+    "reference": "#P6194"
+  }, {
+    "reference": "#P8699"
+  }]
+}
+
+payload.contentAttachment.url is the workflow id to be started
+```
+
+```
+/syncWorkflows - GET
+Use this end point to synchronize workflows between emNutt and Rapidpro
+```
+
+```
+/fhir/Basic?_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows
+Use this end point to get all workflows from emNutt
+```
+
+```
+/syncWorkflowRunMessages - GET
+Use this end point to synchronize Messages between rapidpro and emNutt
+```
+
+```
+/syncContacts - POST
+Use this end point to sync contacts between POS i.e iHRIS, DHIS2 openMRS etc and rapidpro.
+The request body must be a FHIR bundle of contacts i.e Practitioner resource or Person resource
+This is especially when emNutt and POS are using different FHIR Servers
+```
+
+```
+/syncContacts - GET
+Use this end point to sync contacts between emNutt and Rapidpro
+This is especially when emNutt and POS are using the same FHIR server.
+```
+
+```
+/fhir/:resource?/:id? - GET
+Use to get resource data from emNut 
+i.e /fhir/Communication (lists all communications)
+i.e /fhir/Communication/123 list communication that has ID 123
+```
