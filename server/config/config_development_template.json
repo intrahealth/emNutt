@@ -14,6 +14,9 @@
     },
     "register": false
   },
+  "origins": {
+    "http://localhost:8080"
+  },
   "rapidpro": {
     "baseURL": "http://app.rapidpro.io",
     "token": "369958889jk10930de856fc15lmefjkd73f0390c",

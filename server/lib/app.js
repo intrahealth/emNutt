@@ -3,7 +3,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const async = require('async');
 const medUtils = require('openhim-mediator-utils');
+const cors = require('cors');
 const fs = require('fs');
+const helmet = require('helmet');
 const moment = require('moment');
 const request = require('request');
 const isJSON = require('is-json');
@@ -26,6 +28,26 @@ if (config.get('mediator:register')) {
  */
 function appRoutes() {
   const app = express();
+
+  app.get('/site-up', cors(), function(req, res, next) {
+    res.status(201).json({message: "site is up"});
+  });
+
+  var corsOptions = {
+    origin: function (origin, callback) {
+      if (config.get('origins').indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log("Attempted request from unknown origin: " + origin);
+      }
+    },
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  };
+
+  app.use(helmet());
+
+  app.use(cors(corsOptions));
   app.use(bodyParser.json());
 
   app.post('/fhir/CommunicationRequest', (req, res) => {
