@@ -70,12 +70,16 @@ function appRoutes() {
     })
   });
 
-  app.get('/fhir/:resource?', (req, res) => {
+  app.get('/fhir/:resource?/:id?', (req, res) => {
     logger.info('Received a request to get data for resource ' + req.params.resource);
     const resource = req.params.resource;
+    const id = req.params.id;
     let url = URI(config.get('macm:baseURL'));
     if (resource) {
       url = url.segment(resource);
+    }
+    if (id) {
+      url = url.segment(id);
     }
     for (const param in req.query) {
       url.addQuery(param, req.query[param]);
@@ -90,25 +94,28 @@ function appRoutes() {
       },
     };
     request.get(options, (err, response, body) => {
-      let statusCode
+      let statusCode;
       if (response.statusCode) {
-        statusCode = response.statusCode
+        statusCode = response.statusCode;
       } else if (body.entry) {
-        statusCode = 200
+        statusCode = 200;
       } else {
-        statusCode = 500
+        statusCode = 500;
       }
       if (isJSON(body)) {
-        body = JSON.parse(body)
+        body = JSON.parse(body);
       }
       if (body.link) {
         const baseURL = URI(config.get('macm:baseURL')).toString().replace('/fhir', '');
         for (const index in body.link) {
+          if (!body.link[index].url) {
+            continue;
+          }
           body.link[index].url = body.link[index].url.replace(baseURL, config.get('app:baseURL'));
         }
       }
-      return res.status(statusCode).send(body)
-    })
+      return res.status(statusCode).send(body);
+    });
   });
 
   app.get('/syncWorkflows', (req, res) => {
