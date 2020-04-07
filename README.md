@@ -4,9 +4,10 @@
 
 You will need  
   1. A FHIR compatible server such as [hapi](https://hapifhir.io/)
-  2. [OpenHIM](http://openhim.org/) installed
-  3. An [Elasticsearch](https://www.elastic.co/) instance
-  4. And[Kibana](https://www.elastic.co/kibana)
+  2. An [Elasticsearch](https://www.elastic.co/) instance  
+  3. And [Kibana](https://www.elastic.co/kibana)
+  
+  If you want to use emNutt as a mediator you will need to have [OpenHIM](http://openhim.org/) installed
   
 # Installation
 
