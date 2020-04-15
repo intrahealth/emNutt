@@ -34,7 +34,7 @@ Some configuration variables inside JSON config file (config/config_development.
 "app": {
     "port": 3002,
     "installed": false,
-    "baseURL": "http://localhost:3000"
+    "baseURL": "http://localhost:3002"
   }
 ```
  app.port - is the port number for emNutt
