@@ -12,7 +12,11 @@ const convert = new Fhir();
 
 const loadResources = (callback) => {
   let processingError = false;
-  const folders = [`${__dirname}/../../resources/StructureDefinition`, `${__dirname}/../../resources/SearchParameter`];
+  const folders = [
+    `${__dirname}/../../resources/StructureDefinition`,
+    `${__dirname}/../../resources/Relationships`,
+    `${__dirname}/../../resources/SearchParameter`
+  ];
   const promises = [];
   for (const folder of folders) {
     fs.readdirSync(folder).forEach(file => {

@@ -20,6 +20,7 @@
     "nconf": "^0.10.0",
     "openhim-mediator-utils": "^0.2.3",
     "request": "^2.88.0",
+    "request-promise-native": "^1.0.8",
     "urijs": "^1.19.2",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.2"
