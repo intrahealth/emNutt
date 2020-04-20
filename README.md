@@ -95,6 +95,17 @@ elastic.baseURL - Is the base URL of Elasticsearch server
 elastic.username - Is the elasticsearch username
 elastic.password - Is the elasticsearch password
 
+## Kibana Config
+```
+"kibana": {
+    "baseURL": "http://localhost:5601",
+    "username": "",
+    "password": ""
+  },
+```
+kibana.baseURL - Is the base URL for Kibana 
+kibana.username - Is the kibana username 
+kibana.password - Is the kibana password 
 
 ## Run the server
 ```
