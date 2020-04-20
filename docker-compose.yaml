@@ -1,0 +1,15 @@
+version: "3.3"
+
+services:
+
+  fhir:
+    container_name: hapi-fhir
+    image: hapiproject/hapi:latest
+    ports:
+      - "8082:8082"
+
+  emnutt:
+    build: .
+    ports:
+      - "49160:3000"
+    restart: unless-stopped

@@ -1,12 +1,10 @@
 const request = require('request');
 const URI = require('urijs');
-const nconf = require('nconf');
+const async = require('async');
 const config = require('./config');
 const logger = require('./winston');
 const fs = require('fs');
 const Fhir = require('fhir').Fhir;
-
-nconf.argv();
 
 const convert = new Fhir();
 
@@ -50,7 +48,7 @@ const loadResources = (callback) => {
             request.post(options, (err, res, body) => {
               resolve();
               if (err) {
-                logger.error(err)
+                logger.error(err);
                 processingError = true;
               }
               if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
@@ -64,7 +62,7 @@ const loadResources = (callback) => {
             request.put(options, (err, res, body) => {
               resolve();
               if (err) {
-                logger.error(err)
+                logger.error(err);
                 processingError = true;
               }
               if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
@@ -87,6 +85,94 @@ const loadResources = (callback) => {
   });
 };
 
+const loadmHeroDashboards = (callback) => {
+  let processingError = false;
+  const folders = [
+    `${__dirname}/../../resources/kibana/dashboards`
+  ];
+  const promises = [];
+  for (const folder of folders) {
+    fs.readdirSync(folder).forEach(file => {
+      promises.push(new Promise((resolve) => {
+        logger.info('Loading ' + file + ' into Kibana...');
+        fs.readFile(`${folder}/${file}`, (err, data) => {
+          if (err) throw err;
+          try {
+            data = JSON.parse(data);
+          } catch (error) {
+            logger.error(error);
+            throw error;
+          }
+
+
+          const dest = URI(config.get('kibana:baseURL'))
+            .segment('api')
+            .segment('kibana')
+            .segment('dashboards')
+            .segment('import')
+            .addQuery('force', true)
+            .toString();
+          const options = {
+            url: dest,
+            withCredentials: true,
+            auth: {
+              username: config.get('kibana:username'),
+              password: config.get('kibana:password')
+            },
+            headers: {
+              'kbn-xsrf': true,
+              'Content-Type': 'application/json',
+            },
+            json: data,
+          };
+          request.post(options, (err, res, body) => {
+            resolve();
+            if (err) {
+              logger.error(err);
+              processingError = true;
+            }
+            if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+              processingError = true;
+            }
+            logger.info(dest + ': ' + res.statusCode);
+            logger.info(JSON.stringify(res.body, null, 2));
+          });
+        });
+      }));
+    });
+  }
+  Promise.all(promises).then(() => {
+    logger.info('Done loading required resources');
+    return callback(processingError);
+  }).catch((err) => {
+    throw err;
+  });
+};
+
+const init = (callback) => {
+  let error = false;
+  async.parallel({
+    loadResources: (callback) => {
+      loadResources((err) => {
+        if (err) {
+          error = err;
+        }
+        return callback(null);
+      });
+    },
+    loadmHeroDashboards: (callback) => {
+      loadmHeroDashboards((err) => {
+        if (err) {
+          error = err;
+        }
+        return callback(null);
+      });
+    }
+  }, () => {
+    return callback(error);
+  });
+};
+
 module.exports = {
-  loadResources
+  init
 };

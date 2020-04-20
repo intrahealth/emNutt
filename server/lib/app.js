@@ -29,8 +29,10 @@ if (config.get('mediator:register')) {
 function appRoutes() {
   const app = express();
 
-  app.get('/site-up', cors(), function(req, res, next) {
-    res.status(201).json({message: "site is up"});
+  app.get('/site-up', cors(), function (req, res, next) {
+    res.status(201).json({
+      message: "site is up"
+    });
   });
 
   var corsOptions = {
@@ -51,15 +53,15 @@ function appRoutes() {
   app.use(bodyParser.json());
 
   app.post('/fhir/CommunicationRequest', (req, res) => {
-    let resource = req.body
+    let resource = req.body;
     if (!resource) {
-      return res.status(400).send()
+      return res.status(400).send();
     }
     let commBundle = {
       entry: [{
         resource
       }]
-    }
+    };
     rapidpro.processCommunications(commBundle, (err) => {
       if (err) {
         return res.status(500).send('Done');
@@ -70,26 +72,26 @@ function appRoutes() {
   });
 
   app.post('/fhir', (req, res) => {
-    let resource = req.body
+    let resource = req.body;
     if (!resource) {
-      return res.status(400).send()
+      return res.status(400).send();
     }
     macm.saveResource(resource, (err, response, body) => {
-      let statusCode
+      let statusCode;
       if (response.statusCode) {
-        statusCode = response.statusCode
+        statusCode = response.statusCode;
       }
       if (err) {
         if (!statusCode) {
-          statusCode = 500
+          statusCode = 500;
         }
-        return res.status(statusCode).send(body)
+        return res.status(statusCode).send(body);
       }
       if (!statusCode) {
-        statusCode = 201
+        statusCode = 201;
       }
-      return res.status(statusCode).json(body)
-    })
+      return res.status(statusCode).json(body);
+    });
   });
 
   app.get('/fhir/:resource?/:id?', (req, res) => {
@@ -142,7 +144,7 @@ function appRoutes() {
 
   app.get('/syncWorkflows', (req, res) => {
     logger.info('Received a request to synchronize workflows');
-    let processingError = false
+    let processingError = false;
     let runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
     const isValid = moment(runsLastSync, 'Y-MM-DDTH:mm:ss').isValid();
     if (!isValid) {
@@ -272,7 +274,7 @@ function appRoutes() {
 
   app.get('/checkCommunicationRequest', (req, res) => {
     let processingError = false;
-    let query = `status:not=completed`
+    let query = `status:not=completed`;
     macm.getResource({
       resource: 'CommunicationRequest',
       query
@@ -368,25 +370,25 @@ function appRoutes() {
     let contacts = [];
     async.series({
       practitioners: callback => {
-        let query = `_lastUpdated=${runsLastSync}`
+        let query = `_lastUpdated=${runsLastSync}`;
         macm.getResource({
           resource: 'Practitioner',
           query
         }, (err, practs) => {
           if (err) {
-            processingError = true
+            processingError = true;
           }
           contacts = contacts.concat(practs.entry);
         });
       },
       person: callback => {
-        let query = `_lastUpdated=${runsLastSync}`
+        let query = `_lastUpdated=${runsLastSync}`;
         macm.getResource({
           resource: 'Person',
           query
         }, (err, pers) => {
           if (err) {
-            processingError = true
+            processingError = true;
           }
           contacts = contacts.concat(pers.entry);
         });
@@ -396,7 +398,7 @@ function appRoutes() {
         endPoint: 'contacts.json',
       }, (err, rpContacts) => {
         if (err) {
-          processingError = true
+          processingError = true;
         }
         let contModified = false;
         async.eachOf(contacts, (contact, index, nxtEntry) => {
@@ -421,7 +423,7 @@ function appRoutes() {
                 };
               }
             } else {
-              processingError = true
+              processingError = true;
             }
             return nxtEntry();
           });
@@ -453,15 +455,15 @@ function appRoutes() {
   });
 
   app.get('/syncContactGroups', (req, res) => {
-    logger.info('Received a request to sync contacts groups')
+    logger.info('Received a request to sync contacts groups');
     const bundle = {};
     bundle.type = 'batch';
     bundle.resourceType = 'Bundle';
-    bundle.entry = []
+    bundle.entry = [];
     rapidpro.getEndPointData({
       endPoint: 'groups.json'
     }, (err, grps) => {
-      if(err) {
+      if (err) {
         return res.status(500).send();
       }
       async.each(grps, (grp, nxtGrp) => {
@@ -473,7 +475,7 @@ function appRoutes() {
           endPoint: 'contacts.json',
           queries
         }, (err, contacts) => {
-          if(err) {
+          if (err) {
             logger.error(err);
           }
           let promises = [];
@@ -522,22 +524,22 @@ function appRoutes() {
                 method: 'PUT',
                 url: `Basic/${grp.uuid}`
               }
-            })
-            return nxtGrp()
-          })
-        })
+            });
+            return nxtGrp();
+          });
+        });
       }, () => {
         macm.saveResource(bundle, (err, response, body) => {
           if (err) {
-            res.status(500).send()
+            res.status(500).send();
           } else {
-            res.status(200).send('Done')
+            res.status(200).send('Done');
           }
-          logger.info('Done synchronizing contact groups')
-        })
-      })
-    })
-  })
+          logger.info('Done synchronizing contact groups');
+        });
+      });
+    });
+  });
   return app;
 }
 
@@ -584,7 +586,7 @@ function start(callback) {
             logger.info('Received initial config:', newConfig);
             logger.info('Successfully registered emNutt mediator!');
             if (!config.get('app:installed')) {
-              prerequisites.loadResources((err) => {
+              prerequisites.init((err) => {
                 if (!err) {
                   mixin.updateConfigFile(['app', 'installed'], true, () => {});
                 }
@@ -600,7 +602,7 @@ function start(callback) {
                 const updatedConfig = Object.assign(configFile, newConfig);
                 reloadConfig(updatedConfig, () => {
                   if (!config.get('app:installed')) {
-                    prerequisites.loadResources((err) => {
+                    prerequisites.init((err) => {
                       if (!err) {
                         mixin.updateConfigFile(['app', 'installed'], true, () => {});
                       }
@@ -620,7 +622,7 @@ function start(callback) {
     const app = appRoutes();
     const server = app.listen(config.get('app:port'), () => {
       if (!config.get('app:installed')) {
-        prerequisites.loadResources(() => {
+        prerequisites.init(() => {
           mixin.updateConfigFile(['app', 'installed'], true, () => {});
         });
       }
