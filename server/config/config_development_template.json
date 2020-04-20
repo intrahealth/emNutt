@@ -14,9 +14,9 @@
     },
     "register": false
   },
-  "origins": {
+  "origins": [
     "http://localhost:8080"
-  },
+  ],
   "rapidpro": {
     "baseURL": "http://app.rapidpro.io",
     "token": "369958889jk10930de856fc15lmefjkd73f0390c",
@@ -29,6 +29,11 @@
   },
   "elastic": {
     "baseURL": "http://localhost:9200",
+    "username": "",
+    "password": ""
+  },
+  "kibana": {
+    "baseURL": "http://localhost:5601",
     "username": "",
     "password": ""
   },
