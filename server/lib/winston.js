@@ -2,8 +2,8 @@ const winston = require('winston');
 require('winston-daily-rotate-file');
 
 var transport = new winston.transports.DailyRotateFile({
-  dirname: '/var/log',
-  filename: 'openclientregistry-%DATE%.log',
+  dirname: './logs',
+  filename: 'emNutt-%DATE%.log',
   datePattern: 'YYYY-MM-DD-HH',
   zippedArchive: true,
   maxSize: '10m',

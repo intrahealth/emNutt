@@ -37,6 +37,7 @@ function appRoutes() {
 
   var corsOptions = {
     origin: function (origin, callback) {
+      console.log(origin);
       if (config.get('origins').indexOf(origin) !== -1) {
         callback(null, true);
       } else {
@@ -47,12 +48,13 @@ function appRoutes() {
     allowedHeaders: ["Content-Type", "Authorization"]
   };
 
-  app.use(helmet());
+  //app.use(helmet());
 
-  app.use(cors(corsOptions));
+  //app.use(cors(corsOptions));
+  app.use(cors());
   app.use(bodyParser.json());
 
-  app.post('/fhir/CommunicationRequest', (req, res) => {
+  app.post('/emNutt/fhir/CommunicationRequest', (req, res) => {
     let resource = req.body;
     if (!resource) {
       return res.status(400).send();
@@ -71,7 +73,7 @@ function appRoutes() {
     });
   });
 
-  app.post('/fhir', (req, res) => {
+  app.post('/emNutt/fhir', (req, res) => {
     let resource = req.body;
     if (!resource) {
       return res.status(400).send();
@@ -94,7 +96,7 @@ function appRoutes() {
     });
   });
 
-  app.get('/fhir/:resource?/:id?', (req, res) => {
+  app.get('/emNutt/fhir/:resource?/:id?', (req, res) => {
     logger.info('Received a request to get data for resource ' + req.params.resource);
     const resource = req.params.resource;
     const id = req.params.id;
@@ -130,19 +132,27 @@ function appRoutes() {
         body = JSON.parse(body);
       }
       if (body.link) {
-        const baseURL = URI(config.get('macm:baseURL')).toString().replace('/fhir', '');
+        let routerBaseURL;
+        if (config.get("mediator:register")) {
+          routerBaseURL = URI(config.get("mediator:api:routerURL")).segment('emNutt').segment('fhir').toString();
+          if (!config.get("mediator:api:routerURL")) {
+            logger.error('Cant find openHIM router base URL, this may cause an issue querying data from emNutt');
+          }
+        } else {
+          routerBaseURL = URI(config.get('app:baseURL')).segment('fhir').toString();
+        }
         for (const index in body.link) {
           if (!body.link[index].url) {
             continue;
           }
-          body.link[index].url = body.link[index].url.replace(baseURL, config.get('app:baseURL'));
+          body.link[index].url = body.link[index].url.replace(config.get('macm:baseURL'), routerBaseURL);
         }
       }
       return res.status(statusCode).send(body);
     });
   });
 
-  app.get('/syncWorkflows', (req, res) => {
+  app.get('/emNutt/syncWorkflows', (req, res) => {
     logger.info('Received a request to synchronize workflows');
     let processingError = false;
     let runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
@@ -179,7 +189,7 @@ function appRoutes() {
     });
   });
 
-  app.get('/syncWorkflowRunMessages', (req, res) => {
+  app.get('/emNutt/syncWorkflowRunMessages', (req, res) => {
     logger.info('Received a request to sync workflow messages');
     const query = '_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows';
     let runsLastSync = moment('1970-01-01').format('Y-MM-DDTH:mm:ss');
@@ -272,7 +282,7 @@ function appRoutes() {
     });
   });
 
-  app.get('/checkCommunicationRequest', (req, res) => {
+  app.get('/emNutt/checkCommunicationRequest', (req, res) => {
     let processingError = false;
     let query = `status:not=completed`;
     macm.getResource({
@@ -293,7 +303,7 @@ function appRoutes() {
     });
   });
 
-  app.post('/syncContacts', (req, res) => {
+  app.post('/emNutt/syncContacts', (req, res) => {
     logger.info('Received a bundle of contacts to be synchronized');
     if (!config.get('rapidpro:syncAllContacts')) {
       logger.warn('All Contacts sync is disabled, the server will sync only communicated contacts');
@@ -353,7 +363,7 @@ function appRoutes() {
     });
   });
 
-  app.get('/syncContacts', (req, res) => {
+  app.get('/emNutt/syncContacts', (req, res) => {
     logger.info('Received a request to sync DB contacts');
     let runsLastSync = config.get('lastSync:syncContacts:time');
     const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
@@ -454,7 +464,7 @@ function appRoutes() {
     });
   });
 
-  app.get('/syncContactGroups', (req, res) => {
+  app.get('/emNutt/syncContactGroups', (req, res) => {
     logger.info('Received a request to sync contacts groups');
     const bundle = {};
     bundle.type = 'batch';
