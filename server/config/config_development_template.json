@@ -9,6 +9,7 @@
       "username": "root@openhim.org",
       "password": "openhim-password",
       "apiURL": "https://localhost:8080",
+      "routerURL": "http://localhost:5001",
       "trustSelfSigned": true,
       "urn": ""
     },
