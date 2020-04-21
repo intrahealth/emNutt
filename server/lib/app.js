@@ -134,8 +134,8 @@ function appRoutes() {
       if (body.link) {
         let routerBaseURL;
         if (config.get("mediator:register")) {
-          routerBaseURL = URI(config.get("mediator:api:routerURL")).segment('emNutt').segment('fhir').toString();
-          if (!config.get("mediator:api:routerURL")) {
+          routerBaseURL = URI(config.get("mediator:api:apiURL")).segment('emNutt').segment('fhir').toString();
+          if (!config.get("mediator:api:apiURL")) {
             logger.error('Cant find openHIM router base URL, this may cause an issue querying data from emNutt');
           }
         } else {
