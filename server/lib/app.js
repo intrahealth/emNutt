@@ -8,6 +8,9 @@ const fs = require('fs');
 const helmet = require('helmet');
 const moment = require('moment');
 const request = require('request');
+const {
+  CacheFhirToES
+} = require('fhir2es');
 const isJSON = require('is-json');
 const URI = require('urijs');
 const logger = require('./winston');
@@ -550,6 +553,20 @@ function appRoutes() {
       });
     });
   });
+
+  app.get('/emNutt/cacheFHIR2ES', (req, res) => {
+    let caching = new CacheFhirToES({
+      ESBaseURL: config.get("elastic:baseURL"),
+      ESUsername: config.get("elastic:username"),
+      ESPassword: config.get("elastic:password"),
+      ESMaxCompilationRate: config.get("elastic:max_compilations_rate"),
+      FHIRBaseURL: config.get("macm:baseURL"),
+      FHIRUsername: config.get("macm:username"),
+      FHIRPassword: config.get("macm:password")
+    });
+    caching.cache();
+    res.status(200).send();
+  });
   return app;
 }
 
@@ -595,10 +612,11 @@ function start(callback) {
             config.set('mediator:api:urn', mediatorConfig.urn);
             logger.info('Received initial config:', newConfig);
             logger.info('Successfully registered emNutt mediator!');
-            if (!config.get('app:installed')) {
+            if (!newConfig.app.installed) {
               prerequisites.init((err) => {
                 if (!err) {
-                  mixin.updateConfigFile(['app', 'installed'], true, () => {});
+                  newConfig.app.installed = true;
+                  mixin.updateopenHIMConfig(mediatorConfig.urn, newConfig, () => {});
                 }
               });
             }
@@ -611,10 +629,11 @@ function start(callback) {
                 logger.info('Received updated config:', newConfig);
                 const updatedConfig = Object.assign(configFile, newConfig);
                 reloadConfig(updatedConfig, () => {
-                  if (!config.get('app:installed')) {
+                  if (!newConfig.app.installed) {
                     prerequisites.init((err) => {
                       if (!err) {
-                        mixin.updateConfigFile(['app', 'installed'], true, () => {});
+                        newConfig.app.installed = true;
+                        mixin.updateopenHIMConfig(mediatorConfig.urn, newConfig, () => {});
                       }
                     });
                   }

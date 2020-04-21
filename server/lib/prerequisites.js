@@ -60,12 +60,16 @@ const loadResources = (callback) => {
           } else {
             logger.info('Saving ' + fhir.resourceType + ' - ' + fhir.id);
             request.put(options, (err, res, body) => {
+              if (!res) {
+                logger.error('Something went wrong, this might be caused by unreachable FHIR server');
+                return resolve;
+              }
               resolve();
               if (err) {
                 logger.error(err);
                 processingError = true;
               }
-              if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+              if (res && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
                 processingError = true;
               }
               logger.info(dest + ': ' + res.statusCode);

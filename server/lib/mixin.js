@@ -1,4 +1,6 @@
 const fs = require('fs');
+const medUtils = require('openhim-mediator-utils');
+const request = require('request');
 const logger = require('./winston');
 const config = require('./config');
 const env = process.env.NODE_ENV || 'development';
@@ -30,6 +32,24 @@ const updateConfigFile = (path, newValue, callback) => {
   });
 };
 
+const updateopenHIMConfig = (urn, updatedConfig, callback) => {
+  medUtils.authenticate(config.get("mediator:api"), () => {
+    const options = {
+      url: `${config.get("mediator:api:apiURL")}/mediators/${urn}/config`,
+      headers: medUtils.genAuthHeaders(config.get("mediator:api")),
+      body: updatedConfig,
+      json: true
+    };
+    request.put(options, (err, res, body) => {
+      if (err) {
+        return callback(err);
+      }
+      callback();
+    });
+  });
+};
+
 module.exports = {
-  updateConfigFile
+  updateConfigFile,
+  updateopenHIMConfig
 };
