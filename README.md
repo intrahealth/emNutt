@@ -223,7 +223,7 @@ This is especially when emNutt and POS are using the same FHIR server. <br>
 /emNutt/fhir/:resource?/:id? - GET
 
 ```
-Use to get resource data from emNutt 
-i.e /fhir/Communication (lists all communications)
-i.e /fhir/Communication/123 list communication that has ID 123
+Use to get resource data from emNutt <br>
+i.e /emNutt/fhir/Communication (lists all communications) <br>
+i.e /emNutt/fhir/Communication/123 list communication that has ID 123 <br>
 
