@@ -37,9 +37,9 @@ Some configuration variables inside JSON config file (config/config_development.
     "baseURL": "http://localhost:3002/emNutt"
   }
 ```
- app.port - is the port number for emNutt
- app.installed - when false, emNutt will load all default settings and set app.installed to true. If you want to reload  default settings then set this to false at any time.
- app.baseURL - is the base URL of the emNutt server, if emNutt is behind any proxy, then it should be the address used to access emNutt through proxy
+ app.port - is the port number for emNutt <br>
+ app.installed - when false, emNutt will load all default settings and set app.installed to true. If you want to reload  default settings then set this to false at any time. <br>
+ app.baseURL - is the base URL of the emNutt server, if emNutt is behind any proxy, then it should be the address used to access emNutt through proxy <br>
 
 ## Mediator Config
 ```
@@ -69,9 +69,9 @@ Some configuration variables inside JSON config file (config/config_development.
     "syncAllContacts": false
 }
 ```
-rapidpro.baseURL is the rapidpro base URL that is used by emNutt for starting workflows, sync contacts etc
-rapidpro.token is the security token that can be obtained from inside rapidpro
-rapidpro.syncAllContacts - if set to true then emNutt will sync all contacts from iHRIS or DHIS2 etc and save them to Rapidpro. If set to false then only contacted contacts will be saved into Rapidpro.
+rapidpro.baseURL is the rapidpro base URL that is used by emNutt for starting workflows, sync contacts etc <br>
+rapidpro.token is the security token that can be obtained from inside rapidpro <br>
+rapidpro.syncAllContacts - if set to true then emNutt will sync all contacts from iHRIS or DHIS2 etc and save them to Rapidpro. If set to false then only contacted contacts will be saved into Rapidpro. <br>
 
 ## FHIR Server Config
 ```
@@ -81,9 +81,9 @@ rapidpro.syncAllContacts - if set to true then emNutt will sync all contacts fro
     "password": ""
 }
 ```
-macm.baseURL - This is the base URL for the FHIR server
-macm.username - This is the username for the FHIR server
-macm.password - This is the password for the FHIR server
+macm.baseURL - This is the base URL for the FHIR server <br>
+macm.username - This is the username for the FHIR server <br>
+macm.password - This is the password for the FHIR server <br>
 
 ## Elasticsearch Config
 ```
@@ -93,9 +93,9 @@ macm.password - This is the password for the FHIR server
     "password": ""
 }
 ```
-elastic.baseURL - Is the base URL of Elasticsearch server
-elastic.username - Is the elasticsearch username
-elastic.password - Is the elasticsearch password
+elastic.baseURL - Is the base URL of Elasticsearch server <br>
+elastic.username - Is the elasticsearch username <br>
+elastic.password - Is the elasticsearch password <br>
 
 ## Kibana Config
 ```
@@ -105,9 +105,9 @@ elastic.password - Is the elasticsearch password
     "password": ""
   },
 ```
-kibana.baseURL - Is the base URL for Kibana 
-kibana.username - Is the kibana username 
-kibana.password - Is the kibana password 
+kibana.baseURL - Is the base URL for Kibana  <br>
+kibana.username - Is the kibana username  <br>
+kibana.password - Is the kibana password  <br>
 
 ## Run the server
 ```
@@ -118,7 +118,7 @@ node lib/app.js
 ```
 /fhir/CommunicationRequest - POST
 ```
-Use this end point to POST CommunicationRequest (sending Messages or Starting a workflow)
+Use this end point to POST CommunicationRequest (sending Messages or Starting a workflow) <br>
 Below is a sample CommunicationRequest - When emNutt and POS are using the same FHIR Server i.e emNutt knows where to get Practitioner/P6194
 
 ```
@@ -208,22 +208,22 @@ Use this end point to synchronize Messages between rapidpro and emNutt
 /syncContacts - POST
 
 ```
-Use this end point to sync contacts between POS i.e iHRIS, DHIS2 openMRS etc and rapidpro.
-The request body must be a FHIR bundle of contacts i.e Practitioner resource or Person resource
-This is especially when emNutt and POS are using different FHIR Servers
+Use this end point to sync contacts between POS i.e iHRIS, DHIS2 openMRS etc and rapidpro. <br>
+The request body must be a FHIR bundle of contacts i.e Practitioner resource or Person resource <br>
+This is especially when emNutt and POS are using different FHIR Servers <br>
 
 ```
 /syncContacts - GET
 
 ```
-Use this end point to sync contacts between emNutt and Rapidpro
-This is especially when emNutt and POS are using the same FHIR server.
+Use this end point to sync contacts between emNutt and Rapidpro <br>
+This is especially when emNutt and POS are using the same FHIR server. <br>
 
 ```
 /fhir/:resource?/:id? - GET
 
 ```
-Use to get resource data from emNut 
+Use to get resource data from emNutt 
 i.e /fhir/Communication (lists all communications)
 i.e /fhir/Communication/123 list communication that has ID 123
 
