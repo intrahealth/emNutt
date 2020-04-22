@@ -116,7 +116,7 @@ node lib/app.js
 
 # End Points
 ```
-/fhir/CommunicationRequest - POST
+/emNutt/fhir/CommunicationRequest - POST
 ```
 Use this end point to POST CommunicationRequest (sending Messages or Starting a workflow) <br>
 Below is a sample CommunicationRequest - When emNutt and POS are using the same FHIR Server i.e emNutt knows where to get Practitioner/P6194
@@ -189,23 +189,23 @@ OR (This is mostly when emNutt and POS are using different FHIR server - i.e emN
 payload.contentAttachment.url is the workflow id to be started
 
 ```
-/syncWorkflows - GET
+/emNutt/syncWorkflows - GET
 ```
 Use this end point to synchronize workflows between emNutt and Rapidpro
 
 ```
-/fhir/Basic?_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows - GET
+/emNutt/fhir/Basic?_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows - GET
 
 ```
 Use this end point to get all workflows from emNutt
 
 ```
-/syncWorkflowRunMessages - GET
+/emNutt/syncWorkflowRunMessages - GET
 ```
 Use this end point to synchronize Messages between rapidpro and emNutt
 
 ```
-/syncContacts - POST
+/emNutt/syncContacts - POST
 
 ```
 Use this end point to sync contacts between POS i.e iHRIS, DHIS2 openMRS etc and rapidpro. <br>
@@ -213,14 +213,14 @@ The request body must be a FHIR bundle of contacts i.e Practitioner resource or 
 This is especially when emNutt and POS are using different FHIR Servers <br>
 
 ```
-/syncContacts - GET
+/emNutt/syncContacts - GET
 
 ```
 Use this end point to sync contacts between emNutt and Rapidpro <br>
 This is especially when emNutt and POS are using the same FHIR server. <br>
 
 ```
-/fhir/:resource?/:id? - GET
+/emNutt/fhir/:resource?/:id? - GET
 
 ```
 Use to get resource data from emNutt 
