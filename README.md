@@ -224,6 +224,6 @@ This is especially when emNutt and POS are using the same FHIR server. <br>
 
 ```
 Use to get resource data from emNutt <br>
-i.e /emNutt/fhir/Communication (lists all communications) <br>
-i.e /emNutt/fhir/Communication/123 list communication that has ID 123 <br>
+i.e /emNutt/fhir/Communication (lists all communications) OR <br>
+    /emNutt/fhir/Communication/123 list communication that has ID 123 <br>
 
