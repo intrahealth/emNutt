@@ -18,7 +18,7 @@ module.exports = function () {
       rpContacts
     }, callback) {
       if (!Array.isArray(rpContacts)) {
-        return callback(true)
+        return callback(true);
       }
       let urns = generateURNS(contact);
       const rpContactWithGlobalid = rpContacts.find(cntct => {
@@ -66,8 +66,8 @@ module.exports = function () {
           body.fields.globalid = `${contact.resourceType}/${contact.id}`;
         }
       }
-      if(body.urns.length === 0) {
-        return callback(true)
+      if (body.urns.length === 0) {
+        return callback(true);
       }
       let url = URI(config.get('rapidpro:baseURL'))
         .segment('api')
@@ -86,7 +86,7 @@ module.exports = function () {
       };
       request.post(options, (err, res, body) => {
         if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
-          err = 'An error occured while adding a contact, Err Code ' + res.statusCode
+          err = 'An error occured while adding a contact, Err Code ' + res.statusCode;
         }
         logger.info(body);
         if (err) {
@@ -95,7 +95,7 @@ module.exports = function () {
         return callback(err, res, body);
       });
     },
-    processCommunications (commReqs, callback) {
+    processCommunications(commReqs, callback) {
       let processingError = false;
       let sendFailed = false;
       logger.info(`Processing ${commReqs.entry.length} communication requests`);
@@ -105,9 +105,9 @@ module.exports = function () {
             endPoint: 'contacts.json',
           }, (err, rpContacts) => {
             if (err) {
-              processingError = true
-              logger.error('An error has occured while getting rapidpro contacts, checking communication requests has been stopped')
-              return res.status(500).send('An error has occured while getting rapidpro contacts, checking communication requests has been stopped')
+              processingError = true;
+              logger.error('An error has occured while getting rapidpro contacts, checking communication requests has been stopped');
+              return res.status(500).send('An error has occured while getting rapidpro contacts, checking communication requests has been stopped');
             }
             resolve(rpContacts);
           });
@@ -170,17 +170,20 @@ module.exports = function () {
                     }
                     resolve1();
                   } else {
-                    let recArr = recipient.reference.split('/')
-                    const [resourceName, resID] = recArr
-                    macm.getResource({resource: resourceName, id: resID}, (err, recResource) => {
+                    let recArr = recipient.reference.split('/');
+                    const [resourceName, resID] = recArr;
+                    macm.getResource({
+                      resource: resourceName,
+                      id: resID
+                    }, (err, recResource) => {
                       if (recResource.resourceType) {
                         resource = recResource;
                       } else if (Object.keys(recResource).length === 0) {
                         logger.error(`Reference ${recipient.reference} was not found on the server`);
                       } else if (err) {
                         logger.error(err);
-                        logger.error('An error has occured while getting resource ' + recipient.reference)
-                        processingError = true
+                        logger.error('An error has occured while getting resource ' + recipient.reference);
+                        processingError = true;
                       }
                       resolve1();
                     });
@@ -198,7 +201,7 @@ module.exports = function () {
                         }
                       }
                     } else {
-                      logger.warn('No contact found for resource id ' + resource.resourceType + '/' + resource.id + ' Workflow wont be started for this')
+                      logger.warn('No contact found for resource id ' + resource.resourceType + '/' + resource.id + ' Workflow wont be started for this');
                     }
                   }
                   if (resource && !config.get('rapidpro:syncAllContacts')) {
@@ -237,7 +240,7 @@ module.exports = function () {
                     resolve();
                   }
                 }).catch(err => {
-                  processingError = true
+                  processingError = true;
                   logger.error(err);
                   resolve();
                   throw err;
@@ -280,19 +283,19 @@ module.exports = function () {
                               logger.error('An error has occured while starting a workflow');
                               logger.error(err);
                               sendFailed = true;
-                              processingError = true
+                              processingError = true;
                             }
                             if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                               sendFailed = true;
-                              processingError = true
-                              logger.error('Send Message Err Code ' + res.statusCode)
+                              processingError = true;
+                              logger.error('Send Message Err Code ' + res.statusCode);
                             }
                             if (!sendFailed) {
                               this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (err, res, body) => {
                                 resolve();
                               });
                             } else {
-                              resolve()
+                              resolve();
                             }
                           });
                           createNewReq = true;
@@ -306,18 +309,18 @@ module.exports = function () {
                           if (err) {
                             logger.error(err);
                             sendFailed = true;
-                            processingError = true
+                            processingError = true;
                           }
                           if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                             sendFailed = true;
-                            processingError = true
+                            processingError = true;
                           }
                           if (!sendFailed) {
                             this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (err, res, body) => {
                               return callback(null);
                             });
                           } else {
-                            return callback(null)
+                            return callback(null);
                           }
                         });
                       } else {
@@ -355,11 +358,11 @@ module.exports = function () {
                         if (err) {
                           logger.error(err);
                           sendFailed = true;
-                          processingError = true
+                          processingError = true;
                         }
                         if (res.statusCode && res.statusCode < 200 || res.statusCode > 299) {
                           sendFailed = true;
-                          processingError = true
+                          processingError = true;
                         }
                         if (!sendFailed) {
                           this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (err, res, body) => {
@@ -380,15 +383,15 @@ module.exports = function () {
                       if (err) {
                         logger.error(err);
                         sendFailed = true;
-                        processingError = true
+                        processingError = true;
                       }
                       if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                         sendFailed = true;
-                        processingError = true
+                        processingError = true;
                       }
                       if (!sendFailed) {
                         this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (err, res, body) => {
-                          return callback(null)
+                          return callback(null);
                         });
                       } else {
                         return callback(null);
@@ -398,7 +401,7 @@ module.exports = function () {
                     return callback(null);
                   }
                 }).catch(err => {
-                  processingError = true
+                  processingError = true;
                   throw err;
                 });
               },
@@ -406,14 +409,14 @@ module.exports = function () {
               return nxtComm();
             });
           }).catch(err => {
-            processingError = true
+            processingError = true;
             logger.error(err);
             throw err;
           });
         }, () => {
           return callback(processingError);
         });
-      })
+      });
     },
 
     sendMessage(flowBody, type, callback) {
@@ -449,7 +452,7 @@ module.exports = function () {
               return callback(err, res, body);
             });
           } else {
-            logger.info(JSON.stringify(body,0,2));
+            logger.info(JSON.stringify(body, 0, 2));
             return callback(err, res, body);
           }
         });
@@ -563,7 +566,7 @@ module.exports = function () {
         }
       }];
       macm.saveResource(bundle, (err, res, body) => {
-        return callback(err, res, body)
+        return callback(err, res, body);
       });
     },
 
@@ -629,7 +632,7 @@ module.exports = function () {
                     endPointData = endPointData.concat(data);
                   }
                   if (err) {
-                    return callback(err)
+                    return callback(err);
                   }
                   return callback(null);
                 });

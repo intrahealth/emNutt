@@ -28,7 +28,6 @@ const loadResources = (callback) => {
           } else {
             fhir = JSON.parse(data);
           }
-
           const dest = URI(config.get('macm:baseURL')).segment(fhir.resourceType).segment(fhir.id).toString();
           const options = {
             url: dest,

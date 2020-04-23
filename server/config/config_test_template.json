@@ -21,7 +21,7 @@
     "syncAllContacts": true
   },
   "macm": {
-    "baseURL": "http://localhost:8080/fhir",
+    "baseURL": "http://localhost:8080/hapi-fhir-jpaserver/fhir",
     "username": "",
     "password": ""
   },

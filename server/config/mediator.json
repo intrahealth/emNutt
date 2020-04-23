@@ -16,7 +16,7 @@
         "macm": {
           "username": "hapi",
           "password": "hapi",
-          "baseURL": "http://localhost:8080/hapi/fhir"
+          "baseURL": "http://localhost:8080/hapi-fhir-jpaserver/fhir"
         },
         "elastic": {
           "baseURL": "http://localhost:9200",

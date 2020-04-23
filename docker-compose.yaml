@@ -1,15 +1,16 @@
-version: "3.3"
 
-services:
+  version: '3.3'
+  networks:
+    emnutt:
 
-  fhir:
-    container_name: hapi-fhir
-    image: hapiproject/hapi:latest
-    ports:
-      - "8082:8082"
-
-  emnutt:
-    build: .
-    ports:
-      - "49160:3000"
-    restart: unless-stopped
+  services:
+    emnutt:
+      build: .
+      ports:
+        - '3002:3002'
+      restart: unless-stopped
+      environment:
+        MACM_BASE_URL: http://localhost:8081/scratchpad/fhir
+        MACM_USERNAME: 
+        MACM_PASSWORD: 
+      
