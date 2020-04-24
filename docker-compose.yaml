@@ -1,5 +1,5 @@
 
-  version: '3.3'
+  version: "3.3"
   networks:
     emnutt:
 
@@ -7,10 +7,61 @@
     emnutt:
       build: .
       ports:
-        - '3002:3002'
+        - "3002:3002"
       restart: unless-stopped
+      networks:
+        emnutt:
       environment:
-        MACM_BASE_URL: http://localhost:8081/scratchpad/fhir
+        APP_PORT: 3002
+        APP_BASE_URL: http://localhost:3002/emNutt
+        MACM_BASE_URL: 
         MACM_USERNAME: 
         MACM_PASSWORD: 
-      
+        RAPIDPRO_BASE_URL: 
+        RAPIDPRO_TOKEN: 
+        RAPIDPRO_SYNC_ALL_CONTACTS: ""
+        ELASTIC_BASE_URL: 
+        ELASTIC_USERNAME: 
+        ELASTIC_PASSWORD: 
+        KIBANA_BASE_URL: 
+        KIBANA_USERNAME: 
+        KIBANA_PASSWORD: 
+        MEDIATOR_API_URL: https://localhost:8080
+        MEDIATOR_API_USERNAME: 
+        MEDIATOR_API_PASSWORD: 
+        MEDIATOR_API_TRUST_SELF_SIGNED: "true"
+        MEDIATOR_ROUTER_URL: http://localhost:5001
+        MEDIATOR_REGISTER: "true"
+
+    fhir:
+      container_name: hapi-fhir
+      image: hapiproject/hapi:latest
+      networks:
+        emnutt:
+      ports:
+        - '8080:8080'
+
+    rapidpro:
+      container_name: rapidpro
+      image: rapidpro/rapidpro:master
+      networks:
+        emnutt:
+      ports:
+        - '8000:8000'
+
+    elasticsearch:
+      container_name: elasticsearch
+      image: elasticsearch:7.6.2
+      networks:
+        emnutt:
+      ports:
+        - '9200:9200'
+
+    kibana:
+      container_name: kibana
+      image: kibana:7.6.2
+      networks:
+        emnutt:
+      ports:
+        - '5601:5601'
+

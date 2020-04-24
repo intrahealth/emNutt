@@ -1,0 +1,55 @@
+{
+  "app": {
+    "port": 3002,
+    "installed": true,
+    "baseURL": "http://localhost:3002/emNutt"
+  },
+  "mediator": {
+    "api": {
+      "username": "root@openhim.org",
+      "password": "openhim-password",
+      "apiURL": "https://openhim-core:8080",
+      "routerURL": "http://localhost:5001",
+      "trustSelfSigned": true,
+      "urn": ""
+    },
+    "register": false
+  },
+  "origins": [
+    "http://localhost:8080"
+  ],
+  "rapidpro": {
+    "baseURL": "http://rapidpro:8000",
+    "token": "369958889jk10930de856fc15lmefjkd73f0390c",
+    "syncAllContacts": true
+  },
+  "macm": {
+    "baseURL": "http://hapi-fhir:8080/hapi-fhir-jpaserver/fhir",
+    "username": "",
+    "password": ""
+  },
+  "elastic": {
+    "baseURL": "http://elasticsearch:9200",
+    "username": "",
+    "password": ""
+  },
+  "kibana": {
+    "baseURL": "http://kibana:5601",
+    "username": "",
+    "password": ""
+  },
+  "lastSync": {
+    "syncWorkflows": {
+      "time": "1970-01-01T00:00:00"
+    },
+    "syncWorkflowRunMessages": {
+      "time": "1970-01-01T00:00:00"
+    },
+    "checkCommunicationRequest": {
+      "time": "1970-01-01T00:00:00"
+    },
+    "syncContacts": {
+      "time": "1970-01-01T00:00:00"
+    }
+  }
+}
