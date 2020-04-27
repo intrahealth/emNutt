@@ -588,87 +588,91 @@ function reloadConfig(data, callback) {
 }
 
 function start(callback) {
-  if (config.get('mediator:register')) {
-    logger.info('Running emNutt as a mediator');
-    medUtils.registerMediator(
-      config.get('mediator:api'),
-      mediatorConfig,
-      err => {
-        if (err) {
-          logger.error('Failed to register this mediator, check your config');
-          logger.error(err.stack);
-          process.exit(1);
-        }
-        config.set('mediator:api:urn', mediatorConfig.urn);
-        medUtils.fetchConfig(config.get('mediator:api'), (err, newConfig) => {
+  prerequisites.checkDependencies(() => {
+    if (config.get('mediator:register')) {
+      logger.info('Running emNutt as a mediator');
+      medUtils.registerMediator(
+        config.get('mediator:api'),
+        mediatorConfig,
+        err => {
           if (err) {
-            logger.info('Failed to fetch initial config');
-            logger.info(err.stack);
+            logger.error('Failed to register this mediator, check your config');
+            logger.error(err.stack);
             process.exit(1);
           }
-          const configFile = require(`${__dirname}/../config/config_${env}.json`);
-          const updatedConfig = Object.assign(configFile, newConfig);
-          reloadConfig(updatedConfig, () => {
-            config.set('mediator:api:urn', mediatorConfig.urn);
-            logger.info('Received initial config:', newConfig);
-            logger.info('Successfully registered emNutt mediator!');
-            if (!newConfig.app.installed) {
-              prerequisites.init((err) => {
-                if (!err) {
-                  newConfig.app.installed = true;
-                  mixin.updateopenHIMConfig(mediatorConfig.urn, newConfig, () => {});
-                }
-              });
+          config.set('mediator:api:urn', mediatorConfig.urn);
+          medUtils.fetchConfig(config.get('mediator:api'), (err, newConfig) => {
+            if (err) {
+              logger.info('Failed to fetch initial config');
+              logger.info(err.stack);
+              process.exit(1);
             }
-            const app = appRoutes();
-            const server = app.listen(config.get('app:port'), () => {
-              const configEmitter = medUtils.activateHeartbeat(
-                config.get('mediator:api')
-              );
-              configEmitter.on('config', newConfig => {
-                logger.info('Received updated config:', newConfig);
-                const updatedConfig = Object.assign(configFile, newConfig);
-                reloadConfig(updatedConfig, () => {
-                  if (!newConfig.app.installed) {
-                    prerequisites.init((err) => {
-                      if (!err) {
-                        newConfig.app.installed = true;
-                        mixin.updateopenHIMConfig(mediatorConfig.urn, newConfig, () => {});
-                      }
-                    });
+            const configFile = require(`${__dirname}/../config/config_${env}.json`);
+            const updatedConfig = Object.assign(configFile, newConfig);
+            reloadConfig(updatedConfig, () => {
+              config.set('mediator:api:urn', mediatorConfig.urn);
+              logger.info('Received initial config:', newConfig);
+              logger.info('Successfully registered emNutt mediator!');
+              if (!newConfig.app.installed) {
+                prerequisites.init((err) => {
+                  if (!err) {
+                    newConfig.app.installed = true;
+                    mixin.updateopenHIMConfig(mediatorConfig.urn, newConfig, () => {});
                   }
-                  config.set('mediator:api:urn', mediatorConfig.urn);
                 });
+              }
+              const app = appRoutes();
+              const server = app.listen(config.get('app:port'), () => {
+                const configEmitter = medUtils.activateHeartbeat(
+                  config.get('mediator:api')
+                );
+                configEmitter.on('config', newConfig => {
+                  logger.info('Received updated config:', newConfig);
+                  const updatedConfig = Object.assign(configFile, newConfig);
+                  reloadConfig(updatedConfig, () => {
+                    if (!newConfig.app.installed) {
+                      prerequisites.init((err) => {
+                        if (!err) {
+                          newConfig.app.installed = true;
+                          mixin.updateopenHIMConfig(mediatorConfig.urn, newConfig, () => {});
+                        }
+                      });
+                    }
+                    config.set('mediator:api:urn', mediatorConfig.urn);
+                  });
+                });
+                callback(server);
               });
-              callback(server);
             });
           });
-        });
-      }
-    );
-  } else {
-    logger.info('Running emNutt as a stand alone');
-    const app = appRoutes();
-    const server = app.listen(config.get('app:port'), () => {
-      if (!config.get('app:installed')) {
-        prerequisites.init(() => {
-          mixin.updateConfigFile(['app', 'installed'], true, () => {});
-        });
-      }
-      callback(server);
-    });
-  }
+        }
+      );
+    } else {
+      logger.info('Running emNutt as a stand alone');
+      const app = appRoutes();
+      const server = app.listen(config.get('app:port'), () => {
+        if (!config.get('app:installed')) {
+          prerequisites.init(() => {
+            mixin.updateConfigFile(['app', 'installed'], true, () => {});
+          });
+        }
+        callback(server);
+      });
+    }
+  });
 }
 
 exports.start = start;
 
 if (!module.parent) {
   // if this script is run directly, start the server
-  start(() =>
-    logger.info(
-      `emNutt Server is running and listening on port: ${config.get(
+  prerequisites.checkDependencies(() => {
+    start(() =>
+      logger.info(
+        `emNutt Server is running and listening on port: ${config.get(
         'app:port'
       )}`
-    )
-  );
+      )
+    );
+  });
 }

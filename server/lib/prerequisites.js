@@ -8,6 +8,46 @@ const Fhir = require('fhir').Fhir;
 
 const convert = new Fhir();
 
+const checkDependencies = (callback) => {
+  let dependencies = [{
+    name: 'hapi',
+    url: URI(config.get('macm:baseURL')).segment('Communication').toString()
+  }, {
+    name: 'kibana',
+    url: URI(config.get('kibana:baseURL')).segment('api').toString()
+  }, {
+    name: 'elasticsearch',
+    url: URI(config.get('elastic:baseURL')).toString()
+  }];
+  async.each(dependencies, (dependence, nxt) => {
+    isRunning(dependence, () => {
+      return nxt();
+    });
+  }, () => {
+    return callback();
+  });
+
+  function isRunning(dependence, callback) {
+    logger.info('Checking if ' + dependence.name + ' is running');
+    const options = {
+      url: dependence.url
+    };
+    request.get(options, (err, res) => {
+      if (!res) {
+        logger.error(dependence.name + ' Is not ready, waiting for 2 more seconds');
+        setTimeout(() => {
+          isRunning(dependence, (status) => {
+            return callback(status);
+          });
+        }, 2000);
+      } else {
+        logger.info(dependence.name + ' is running...');
+        return callback(true);
+      }
+    });
+  }
+};
+
 const loadResources = (callback) => {
   let processingError = false;
   const folders = [
@@ -177,5 +217,6 @@ const init = (callback) => {
 };
 
 module.exports = {
-  init
+  init,
+  checkDependencies
 };

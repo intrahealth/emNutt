@@ -1,67 +1,117 @@
+version: '3.3'
+networks:
+  emnutt:
 
-  version: "3.3"
-  networks:
-    emnutt:
+services:
+  # mongo-db:
+  #   container_name: mongo-db
+  #   image: mongo:latest
+  #   networks:
+  #     - emnutt
+  #   restart: unless-stopped
+  #   environment:
+  #     NODE_ENV: 'docker'
+  # openhim-core:
+  #   container_name: openhim-core
+  #   image: jembi/openhim-core:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     mongo_url: 'mongodb://mongo-db/openhim-development'
+  #     mongo_atnaUrl: 'mongodb://mongo-db/openhim-development'
+  #     NODE_ENV: 'development'
+  #   ports:
+  #     - '5000:5000'
+  #     - '5001:5001'
+  #     - '8081:8080'
+  #   networks:
+  #     - emnutt
+  #   healthcheck:
+  #     test: 'curl -sSk https://openhim-core:8080/heartbeat || exit 1'
+  #     interval: 30s
+  #     timeout: 30s
+  #     retries: 3
+  # openhim-console:
+  #   container_name: openhim-console
+  #   image: jembi/openhim-console:latest
+  #   restart: unless-stopped
+  #   networks:
+  #     - emnutt
+  #   ports:
+  #     - '9000:80'
+  #   healthcheck:
+  #     test: 'curl -sS http://openhim-console || exit 1'
+  #     interval: 30s
+  #     timeout: 30s
+  #     retries: 3
+  elasticsearch:
+    container_name: elasticsearch
+    image: elasticsearch:7.6.2
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=elasticsearch
+      - cluster.initial_master_nodes=elasticsearch
+      - bootstrap.memory_lock=true
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      emnutt:
+    ports:
+      - '9200:9200'
+  kibana:
+    container_name: kibana
+    image: kibana:7.6.2
+    networks:
+      emnutt:
+    ports:
+      - '5601:5601'
+  fhir:
+    container_name: hapi-fhir
+    image: hapiproject/hapi:latest
+    networks:
+      emnutt:
+    ports:
+      - '8080:8080'
 
-  services:
-    emnutt:
-      build: .
-      ports:
-        - "3002:3002"
-      restart: unless-stopped
-      networks:
-        emnutt:
-      environment:
-        APP_PORT: 3002
-        APP_BASE_URL: http://localhost:3002/emNutt
-        MACM_BASE_URL: 
-        MACM_USERNAME: 
-        MACM_PASSWORD: 
-        RAPIDPRO_BASE_URL: 
-        RAPIDPRO_TOKEN: 
-        RAPIDPRO_SYNC_ALL_CONTACTS: ""
-        ELASTIC_BASE_URL: 
-        ELASTIC_USERNAME: 
-        ELASTIC_PASSWORD: 
-        KIBANA_BASE_URL: 
-        KIBANA_USERNAME: 
-        KIBANA_PASSWORD: 
-        MEDIATOR_API_URL: https://localhost:8080
-        MEDIATOR_API_USERNAME: 
-        MEDIATOR_API_PASSWORD: 
-        MEDIATOR_API_TRUST_SELF_SIGNED: "true"
-        MEDIATOR_ROUTER_URL: http://localhost:5001
-        MEDIATOR_REGISTER: "true"
-
-    fhir:
-      container_name: hapi-fhir
-      image: hapiproject/hapi:latest
-      networks:
-        emnutt:
-      ports:
-        - '8080:8080'
-
-    rapidpro:
-      container_name: rapidpro
-      image: rapidpro/rapidpro:master
-      networks:
-        emnutt:
-      ports:
-        - '8000:8000'
-
-    elasticsearch:
-      container_name: elasticsearch
-      image: elasticsearch:7.6.2
-      networks:
-        emnutt:
-      ports:
-        - '9200:9200'
-
-    kibana:
-      container_name: kibana
-      image: kibana:7.6.2
-      networks:
-        emnutt:
-      ports:
-        - '5601:5601'
-
+  emnutt:
+    build: .
+    ports:
+      - '3002:3002'
+    restart: unless-stopped
+    networks:
+      emnutt:
+    depends_on:
+      - 'fhir'
+    healthcheck:
+      # test: 'curl -sSk http://hapi-fhir:8080/hapi-fhir-jpaserver/fhir || exit 1'
+      test:
+        ['CMD', 'curl', '-f', 'http://hapi-fhir:8080/hapi-fhir-jpaserver/fhir']
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    environment:
+      NODE_ENV: docker
+      APP_PORT: 3002
+      APP_INSTALLED: 'false'
+      APP_BASE_URL: http://localhost:3002/emNutt
+      MACM_BASE_URL:
+      MACM_USERNAME:
+      MACM_PASSWORD:
+      RAPIDPRO_BASE_URL: http://localhost:8000
+      RAPIDPRO_TOKEN: sdfsd
+      RAPIDPRO_SYNC_ALL_CONTACTS: 'true'
+      ELASTIC_BASE_URL:
+      ELASTIC_USERNAME:
+      ELASTIC_PASSWORD:
+      KIBANA_BASE_URL:
+      KIBANA_USERNAME:
+      KIBANA_PASSWORD:
+      MEDIATOR_API_URL:
+      MEDIATOR_API_USERNAME:
+      MEDIATOR_API_PASSWORD:
+      MEDIATOR_API_TRUST_SELF_SIGNED: ''
+      MEDIATOR_ROUTER_URL:
+      MEDIATOR_REGISTER: 'false'
