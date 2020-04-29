@@ -1,4 +1,8 @@
 #! /bin/bash
+RP_MAILROOM_URL="http://mailroom:8090"
+RP_DOMAIN_NAME="localhost"
+RP_HOST_PORT="8000"
+RP_DJANGO_DEBUG="off"
 RP_SEND_MESSAGES="on"
 RP_SEND_WEBHOOKS="on"
 RP_SEND_EMAILS="on"
@@ -12,8 +16,10 @@ RP_MANAGEPY_COLLECTSTATIC="on"
 RP_MANAGEPY_COMPRESS="on"
 RP_MANAGEPY_INIT_DB="on"
 RP_MANAGEPY_MIGRATE="on"
+COURIER_DOMAIN="localhost"
 MEDIATOR_REGISTER=false
 MEDIATOR_API_TRUST_SELF_SIGNED=true
+ELASTIC_BASE_URL="http://elasticsearch:9200"
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root"
   exit
@@ -106,7 +112,7 @@ echo '#! /bin/bash
         NODE_ENV: docker
         APP_PORT: $APP_PORT
         APP_BASE_URL: $APP_BASE_URL
-        APP_INSTALLED: false
+        APP_INSTALLED: \"false\"
         MACM_BASE_URL: $MACM_BASE_URL
         MACM_USERNAME: $MACM_USERNAME
         MACM_PASSWORD: $MACM_PASSWORD
@@ -220,52 +226,110 @@ for component in "${components[@]}"; do
   if [ "$component" == "Rapidpro" ];
   then
   echo "
-    postgresql:
-      container_name: postgresql
-      image: postgres
-      networks:
-        emnutt:
-    redis:
-      container_name: redis
-      image: redis
-      networks:
-        emnutt:
-
     rapidpro:
-      container_name: rapidpro
-      image: rapidpro/rapidpro:master
-      networks:
-        emnutt:
+      image: rapidpro/rapidpro:v4
+      depends_on:
+        - redis
+        - postgresql
+      ports:
+        - '$RP_HOST_PORT:8000'
       environment:
-        DATABASE_URL: $RP_DATABASE_URL
-        REDIS_URL: $REDIS_URL
-        SECRET_KEY: $RP_SECRET_KEY
-        MANAGEPY_COLLECTSTATIC: $RP_MANAGEPY_COLLECTSTATIC
-        MANAGEPY_COMPRESS: $RP_MANAGEPY_COMPRESS
-        MANAGEPY_INIT_DB: $RP_MANAGEPY_INIT_DB
-        MANAGEPY_MIGRATE: $RP_MANAGEPY_MIGRATE
-        SEND_MESSAGES: $RP_SEND_MESSAGES
-        SEND_WEBHOOKS: $RP_SEND_WEBHOOKS
-        SEND_EMAILS: $RP_SEND_EMAILS
-        SEND_AIRTIME: $RP_SEND_AIRTIME
-        SEND_CALLS: $RP_SEND_CALLS
-        IS_PROD: $RP_IS_PROD
+          MAILROOM_URL: \\\"$RP_MAILROOM_URL\\\"
+          DOMAIN_NAME: \\\"$RP_DOMAIN_NAME\\\"
+          DJANGO_DEBUG: \\\"$RP_DJANGO_DEBUG\\\"
+          DATABASE_URL: $RP_DATABASE_URL
+          REDIS_URL: $REDIS_URL
+          SECRET_KEY: $RP_SECRET_KEY
+          MANAGEPY_COLLECTSTATIC: \\\"$RP_MANAGEPY_COLLECTSTATIC\\\"
+          MANAGEPY_COMPRESS: \\\"$RP_MANAGEPY_COMPRESS\\\"
+          MANAGEPY_INIT_DB: \\\"$RP_MANAGEPY_INIT_DB\\\"
+          MANAGEPY_MIGRATE: \\\"$RP_MANAGEPY_MIGRATE\\\"
+          SEND_MESSAGES: \\\"$RP_SEND_MESSAGES\\\"
+          SEND_WEBHOOKS: \\\"$RP_SEND_WEBHOOKS\\\"
+          SEND_EMAILS: \\\"$RP_SEND_EMAILS\\\"
+          SEND_AIRTIME: \\\"$RP_SEND_AIRTIME\\\"
+          SEND_CALLS: \\\"$RP_SEND_CALLS\\\"
+          IS_PROD: \\\"$RP_IS_PROD\\\"
 
+    celery_base:
+      image: rapidpro/rapidpro:v4
+      depends_on:
+        - rapidpro
+      links:
+        - redis
+        - postgresql
+      environment:
+          DATABASE_URL: postgresql://postgres:postgres@postgresql/rapidpro
+          REDIS_URL: redis://redis:6379/0
+          SECRET_KEY: super-secret-key
+      command:
+        [
+          '/venv/bin/celery',
+          '--beat',
+          '--app=temba',
+          'worker',
+          '--loglevel=INFO',
+          '--queues=celery,flows',
+        ]
+    celery_msgs:
+      image: rapidpro/rapidpro:v4
+      depends_on:
+        - rapidpro
+      links:
+        - redis
+        - postgresql
+      environment:
+          DATABASE_URL: postgresql://postgres:postgres@postgresql/rapidpro
+          REDIS_URL: redis://redis:6379/0
+          SECRET_KEY: super-secret-key
+      command:
+        [
+          '/venv/bin/celery',
+          '--app=temba',
+          'worker',
+          '--loglevel=INFO',
+          '--queues=msgs,handler',
+        ]
+    redis:
+      image: redis:alpine
+
+    postgresql:
+      image: mdillon/postgis:9.6
+      environment:
+        - POSTGRES_DB=rapidpro
+
+    courier:
+      image: praekeltfoundation/courier
+      depends_on:
+        - rapidpro
+      links:
+        - redis
+        - postgresql
+      environment:
+          COURIER_DOMAIN: \\\"$COURIER_DOMAIN\\\"
+          COURIER_SPOOL_DIR: /tmp/courier/
+          COURIER_DB: postgres://postgres:postgres@postgresql/rapidpro
+          COURIER_REDIS: redis://redis:6379/8
+
+    mailroom:
+      image: praekeltfoundation/mailroom
+      depends_on:
+        - rapidpro
+      links:
+        - redis
+        - postgresql
+      environment:
+          MAILROOM_ADDRESS: 'localhost'
+          MAILROOM_DOMAIN: 'localhost'
+          MAILROOM_DB: postgres://postgres:postgres@postgresql/rapidpro?sslmode=disable
+          MAILROOM_REDIS: redis://redis:6379/15
+          MAILROOM_ELASTIC: $ELASTIC_BASE_URL
       ports:
-        - '8000:8000'" >> docker-compose.yaml
-  echo "
-    rapidpro:
-      container_name: rapidpro
-      image: rapidpro/rapidpro:master
-      networks:
-        emnutt:
-      ports:
-        - '8000:8000'" >> start.sh
+        - '8090:8090'" >> start.sh
   fi
 done
-echo '"> docker-compose.yaml
-docker-compose up' >> start.sh
-
+echo "\">docker-compose.yaml
+docker-compose up" >> start.sh
 echo "
 APP_PORT=$APP_PORT
 APP_BASE_URL=$APP_BASE_URL
@@ -275,6 +339,10 @@ MACM_PASSWORD=$MACM_PASSWORD
 RAPIDPRO_BASE_URL=$RAPIDPRO_BASE_URL
 RAPIDPRO_TOKEN=$RAPIDPRO_TOKEN
 RAPIDPRO_SYNC_ALL_CONTACTS=$RAPIDPRO_SYNC_ALL_CONTACTS
+RP_MAILROOM_URL=$RP_MAILROOM_URL
+RP_DOMAIN_NAME=$RP_DOMAIN_NAME
+RP_HOST_PORT=$RP_HOST_PORT
+RP_DJANGO_DEBUG=\\\"$RP_DJANGO_DEBUG\\\"
 RP_DATABASE_URL=$RP_DATABASE_URL
 REDIS_URL=$REDIS_URL
 RP_SECRET_KEY=$RP_SECRET_KEY
@@ -288,6 +356,7 @@ RP_SEND_EMAILS=$RP_SEND_EMAILS
 RP_SEND_AIRTIME=$RP_SEND_AIRTIME
 RP_SEND_CALLS=$RP_SEND_CALLS
 RP_IS_PROD=$RP_IS_PROD
+COURIER_DOMAIN=$COURIER_DOMAIN
 ELASTIC_BASE_URL=$ELASTIC_BASE_URL
 ELASTIC_USERNAME=$ELASTIC_USERNAME
 ELASTIC_PASSWORD=$ELASTIC_PASSWORD
@@ -300,6 +369,7 @@ MEDIATOR_API_PASSWORD=$MEDIATOR_API_PASSWORD
 MEDIATOR_API_TRUST_SELF_SIGNED=$MEDIATOR_API_TRUST_SELF_SIGNED
 MEDIATOR_ROUTER_URL=$MEDIATOR_ROUTER_URL
 MEDIATOR_REGISTER=$MEDIATOR_REGISTER
+ELASTIC_BASE_URL=$ELASTIC_BASE_URL
 " > docker_env_vars
 
 ./update-ohim-console.sh &

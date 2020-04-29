@@ -12,6 +12,6 @@ RUN /bin/bash -c 'cp config/config_docker_template.json config/config_docker.jso
 
 RUN npm install
 
-EXPOSE 3000
+EXPOSE 3002
 
 CMD [ "node", "lib/app.js" ]

@@ -33,7 +33,10 @@ const checkDependencies = (callback) => {
       url: dependence.url
     };
     request.get(options, (err, res) => {
-      if (!res) {
+      if (res.statusCode) {
+        logger.error(dependence.name + ' responded with code ' + res.statusCode);
+      }
+      if (!res || res.statusCode == 503) {
         logger.error(dependence.name + ' Is not ready, waiting for 2 more seconds');
         setTimeout(() => {
           isRunning(dependence, (status) => {
