@@ -33,7 +33,7 @@ const checkDependencies = (callback) => {
       url: dependence.url
     };
     request.get(options, (err, res) => {
-      if (res.statusCode) {
+      if (res && res.statusCode) {
         logger.info(dependence.name + ' responded with code ' + res.statusCode);
       }
       if (!res || (res && res.statusCode == 503)) {
