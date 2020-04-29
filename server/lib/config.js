@@ -9,4 +9,3 @@ nconf.argv()
     file: `${__dirname}/../config/config_${env}.json`
   });
 module.exports = nconf;
-console.log('loaded config');

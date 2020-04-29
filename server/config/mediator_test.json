@@ -1,0 +1,546 @@
+    {
+      "urn": "urn:uuid:b8dee26a-b624-481a-bfe4-0ae614138cc4",
+      "version": "0.0.1",
+      "name": "emNutt",
+      "description": "emNutt",
+      "config": {
+        "app": {
+          "port": 3002,
+          "installed": false
+        },
+        "rapidpro": {
+          "baseURL": "https://app.rapidpro.io",
+          "token": "5a4d6805d3bel853f3e11b52d9262b0886fa69tq",
+          "syncAllContacts": false
+        },
+        "macm": {
+          "username": "hapi",
+          "password": "hapi",
+          "baseURL": "http://localhost:8080/hapi-fhir-jpaserver/fhir"
+        },
+        "elastic": {
+          "baseURL": "http://localhost:9200",
+          "username": "",
+          "password": ""
+        },
+        "kibana": {
+          "baseURL": "http://localhost:5601",
+          "username": "",
+          "password": ""
+        }
+      },
+      "configDefs": [{
+        "param": "app",
+        "displayName": "Mediator Configurations",
+        "description": "Mediator Configuration Details",
+        "type": "struct",
+        "template": [{
+            "type": "number",
+            "description": "Port",
+            "displayName": "Port",
+            "param": "port"
+          },
+          {
+            "type": "bool",
+            "description": "To reinstall, change it to false",
+            "displayName": "Mediator Installed",
+            "param": "installed"
+          }
+        ],
+        "values": []
+      }, {
+        "param": "rapidpro",
+        "displayName": "Rapidpro Server",
+        "description": "Rapidpro Server Configuration Details",
+        "type": "struct",
+        "template": [{
+            "type": "string",
+            "description": "The base URL (e.g. https://app.rapidpro.io)",
+            "displayName": "Base URL",
+            "param": "baseURL"
+          },
+          {
+            "type": "string",
+            "description": "Token required to access Rapidpro server",
+            "displayName": "Token",
+            "param": "token"
+          },
+          {
+            "type": "bool",
+            "description": "Sync All contacts or sync contacts as they are sent messages",
+            "displayName": "Sync All Contacts",
+            "param": "syncAllContacts"
+          }
+        ],
+        "values": []
+      }, {
+        "param": "macm",
+        "displayName": "mAcm (FHIR) Server",
+        "description": "mAcm (FHIR) Server Configuration Details",
+        "type": "struct",
+        "template": [{
+            "type": "string",
+            "description": "The base URL (e.g. http://localhost:8080/hapi/fhir)",
+            "displayName": "Base URL",
+            "param": "baseURL"
+          },
+          {
+            "type": "string",
+            "description": "Username required to access FHIR server",
+            "displayName": "Username",
+            "param": "username"
+          },
+          {
+            "type": "password",
+            "description": "Password required to access FHIR server",
+            "displayName": "Password",
+            "param": "password"
+          }
+        ],
+        "values": []
+      }, {
+        "param": "elastic",
+        "displayName": "Elasticsearch Server",
+        "description": "Elasticsearch Server Configuration Details",
+        "type": "struct",
+        "template": [{
+            "type": "string",
+            "description": "The base URL (e.g. http://localhost:9200)",
+            "displayName": "Base URL",
+            "param": "baseURL"
+          },
+          {
+            "type": "string",
+            "description": "Username required to access elasticsearch server",
+            "displayName": "Username",
+            "param": "username"
+          },
+          {
+            "type": "password",
+            "description": "Password required to access elasticsearch server",
+            "displayName": "Password",
+            "param": "password"
+          }
+        ],
+        "values": []
+      }, {
+        "param": "kibana",
+        "displayName": "Kibana Server",
+        "description": "Kibana Server Configuration Details",
+        "type": "struct",
+        "template": [{
+            "type": "string",
+            "description": "The base URL (e.g. http://localhost:5601)",
+            "displayName": "Base URL",
+            "param": "baseURL"
+          },
+          {
+            "type": "string",
+            "description": "Username required to access Kibana server",
+            "displayName": "Username",
+            "param": "username"
+          },
+          {
+            "type": "password",
+            "description": "Password required to access Kibana server",
+            "displayName": "Password",
+            "param": "password"
+          }
+        ],
+        "values": []
+      }],
+      "defaultChannelConfig": [{
+        "methods": [
+          "GET",
+          "POST",
+          "DELETE",
+          "PUT",
+          "OPTIONS",
+          "HEAD",
+          "TRACE",
+          "CONNECT",
+          "PATCH"
+        ],
+        "type": "http",
+        "allow": [],
+        "whitelist": [],
+        "authType": "public",
+        "matchContentTypes": [],
+        "properties": [],
+        "txViewAcl": [],
+        "txViewFullAcl": [],
+        "txRerunAcl": [],
+        "status": "enabled",
+        "rewriteUrls": false,
+        "addAutoRewriteRules": true,
+        "autoRetryEnabled": false,
+        "autoRetryPeriodMinutes": 60,
+        "updatedBy": {
+          "id": "5d5d94607329d74724442f67",
+          "name": "Super User"
+        },
+        "requestBody": true,
+        "responseBody": true,
+        "description": "GET/POST/DELETE/... resource data into emNutt",
+        "urlPattern": "^/emNutt/fhir",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": null,
+        "tcpHost": null,
+        "tcpPort": null,
+        "rewriteUrlsConfig": [],
+        "alerts": [],
+        "routes": [{
+          "type": "http",
+          "status": "enabled",
+          "forwardAuthHeader": false,
+          "name": "Get/Submit emNutt FHIR Resources",
+          "secured": false,
+          "host": "localhost",
+          "port": 3002,
+          "path": "",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": ""
+        }],
+        "name": "Get/Submit emNutt FHIR Resources"
+      }, {
+        "requestBody": true,
+        "responseBody": true,
+        "name": "Sync Rapidpro Workflows",
+        "description": "Get all rapidpro workflows and convert them to FHIR",
+        "urlPattern": "/emNutt/syncWorkflows",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": "0 */1 * * *",
+        "tcpHost": null,
+        "tcpPort": null,
+        "autoRetryPeriodMinutes": 60,
+        "autoRetryEnabled": false,
+        "rewriteUrlsConfig": [],
+        "addAutoRewriteRules": true,
+        "rewriteUrls": false,
+        "status": "enabled",
+        "alerts": [],
+        "txRerunAcl": [],
+        "txViewFullAcl": [],
+        "txViewAcl": [],
+        "properties": [],
+        "matchContentTypes": [],
+        "routes": [{
+          "name": "Sync Rapidpro Workflows",
+          "secured": false,
+          "host": "localhost",
+          "port": 3002,
+          "path": "/emNutt/syncWorkflows",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "status": "enabled",
+          "type": "http"
+        }],
+        "authType": "public",
+        "whitelist": [],
+        "allow": [],
+        "type": "polling",
+        "methods": [
+          "GET"
+        ]
+      }, {
+        "requestBody": true,
+        "responseBody": true,
+        "name": "Cache FHIR Data into Elasticsearch",
+        "description": "Cache FHIR Data into Elasticsearch",
+        "urlPattern": "/emNutt/cacheFHIR2ES",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": "0 */1 * * *",
+        "tcpHost": null,
+        "tcpPort": null,
+        "autoRetryPeriodMinutes": 60,
+        "autoRetryEnabled": false,
+        "rewriteUrlsConfig": [],
+        "addAutoRewriteRules": true,
+        "rewriteUrls": false,
+        "status": "enabled",
+        "alerts": [],
+        "txRerunAcl": [],
+        "txViewFullAcl": [],
+        "txViewAcl": [],
+        "properties": [],
+        "matchContentTypes": [],
+        "routes": [{
+          "name": "Cache FHIR Data into Elasticsearch",
+          "secured": false,
+          "host": "localhost",
+          "port": 3002,
+          "path": "/emNutt/cacheFHIR2ES",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "status": "enabled",
+          "type": "http"
+        }],
+        "authType": "public",
+        "whitelist": [],
+        "allow": [],
+        "type": "polling",
+        "methods": [
+          "GET"
+        ]
+      }, {
+        "requestBody": true,
+        "responseBody": true,
+        "name": "Sync Rapidpro Messages",
+        "description": "Get all rapidpro messages and convert them to FHIR",
+        "urlPattern": "/emNutt/syncWorkflowRunMessages",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": "0 7 * * *",
+        "tcpHost": null,
+        "tcpPort": null,
+        "autoRetryPeriodMinutes": 60,
+        "autoRetryEnabled": false,
+        "rewriteUrlsConfig": [],
+        "addAutoRewriteRules": true,
+        "rewriteUrls": false,
+        "status": "enabled",
+        "alerts": [],
+        "txRerunAcl": [],
+        "txViewFullAcl": [],
+        "txViewAcl": [],
+        "properties": [],
+        "matchContentTypes": [],
+        "routes": [{
+          "name": "Sync Rapidpro Messages",
+          "secured": false,
+          "host": "localhost",
+          "port": 3002,
+          "path": "/emNutt/syncWorkflowRunMessages",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "status": "enabled",
+          "type": "http"
+        }],
+        "authType": "public",
+        "whitelist": [],
+        "allow": [],
+        "type": "polling",
+        "methods": [
+          "GET"
+        ]
+      }, {
+        "requestBody": true,
+        "responseBody": true,
+        "name": "Check new messages and send to rapidpro",
+        "description": "Check new messages and send them to rapidpro",
+        "urlPattern": "/emNutt/checkCommunicationRequest",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": "*/10 * * * *",
+        "tcpHost": null,
+        "tcpPort": null,
+        "autoRetryPeriodMinutes": 60,
+        "autoRetryEnabled": false,
+        "rewriteUrlsConfig": [],
+        "addAutoRewriteRules": true,
+        "rewriteUrls": false,
+        "status": "enabled",
+        "alerts": [],
+        "txRerunAcl": [],
+        "txViewFullAcl": [],
+        "txViewAcl": [],
+        "properties": [],
+        "matchContentTypes": [],
+        "routes": [{
+          "name": "Check new messages and send to rapidpro",
+          "secured": false,
+          "host": "localhost",
+          "port": 3002,
+          "path": "/emNutt/checkCommunicationRequest",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "status": "enabled",
+          "type": "http"
+        }],
+        "authType": "public",
+        "whitelist": [],
+        "allow": [],
+        "type": "polling",
+        "methods": [
+          "GET"
+        ]
+      }, {
+        "requestBody": true,
+        "responseBody": true,
+        "name": "Synchronize rapidpro contact groups",
+        "description": "Synchronize rapidpro contact groups",
+        "urlPattern": "/emNutt/syncContactGroups",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": "0 */6 * * *",
+        "tcpHost": null,
+        "tcpPort": null,
+        "autoRetryPeriodMinutes": 60,
+        "autoRetryEnabled": false,
+        "rewriteUrlsConfig": [],
+        "addAutoRewriteRules": true,
+        "rewriteUrls": false,
+        "status": "enabled",
+        "alerts": [],
+        "txRerunAcl": [],
+        "txViewFullAcl": [],
+        "txViewAcl": [],
+        "properties": [],
+        "matchContentTypes": [],
+        "routes": [{
+          "name": "Synchronize rapidpro contact groups",
+          "secured": false,
+          "host": "localhost",
+          "port": 3002,
+          "path": "/emNutt/syncContactGroups",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "status": "enabled",
+          "type": "http"
+        }],
+        "authType": "public",
+        "whitelist": [],
+        "allow": [],
+        "type": "polling",
+        "methods": [
+          "GET"
+        ]
+      }, {
+        "requestBody": true,
+        "responseBody": true,
+        "name": "Submit a bundle of records with phone numbers",
+        "description": "Synchronize contacts with rapidpro by posting a bundle of records with their phone numbers",
+        "urlPattern": "/emNutt/syncContacts",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": null,
+        "tcpHost": null,
+        "tcpPort": null,
+        "autoRetryPeriodMinutes": 60,
+        "autoRetryEnabled": false,
+        "rewriteUrlsConfig": [],
+        "addAutoRewriteRules": true,
+        "rewriteUrls": false,
+        "status": "enabled",
+        "alerts": [],
+        "txRerunAcl": [],
+        "txViewFullAcl": [],
+        "txViewAcl": [],
+        "properties": [],
+        "matchContentTypes": [],
+        "routes": [{
+          "name": "Submit a bundle of records with phone numbers",
+          "secured": false,
+          "host": "localhost",
+          "port": 3002,
+          "path": "/emNutt/syncContacts",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "status": "enabled",
+          "type": "http"
+        }],
+        "authType": "public",
+        "whitelist": [],
+        "allow": [],
+        "type": "http",
+        "methods": [
+          "POST"
+        ]
+      }, {
+        "requestBody": true,
+        "responseBody": true,
+        "name": "Initialize auto contacts synchronization with rapidpro",
+        "description": "Initialize auto contact synchronization between FHIR server and rapidpro",
+        "urlPattern": "/emNutt/syncContacts",
+        "matchContentRegex": null,
+        "matchContentXpath": null,
+        "matchContentValue": null,
+        "matchContentJson": null,
+        "pollingSchedule": "0 10 * * *",
+        "tcpHost": null,
+        "tcpPort": null,
+        "autoRetryPeriodMinutes": 60,
+        "autoRetryEnabled": false,
+        "rewriteUrlsConfig": [],
+        "addAutoRewriteRules": true,
+        "rewriteUrls": false,
+        "status": "enabled",
+        "alerts": [],
+        "txRerunAcl": [],
+        "txViewFullAcl": [],
+        "txViewAcl": [],
+        "properties": [],
+        "matchContentTypes": [],
+        "routes": [{
+          "name": "Initialize auto contacts synchronization with rapidpro",
+          "secured": false,
+          "host": "localhost",
+          "port": 3002,
+          "path": "/emNutt/syncContacts",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "status": "enabled",
+          "type": "http"
+        }],
+        "authType": "public",
+        "whitelist": [],
+        "allow": [],
+        "type": "polling",
+        "methods": [
+          "GET"
+        ]
+      }],
+      "endpoints": [{
+        "name": "Activate emNutt",
+        "host": "localhost",
+        "path": "/emNutt/syncWorkflows",
+        "port": 3002,
+        "primary": true,
+        "forwardAuthHeader": false,
+        "status": "enabled",
+        "type": "http"
+      }],
+      "_uptime": 2201.945,
+      "_lastHeartbeat": "2017-12-15T03:47:03.365Z",
+      "_configModifiedTS": "2017-12-15T02:52:49.054Z"
+    }

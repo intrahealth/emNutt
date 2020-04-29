@@ -7,7 +7,6 @@ const fs = require('fs');
 const Fhir = require('fhir').Fhir;
 
 const convert = new Fhir();
-
 const checkDependencies = (callback) => {
   let dependencies = [{
     name: 'hapi',

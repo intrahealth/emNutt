@@ -21,9 +21,9 @@ const rapidpro = require('./rapidpro')();
 const macm = require('./macm')();
 const prerequisites = require('./prerequisites');
 const mixin = require('./mixin');
-const mediatorConfig = require(`${__dirname}/../config/mediator`);
 
 const env = process.env.NODE_ENV || 'development';
+const mediatorConfig = require(`${__dirname}/../config/mediator_${env}`);
 if (config.get('mediator:register')) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 }

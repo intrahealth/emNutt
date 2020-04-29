@@ -20,7 +20,7 @@
   ],
   "rapidpro": {
     "baseURL": "http://rapidpro:8000",
-    "token": "369958889jk10930de856fc15lmefjkd73f0390c",
+    "token": "",
     "syncAllContacts": true
   },
   "macm": {
