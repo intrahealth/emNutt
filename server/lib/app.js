@@ -28,6 +28,7 @@ if (config.get('mediator:register')) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 }
 
+envVars.set();
 /**
  * @returns {express.app}
  */
@@ -616,7 +617,7 @@ function start(callback) {
               config.set('mediator:api:urn', mediatorConfig.urn);
               logger.info('Received initial config:', newConfig);
               logger.info('Successfully registered emNutt mediator!');
-              if (!newConfig.app.installed) {
+              if (!config.get("app:installed")) {
                 prerequisites.init((err) => {
                   if (!err) {
                     newConfig.app.installed = true;
@@ -633,7 +634,7 @@ function start(callback) {
                   logger.info('Received updated config:', newConfig);
                   const updatedConfig = Object.assign(configFile, newConfig);
                   reloadConfig(updatedConfig, () => {
-                    if (!newConfig.app.installed) {
+                    if (!config.get("app:installed")) {
                       prerequisites.init((err) => {
                         if (!err) {
                           newConfig.app.installed = true;

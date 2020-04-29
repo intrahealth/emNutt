@@ -2,8 +2,9 @@
 const moment = require('moment');
 const logger = require('./winston');
 const config = require('./config');
-
-const set = (callback) => {
+const set = () => {
+  logger.info('Setting env variables');
+  config.get("app:installed");
   //APP env variables
   if (process.env.APP_INSTALLED || process.env.APP_INSTALLED === false || process.env.APP_INSTALLED === true) {
     if (typeof process.env.APP_INSTALLED === 'string') {
@@ -153,7 +154,7 @@ const set = (callback) => {
       logger.error('Invalid date format for LAST_SYNC_CONTACTS');
     }
   }
-  return callback();
+  logger.info('Done setting env variables')
 };
 
 module.exports = {
