@@ -1,4 +1,5 @@
 'use strict';
+/*global process, __dirname */
 const express = require('express');
 const bodyParser = require('body-parser');
 const async = require('async');
@@ -15,6 +16,7 @@ const isJSON = require('is-json');
 const URI = require('urijs');
 const logger = require('./winston');
 const config = require('./config');
+const envVars = require('./envVars');
 const rapidpro = require('./rapidpro')();
 const macm = require('./macm')();
 const prerequisites = require('./prerequisites');
@@ -583,6 +585,7 @@ function reloadConfig(data, callback) {
       throw err;
     }
     config.file(tmpFile);
+    envVars.set();
     return callback();
   });
 }
