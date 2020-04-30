@@ -17,8 +17,10 @@ RP_MANAGEPY_COMPRESS="on"
 RP_MANAGEPY_INIT_DB="on"
 RP_MANAGEPY_MIGRATE="on"
 COURIER_DOMAIN="localhost"
-MEDIATOR_REGISTER=true
+MEDIATOR_REGISTER=false
 MEDIATOR_API_TRUST_SELF_SIGNED=true
+MEDIATOR_API_USERNAME="root@openhim.org"
+MEDIATOR_API_PASSWORD="openhim-password"
 ELASTIC_BASE_URL="http://elasticsearch:9200"
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root"
@@ -32,9 +34,9 @@ APP_BASE_URL=$(whiptail --title "HAPI FHIR Configuration" --backtitle "emNutt In
 selComponents=$(whiptail --checklist --separate-output "Select components to be installed" 10 60 5 \
               HAPI 'FHIR Server' off \
               openHIM 'Interoperability Layer' off \
-              Rapidpro 'SMS Platform' off \
-              Elasticsearch Elasticsearch off \
-              Kibana kibana off \
+              Rapidpro 'SMS Engine' off \
+              Elasticsearch 'Data Indexing' off \
+              Kibana 'Data Visualization' off \
               --title "Select components to be installed" 3>&1 1>&2 2>&3)
 
 if [[ "$selComponents" != *"HAPI"* ]]; then
@@ -84,7 +86,7 @@ if [[ "$selComponents" != *"openHIM"* ]]; then
     MEDIATOR_REGISTER="true"
   fi
 else
-  MEDIATOR_REGISTER="false"
+  MEDIATOR_REGISTER="true"
 fi
 
 mapfile -t components <<< "$selComponents"
@@ -130,7 +132,9 @@ echo '#! /bin/bash
         MEDIATOR_API_PASSWORD: $MEDIATOR_API_PASSWORD
         MEDIATOR_API_TRUST_SELF_SIGNED: \"$MEDIATOR_API_TRUST_SELF_SIGNED\"
         MEDIATOR_ROUTER_URL: $MEDIATOR_ROUTER_URL
-        MEDIATOR_REGISTER: \"$MEDIATOR_REGISTER\"' > start.sh
+        MEDIATOR_REGISTER: \"$MEDIATOR_REGISTER\"
+        MEDIATOR_API_USERNAME: $MEDIATOR_API_USERNAME
+        MEDIATOR_API_PASSWORD: $MEDIATOR_API_PASSWORD' > start.sh
 
 for component in "${components[@]}"; do
   if [ "$component" == "HAPI" ];
