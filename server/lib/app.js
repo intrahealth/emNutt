@@ -380,6 +380,7 @@ function appRoutes() {
   });
 
   app.post('/emNutt/syncContacts', (req, res) => {
+    let failed = false;
     logger.info('Received a bundle of contacts to be synchronized');
     if (!config.get('rapidpro:syncAllContacts')) {
       logger.warn('All Contacts sync is disabled, the server will sync only communicated contacts');
@@ -405,22 +406,24 @@ function appRoutes() {
           contact: entry.resource,
           rpContacts,
         }, (err, response, body) => {
-          if (!err) {
-            const rpUUID = body.uuid;
-            if (rpUUID) {
-              bundleModified = true;
-              if (!bundle.entry[index].resource.identifier) {
-                bundle.entry[index].resource.identifier = [];
-              }
-              bundle.entry[index].resource.identifier.push({
-                system: 'http://app.rapidpro.io/contact-uuid',
-                value: rpUUID,
-              });
-              bundle.entry[index].request = {
-                method: 'PUT',
-                url: `${bundle.entry[index].resource.resourceType}/${bundle.entry[index].resource.id}`,
-              };
+          if (err) {
+            failed = true;
+            return nxtEntry();
+          }
+          const rpUUID = body.uuid;
+          if (rpUUID) {
+            bundleModified = true;
+            if (!bundle.entry[index].resource.identifier) {
+              bundle.entry[index].resource.identifier = [];
             }
+            bundle.entry[index].resource.identifier.push({
+              system: 'http://app.rapidpro.io/contact-uuid',
+              value: rpUUID,
+            });
+            bundle.entry[index].request = {
+              method: 'PUT',
+              url: `${bundle.entry[index].resource.resourceType}/${bundle.entry[index].resource.id}`,
+            };
           }
           return nxtEntry();
         });
@@ -429,10 +432,16 @@ function appRoutes() {
           bundle.type = 'batch';
           macm.saveResource(bundle, () => {
             logger.info('Contacts Sync Done');
+            if (failed) {
+              return res.status(500).send();
+            }
             res.status(200).send('Suceessfully');
           });
         } else {
           logger.info('Contacts Sync Done');
+          if (failed) {
+            return res.status(500).send();
+          }
           res.status(200).send('Suceessfully');
         }
       });
@@ -460,7 +469,7 @@ function appRoutes() {
     let contacts = [];
     async.series({
       practitioners: (callback) => {
-        let query = `_lastUpdated=${runsLastSync}`;
+        let query = `_lastUpdated=ge${runsLastSync}`;
         macm.getResource({
           resource: 'Practitioner',
           query,
@@ -473,7 +482,7 @@ function appRoutes() {
         });
       },
       person: (callback) => {
-        let query = `_lastUpdated=${runsLastSync}`;
+        let query = `_lastUpdated=ge${runsLastSync}`;
         macm.getResource({
           resource: 'Person',
           query,
@@ -486,7 +495,7 @@ function appRoutes() {
         });
       },
       patients: (callback) => {
-        let query = `_lastUpdated=${runsLastSync}`;
+        let query = `_lastUpdated=ge${runsLastSync}`;
         macm.getResource({
           resource: 'Patient',
           query,
@@ -549,6 +558,8 @@ function appRoutes() {
                   runsLastSync,
                   () => {}
                 );
+              } else {
+                return res.status(500).send();
               }
               logger.info('Contacts Sync Done');
               res.status(200).send('Suceessfully');
@@ -560,6 +571,8 @@ function appRoutes() {
                 runsLastSync,
                 () => {}
               );
+            } else {
+              return res.status(500).send();
             }
             logger.info('Contacts Sync Done');
             res.status(200).send('Successfully');
@@ -569,7 +582,31 @@ function appRoutes() {
     });
   });
 
-  app.get('/emNutt/POSContactGroupsSync', (req, res) => {
+  app.get('/emNutt/syncContactsGroups', (req, res) => {
+    let source = config.get("app:contactGroupsSource");
+    if (source === 'pos') {
+      POSContactGroupsSync(req, res);
+    } else {
+      RPContactGroupsSync(req, res);
+    }
+  });
+
+  app.get('/emNutt/cacheFHIR2ES', (req, res) => {
+    let caching = new CacheFhirToES({
+      ESBaseURL: config.get('elastic:baseURL'),
+      ESUsername: config.get('elastic:username'),
+      ESPassword: config.get('elastic:password'),
+      ESMaxCompilationRate: config.get('elastic:max_compilations_rate'),
+      FHIRBaseURL: config.get('macm:baseURL'),
+      FHIRUsername: config.get('macm:username'),
+      FHIRPassword: config.get('macm:password'),
+    });
+    caching.cache();
+    res.status(200).send();
+  });
+  return app;
+
+  function POSContactGroupsSync(req, res) {
     let failed = false;
     logger.info('Received a request to sync POS Contacts Groups');
     let runsLastSync = config.get('lastSync:syncContactsGroups:time');
@@ -584,7 +621,7 @@ function appRoutes() {
     };
     macm.getResource({
       resource: 'Group',
-      query: `_include=Group:member&_lastUpdated=${runsLastSync}`
+      query: `_include=Group:member&_lastUpdated=ge${runsLastSync}`
     }, (err, resourceData) => {
       if (err) {
         failed = true;
@@ -722,9 +759,9 @@ function appRoutes() {
         });
       });
     });
-  });
+  }
 
-  app.get('/emNutt/RPContactGroupsSync', (req, res) => {
+  function RPContactGroupsSync(req, res) {
     let runsLastSync = config.get('lastSync:syncContactsGroups:time');
     const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
     if (!isValid) {
@@ -809,22 +846,7 @@ function appRoutes() {
         logger.info('Done rapidpro group sync');
       });
     });
-  });
-
-  app.get('/emNutt/cacheFHIR2ES', (req, res) => {
-    let caching = new CacheFhirToES({
-      ESBaseURL: config.get('elastic:baseURL'),
-      ESUsername: config.get('elastic:username'),
-      ESPassword: config.get('elastic:password'),
-      ESMaxCompilationRate: config.get('elastic:max_compilations_rate'),
-      FHIRBaseURL: config.get('macm:baseURL'),
-      FHIRUsername: config.get('macm:username'),
-      FHIRPassword: config.get('macm:password'),
-    });
-    caching.cache();
-    res.status(200).send();
-  });
-  return app;
+  }
 }
 
 /**

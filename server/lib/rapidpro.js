@@ -79,7 +79,7 @@ module.exports = function () {
             fullName = name.given;
           }
           if (name.family) {
-            fullName += name.family;
+            fullName += ' ' + name.family;
           }
         }
       }
@@ -133,7 +133,7 @@ module.exports = function () {
         }
         logger.info(body);
         if (err) {
-          logger.error(err);
+          logger.error(err + url);
         }
         return callback(err, res, body);
       });

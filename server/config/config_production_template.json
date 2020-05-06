@@ -31,7 +31,8 @@
   "elastic": {
     "baseURL": "http://localhost:9200",
     "username": "",
-    "password": ""
+    "password": "",
+    "max_compilations_rate": "10000/1m"
   },
   "kibana": {
     "baseURL": "http://localhost:5601",
