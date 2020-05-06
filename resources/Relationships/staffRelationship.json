@@ -191,7 +191,7 @@
         },
         {
           "url": "linkTo",
-          "valueString": "role.position"
+          "valueString": "role.extension(url='http://ihris.org/fhir/StructureDefinition/iHRISPractitionerRoleDetails').extension(url='position').valueReference.reference"
         },
         {
           "url": "multiple",

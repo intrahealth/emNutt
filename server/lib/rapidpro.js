@@ -1,4 +1,3 @@
-/* eslint-disable promise/param-names */
 'use strict';
 const URI = require('urijs');
 const request = require('request');
@@ -13,6 +12,46 @@ module.exports = function () {
      * @param {Object} param0
      * @param {*} callback
      */
+    getOrAddGroup(name, callback) {
+      let queries = [{
+        name: 'name',
+        value: name
+      }];
+      this.getEndPointData({
+        endPoint: 'groups.json',
+        queries
+      }, (err, data) => {
+        if (data.length > 0) {
+          return callback(false, data[0]);
+        } else {
+          let body = {
+            name
+          };
+          let url = URI(config.get('rapidpro:baseURL'))
+            .segment('api')
+            .segment('v2')
+            .segment('groups.json');
+          url = url.toString();
+          const options = {
+            url,
+            headers: {
+              Authorization: `Token ${config.get('rapidpro:token')}`,
+            },
+            json: body,
+          };
+          request.post(options, (err, res, body) => {
+            if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+              err = 'An error occured while adding a contact, Err Code ' + res.statusCode;
+            }
+            logger.info(body);
+            if (err) {
+              logger.error(err);
+            }
+            return callback(err, body);
+          });
+        }
+      });
+    },
     addContact({
       contact,
       rpContacts
@@ -47,7 +86,11 @@ module.exports = function () {
       if (!rpContactWithGlobalid && !rpContactWithoutGlobalid) {
         body.name = fullName;
         body.fields = {};
-        body.fields.globalid = `${contact.resourceType}/${contact.id}`;
+        let resourceType = 'Practitioner';
+        if (contact.resourceType === 'Patient') {
+          resourceType = contact.resourceType;
+        }
+        body.fields.globalid = `${resourceType}/${contact.id}`;
         body.urns = urns;
       } else {
         if (rpContactWithGlobalid) {
@@ -87,6 +130,34 @@ module.exports = function () {
       request.post(options, (err, res, body) => {
         if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
           err = 'An error occured while adding a contact, Err Code ' + res.statusCode;
+        }
+        logger.info(body);
+        if (err) {
+          logger.error(err);
+        }
+        return callback(err, res, body);
+      });
+    },
+    updateContact({
+      uuid,
+      fields
+    }, callback) {
+      let url = URI(config.get('rapidpro:baseURL'))
+        .segment('api')
+        .segment('v2')
+        .segment('contacts.json')
+        .addQuery('uuid', uuid);
+      url = url.toString();
+      const options = {
+        url,
+        headers: {
+          Authorization: `Token ${config.get('rapidpro:token')}`,
+        },
+        json: fields,
+      };
+      request.post(options, (err, res, body) => {
+        if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+          err = 'An error occured while updating a contact, Err Code ' + res.statusCode;
         }
         logger.info(body);
         if (err) {

@@ -1,8 +1,8 @@
 {
   "app": {
-    "port": 3000,
+    "port": 3002,
     "installed": true,
-    "baseURL": "http://localhost:3000"
+    "baseURL": "http://localhost:3002/emNutt"
   },
   "mediator": {
     "api": {
@@ -15,6 +15,9 @@
     },
     "register": false
   },
+  "origins": [
+    "http://localhost:8080"
+  ],
   "rapidpro": {
     "baseURL": "http://app.rapidpro.io",
     "token": "369958889jk10930de856fc15lmefjkd73f0390c",
@@ -46,6 +49,9 @@
       "time": "1970-01-01T00:00:00"
     },
     "syncContacts": {
+      "time": "1970-01-01T00:00:00"
+    },
+    "syncContactsGroups": {
       "time": "1970-01-01T00:00:00"
     }
   }

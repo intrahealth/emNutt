@@ -11,8 +11,8 @@ module.exports = function () {
   return {
     rpFlowsToFHIR(flows, callback) {
       if (!Array.isArray(flows)) {
-        logger.error('Flows isnt an array')
-        return callback(true)
+        logger.error('Flows isnt an array');
+        return callback(true);
       }
       let processingError = false;
       const promises = [];
@@ -110,7 +110,7 @@ module.exports = function () {
             };
             this.saveResource(tmpBundle, (err) => {
               if (err) {
-                processingError = true
+                processingError = true;
               }
               resolve();
             });
@@ -123,7 +123,7 @@ module.exports = function () {
         if (saveBundleFlows.entry.length > 0) {
           this.saveResource(saveBundleFlows, (err) => {
             if (err) {
-              processingError = true
+              processingError = true;
             }
             return callback(processingError);
           });
@@ -133,11 +133,11 @@ module.exports = function () {
       });
     },
 
-    saveResource (resource, callback) {
+    saveResource(resource, callback) {
       logger.info('Saving resource data');
       let url = URI(config.get('macm:baseURL'));
-      if(resource.resourceType && resource.resourceType !== 'Bundle') {
-        url = url.segment(resource.resourceType)
+      if (resource.resourceType && resource.resourceType !== 'Bundle') {
+        url = url.segment(resource.resourceType);
       }
       url = url.toString();
       const options = {
@@ -160,7 +160,7 @@ module.exports = function () {
         }
         if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
           logger.error(body);
-          return callback(true, res, body)
+          return callback(true, res, body);
         }
         logger.info('Resource(s) data saved successfully', JSON.stringify(options, 0, 2));
         callback(err, res, body);
@@ -185,7 +185,7 @@ module.exports = function () {
           return callback(err);
         }
         if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
-          return callback(true)
+          return callback(true);
         }
         callback(err, body);
       });
@@ -207,7 +207,7 @@ module.exports = function () {
       count
     }, callback) {
       let resourceData = {};
-      if(!id) {
+      if (!id) {
         resourceData.entry = [];
       }
       if (!url) {
@@ -231,7 +231,7 @@ module.exports = function () {
               return callback(resourceData);
             }
             url.addQuery(qrArr[0], qrArr[1]);
-            if(qrArr[0] === '_count') {
+            if (qrArr[0] === '_count') {
               count = true;
             }
           }
@@ -262,22 +262,22 @@ module.exports = function () {
             }
             if (!isJSON(body)) {
               logger.error('Non JSON has been returned while getting data for resource ' + resource);
-              logger.error(body)
+              logger.error(body);
               return callback(true, false);
             }
             if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
               logger.error(body);
-              logger.error('Getting resource Err Code ' + res.statusCode)
-              return callback(true, false)
+              logger.error('Getting resource Err Code ' + res.statusCode);
+              return callback(true, false);
             }
             body = JSON.parse(body);
-            if(body.hasOwnProperty('total') && body.total === 0) {
-              return callback(null, false)
+            if (body.hasOwnProperty('total') && body.total === 0) {
+              return callback(null, false);
             }
             if (!id && !body.entry) {
-              logger.error('Invalid resource data returned by FHIR server')
-              logger.error(body)
-              return callback(true, false)
+              logger.error('Invalid resource data returned by FHIR server');
+              logger.error(body);
+              return callback(true, false);
             }
             if (id && body) {
               resourceData = body;
@@ -306,7 +306,7 @@ module.exports = function () {
       );
     },
 
-    createCommunicationsFromRPRuns (run, definition, callback) {
+    createCommunicationsFromRPRuns(run, definition, callback) {
       let processingError = false;
       const query = `rpflowstarts=${run.start.uuid}`;
       this.getResource({
@@ -314,7 +314,7 @@ module.exports = function () {
         query
       }, (err, resourceData) => {
         if (err) {
-          return callback(true)
+          return callback(true);
         }
         if (!resourceData.entry) {
           logger.error('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);

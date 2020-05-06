@@ -37,7 +37,7 @@ function appRoutes() {
 
   app.get('/site-up', cors(), function (req, res, next) {
     res.status(201).json({
-      message: "site is up"
+      message: 'site is up',
     });
   });
 
@@ -47,11 +47,11 @@ function appRoutes() {
       if (config.get('origins').indexOf(origin) !== -1) {
         callback(null, true);
       } else {
-        console.log("Attempted request from unknown origin: " + origin);
+        console.log('Attempted request from unknown origin: ' + origin);
       }
     },
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   };
 
   //app.use(helmet());
@@ -67,8 +67,8 @@ function appRoutes() {
     }
     let commBundle = {
       entry: [{
-        resource
-      }]
+        resource,
+      }, ],
     };
     rapidpro.processCommunications(commBundle, (err) => {
       if (err) {
@@ -103,7 +103,9 @@ function appRoutes() {
   });
 
   app.get('/emNutt/fhir/:resource?/:id?', (req, res) => {
-    logger.info('Received a request to get data for resource ' + req.params.resource);
+    logger.info(
+      'Received a request to get data for resource ' + req.params.resource
+    );
     const resource = req.params.resource;
     const id = req.params.id;
     let url = URI(config.get('macm:baseURL'));
@@ -139,23 +141,46 @@ function appRoutes() {
       }
       if (body.link) {
         let routerBaseURL;
-        if (config.get("mediator:register")) {
-          routerBaseURL = URI(config.get("mediator:api:routerURL")).segment('emNutt').segment('fhir').toString();
-          if (!config.get("mediator:api:routerURL")) {
-            logger.error('Cant find openHIM router base URL, this may cause an issue querying data from emNutt');
+        if (config.get('mediator:register')) {
+          routerBaseURL = URI(config.get('mediator:api:routerURL'))
+            .segment('emNutt')
+            .segment('fhir')
+            .toString();
+          if (!config.get('mediator:api:routerURL')) {
+            logger.error(
+              'Cant find openHIM router base URL, this may cause an issue querying data from emNutt'
+            );
           }
         } else {
-          routerBaseURL = URI(config.get('app:baseURL')).segment('fhir').toString();
+          routerBaseURL = URI(config.get('app:baseURL'))
+            .segment('fhir')
+            .toString();
         }
         for (const index in body.link) {
           if (!body.link[index].url) {
             continue;
           }
-          body.link[index].url = body.link[index].url.replace(config.get('macm:baseURL'), routerBaseURL);
+          body.link[index].url = body.link[index].url.replace(
+            config.get('macm:baseURL'),
+            routerBaseURL
+          );
         }
       }
       return res.status(statusCode).send(body);
     });
+  });
+
+  app.get('/emNutt/getConfig', (req, res) => {
+    logger.info('Received a request to get configuration');
+    if (!req.query.parameter) {
+      logger.error('Bad Request');
+      return res.status(400).send();
+    }
+    let paramValue = config.get(req.query.parameter);
+    if (!paramValue) {
+      return res.status(204).send();
+    }
+    return res.status(200).send(paramValue);
   });
 
   app.get('/emNutt/syncWorkflows', (req, res) => {
@@ -169,144 +194,189 @@ function appRoutes() {
     const queries = [{
       name: 'after',
       value: runsLastSync,
-    }];
+    }, ];
     rapidpro.getEndPointData({
-      endPoint: 'flows.json',
-      queries
-    }, (err, flows) => {
-      runsLastSync = moment().subtract('30', 'minutes').format('Y-MM-DDTH:mm:ss');
-      if (err) {
-        processingError = true;
-      }
-      macm.rpFlowsToFHIR(flows, (err) => {
+        endPoint: 'flows.json',
+        queries,
+      },
+      (err, flows) => {
+        runsLastSync = moment()
+          .subtract('30', 'minutes')
+          .format('Y-MM-DDTH:mm:ss');
         if (err) {
           processingError = true;
         }
-        if (!processingError) {
-          mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], runsLastSync, () => {});
-        }
-        logger.info('Done Synchronizing flows');
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.status(200).send('Done');
-        }
-      });
-    });
+        macm.rpFlowsToFHIR(flows, (err) => {
+          if (err) {
+            processingError = true;
+          }
+          if (!processingError) {
+            mixin.updateConfigFile(
+              ['lastSync', 'syncWorkflows', 'time'],
+              runsLastSync,
+              () => {}
+            );
+          }
+          logger.info('Done Synchronizing flows');
+          if (err) {
+            res.status(500).send(err);
+          } else {
+            res.status(200).send('Done');
+          }
+        });
+      }
+    );
   });
 
   app.get('/emNutt/syncWorkflowRunMessages', (req, res) => {
     logger.info('Received a request to sync workflow messages');
-    const query = '_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows';
+    const query =
+      '_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows';
     let runsLastSync = moment('1970-01-01').format('Y-MM-DDTH:mm:ss');
     let processingError = false;
     macm.getResource({
-      resource: 'Basic',
-      query,
-    }, (err, flows) => {
-      if (err) {
-        processingError = true;
-      }
-      async.eachSeries(flows.entry, (flow, nxtFlow) => {
-        const promise1 = new Promise(resolve => {
-          runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
-          const isValid = moment(runsLastSync, 'Y-MM-DDTH:mm:ss').isValid();
-          if (!isValid) {
-            runsLastSync = moment('1970-01-01').format('Y-MM-DDTH:mm:ss');
-          }
-          const queries = [{
-            name: 'flow',
-            value: flow.resource.id,
-          }, {
-            name: 'after',
-            value: runsLastSync,
-          }];
-          rapidpro.getEndPointData({
-            endPoint: 'runs.json',
-            queries,
-          }, (err, runs) => {
-            if (err) {
-              processingError = true;
-            }
-            runsLastSync = moment().subtract('10', 'minutes').format('Y-MM-DDTH:mm:ss');
-            resolve(runs);
-          });
-        });
-        const promise2 = new Promise(resolve => {
-          const queries = [{
-            name: 'flow',
-            value: flow.resource.id,
-          }];
-          rapidpro.getEndPointData({
-            endPoint: 'definitions.json',
-            queries,
-            hasResultsKey: false,
-          }, (err, definitions) => {
-            if (err) {
-              processingError = true;
-            }
-            resolve(definitions);
-          });
-        });
-        Promise.all([promise1, promise2]).then(responses => {
-          const runs = responses[0];
-          const definitions = responses[1];
-          async.each(runs, (run, nxtRun) => {
-            const queries = [{
-              name: 'uuid',
-              value: run.contact.uuid,
-            }];
-            rapidpro.getEndPointData({
-              endPoint: 'contacts.json',
-              queries,
-            }, (err, contact) => {
-              if (err) {
-                processingError = true;
-              }
-              if (!Array.isArray(contact) || contact.length !== 1 || !contact[0].fields.globalid) {
-                return;
-              }
-              run.contact.globalid = contact[0].fields.globalid;
-              macm.createCommunicationsFromRPRuns(run, definitions[0], (err) => {
-                if (err) {
-                  processingError = true;
-                }
-                return nxtRun();
-              });
-            });
-          }, () => {
-            return nxtFlow();
-          });
-        });
-      }, () => {
-        if (!processingError) {
-          mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], runsLastSync, () => {});
+        resource: 'Basic',
+        query,
+      },
+      (err, flows) => {
+        if (err) {
+          processingError = true;
         }
-        logger.info('Done synchronizing flow messages');
-        res.status(200).send('Done');
-      });
-    });
+        async.eachSeries(
+          flows.entry,
+          (flow, nxtFlow) => {
+            const promise1 = new Promise((resolve) => {
+              runsLastSync = config.get(
+                'lastSync:syncWorkflowRunMessages:time'
+              );
+              const isValid = moment(runsLastSync, 'Y-MM-DDTH:mm:ss').isValid();
+              if (!isValid) {
+                runsLastSync = moment('1970-01-01').format('Y-MM-DDTH:mm:ss');
+              }
+              const queries = [{
+                  name: 'flow',
+                  value: flow.resource.id,
+                },
+                {
+                  name: 'after',
+                  value: runsLastSync,
+                },
+              ];
+              rapidpro.getEndPointData({
+                  endPoint: 'runs.json',
+                  queries,
+                },
+                (err, runs) => {
+                  if (err) {
+                    processingError = true;
+                  }
+                  runsLastSync = moment()
+                    .subtract('10', 'minutes')
+                    .format('Y-MM-DDTH:mm:ss');
+                  resolve(runs);
+                }
+              );
+            });
+            const promise2 = new Promise((resolve) => {
+              const queries = [{
+                name: 'flow',
+                value: flow.resource.id,
+              }, ];
+              rapidpro.getEndPointData({
+                  endPoint: 'definitions.json',
+                  queries,
+                  hasResultsKey: false,
+                },
+                (err, definitions) => {
+                  if (err) {
+                    processingError = true;
+                  }
+                  resolve(definitions);
+                }
+              );
+            });
+            Promise.all([promise1, promise2]).then((responses) => {
+              const runs = responses[0];
+              const definitions = responses[1];
+              async.each(
+                runs,
+                (run, nxtRun) => {
+                  const queries = [{
+                    name: 'uuid',
+                    value: run.contact.uuid,
+                  }, ];
+                  rapidpro.getEndPointData({
+                      endPoint: 'contacts.json',
+                      queries,
+                    },
+                    (err, contact) => {
+                      if (err) {
+                        processingError = true;
+                      }
+                      if (
+                        !Array.isArray(contact) ||
+                        contact.length !== 1 ||
+                        !contact[0].fields.globalid
+                      ) {
+                        return;
+                      }
+                      run.contact.globalid = contact[0].fields.globalid;
+                      macm.createCommunicationsFromRPRuns(
+                        run,
+                        definitions[0],
+                        (err) => {
+                          if (err) {
+                            processingError = true;
+                          }
+                          return nxtRun();
+                        }
+                      );
+                    }
+                  );
+                },
+                () => {
+                  return nxtFlow();
+                }
+              );
+            });
+          },
+          () => {
+            if (!processingError) {
+              mixin.updateConfigFile(
+                ['lastSync', 'syncWorkflowRunMessages', 'time'],
+                runsLastSync,
+                () => {}
+              );
+            }
+            logger.info('Done synchronizing flow messages');
+            res.status(200).send('Done');
+          }
+        );
+      }
+    );
   });
 
   app.get('/emNutt/checkCommunicationRequest', (req, res) => {
     let processingError = false;
     let query = `status:not=completed`;
     macm.getResource({
-      resource: 'CommunicationRequest',
-      query
-    }, (err, commReqs) => {
-      if (err) {
-        processingError = true;
-      }
-      rapidpro.processCommunications(commReqs, (err) => {
+        resource: 'CommunicationRequest',
+        query,
+      },
+      (err, commReqs) => {
         if (err) {
           processingError = true;
-          return res.status(500).send('Done');
         }
-        logger.info('Done checking communication requests');
-        res.status(200).send();
-      });
-    });
+        rapidpro.processCommunications(commReqs, (err) => {
+          if (err) {
+            processingError = true;
+            return res.status(500).send('Done');
+          }
+          logger.info('Done checking communication requests');
+          res.status(200).send();
+        });
+      }
+    );
   });
 
   app.post('/emNutt/syncContacts', (req, res) => {
@@ -380,33 +450,52 @@ function appRoutes() {
       logger.warn(
         'All Contacts sync is disabled, the server will sync only communicated contacts'
       );
-      res.status(403).send('All Contacts sync is disabled, the server will sync only communicated contacts');
+      return res
+        .status(403)
+        .send(
+          'All Contacts sync is disabled, the server will sync only communicated contacts'
+        );
     }
     let processingError = false;
     let contacts = [];
     async.series({
-      practitioners: callback => {
+      practitioners: (callback) => {
         let query = `_lastUpdated=${runsLastSync}`;
         macm.getResource({
           resource: 'Practitioner',
-          query
+          query,
         }, (err, practs) => {
           if (err) {
             processingError = true;
           }
           contacts = contacts.concat(practs.entry);
+          return callback(null);
         });
       },
-      person: callback => {
+      person: (callback) => {
         let query = `_lastUpdated=${runsLastSync}`;
         macm.getResource({
           resource: 'Person',
-          query
+          query,
         }, (err, pers) => {
           if (err) {
             processingError = true;
           }
           contacts = contacts.concat(pers.entry);
+          return callback(null);
+        });
+      },
+      patients: (callback) => {
+        let query = `_lastUpdated=${runsLastSync}`;
+        macm.getResource({
+          resource: 'Patient',
+          query,
+        }, (err, pers) => {
+          if (err) {
+            processingError = true;
+          }
+          contacts = contacts.concat(pers.entry);
+          return callback(null);
         });
       },
     }, () => {
@@ -444,7 +533,9 @@ function appRoutes() {
             return nxtEntry();
           });
         }, () => {
-          runsLastSync = moment().subtract('30', 'minutes').format('Y-MM-DDTH:mm:ss');
+          runsLastSync = moment()
+            .subtract('30', 'minutes')
+            .format('Y-MM-DDTH:mm:ss');
           if (contModified) {
             const bundle = {};
             bundle.type = 'batch';
@@ -453,14 +544,22 @@ function appRoutes() {
             bundle.entry = bundle.entry.concat(contacts);
             macm.saveResource(bundle, (err) => {
               if (!err && !processingError) {
-                mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], runsLastSync, () => {});
+                mixin.updateConfigFile(
+                  ['lastSync', 'syncContacts', 'time'],
+                  runsLastSync,
+                  () => {}
+                );
               }
               logger.info('Contacts Sync Done');
               res.status(200).send('Suceessfully');
             });
           } else {
             if (!processingError) {
-              mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], runsLastSync, () => {});
+              mixin.updateConfigFile(
+                ['lastSync', 'syncContacts', 'time'],
+                runsLastSync,
+                () => {}
+              );
             }
             logger.info('Contacts Sync Done');
             res.status(200).send('Successfully');
@@ -470,102 +569,257 @@ function appRoutes() {
     });
   });
 
-  app.get('/emNutt/syncContactGroups', (req, res) => {
-    logger.info('Received a request to sync contacts groups');
-    const bundle = {};
-    bundle.type = 'batch';
-    bundle.resourceType = 'Bundle';
-    bundle.entry = [];
-    rapidpro.getEndPointData({
-      endPoint: 'groups.json'
-    }, (err, grps) => {
+  app.get('/emNutt/POSContactGroupsSync', (req, res) => {
+    let failed = false;
+    logger.info('Received a request to sync POS Contacts Groups');
+    let runsLastSync = config.get('lastSync:syncContactsGroups:time');
+    const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
+    if (!isValid) {
+      runsLastSync = moment('1970-01-01').format('Y-MM-DD');
+    }
+    let modifiedGroups = {
+      resourceType: 'Bundle',
+      type: 'batch',
+      entry: []
+    };
+    macm.getResource({
+      resource: 'Group',
+      query: `_include=Group:member&_lastUpdated=${runsLastSync}`
+    }, (err, resourceData) => {
       if (err) {
+        failed = true;
         return res.status(500).send();
       }
-      async.each(grps, (grp, nxtGrp) => {
-        const queries = [{
-          name: 'group',
-          value: grp.uuid
-        }];
-        rapidpro.getEndPointData({
-          endPoint: 'contacts.json',
-          queries
-        }, (err, contacts) => {
-          if (err) {
-            logger.error(err);
+      let groups = resourceData.entry.filter((entry) => {
+        return entry.resource.resourceType === 'Group';
+      });
+      let people = resourceData.entry.filter((entry) => {
+        return entry.resource.resourceType === 'Practitioner' || entry.resource.resourceType === 'Patient' || entry.resource.resourceType === 'Person';
+      });
+
+      async.eachSeries(people, (ppl, nxt) => {
+        let cancelSync = false;
+        let cntctuuid;
+        let persIdentifier = ppl.resource.identifier && ppl.resource.identifier.find((identifier) => {
+          return identifier.system === 'http://app.rapidpro.io/contact-uuid';
+        });
+        if (!persIdentifier) {
+          return nxt();
+        }
+        cntctuuid = persIdentifier.value;
+        let cntctgrps = groups.filter((group) => {
+          return group.resource.member.find((member) => {
+            return member.entity.reference === ppl.resource.resourceType + '/' + ppl.resource.id;
+          });
+        });
+        if (!cntctgrps) {
+          return nxt();
+        }
+        let rpcontact = {
+          groups: []
+        };
+        let promises = [];
+        for (let cntctgrp of cntctgrps) {
+          if (cancelSync) {
+            continue;
           }
-          let promises = [];
-          let contactsExt = [];
-          for (let contact of contacts) {
-            promises.push(new Promise((resolve) => {
-              if (!contact.fields.globalid) {
-                return resolve();
-              }
-              contactsExt.push({
-                url: 'http://mhero.org/fhir/StructureDefinition/mHeroContactDetails',
-                extension: [{
-                  url: 'uuid',
-                  valueString: contact.uuid
-                }, {
-                  url: 'globalid',
-                  valueString: contact.fields.globalid
-                }]
+          promises.push(new Promise((resolve) => {
+            let grpuuid;
+            let identifier = cntctgrp.resource.identifier && cntctgrp.resource.identifier.find((identifier) => {
+              return identifier.system === "http://app.rapidpro.io/group-uuid";
+            });
+            if (!identifier) {
+              let modifiedGroup = modifiedGroups.entry.find((entry) => {
+                return entry.resource.identifier && entry.resource.identifier.find((identifier) => {
+                  return identifier.system === "http://app.rapidpro.io/group-uuid";
+                });
               });
-              resolve();
-            }));
-          }
-          Promise.all(promises).then(() => {
-            bundle.entry.push({
-              resource: {
-                id: grp.uuid,
-                resourceType: 'Basic',
-                meta: {
-                  profile: ['http://mhero.org/fhir/StructureDefinition/mHeroContactGroup']
-                },
-                extension: [{
-                  url: 'http://mhero.org/fhir/StructureDefinition/mHeroContactGroupDetails',
-                  extension: [{
-                    url: 'uuid',
-                    valueString: grp.uuid
-                  }, {
-                    url: 'name',
-                    valueString: grp.name
-                  }]
-                }, {
-                  url: 'http://mhero.org/fhir/StructureDefinition/mHeroContactsDetails',
-                  extension: contactsExt
-                }]
-              },
-              request: {
-                method: 'PUT',
-                url: `Basic/${grp.uuid}`
+              if (modifiedGroup) {
+                identifier = modifiedGroup.resource.identifier && modifiedGroup.resource.identifier.find((identifier) => {
+                  return identifier.system === "http://app.rapidpro.io/group-uuid";
+                });
+              }
+            }
+            let checkUUID = new Promise((resolve) => {
+              if (identifier) {
+                grpuuid = identifier.value;
+                resolve();
+              } else {
+                rapidpro.getOrAddGroup(cntctgrp.resource.name, (err, resp) => {
+                  if (err) {
+                    cancelSync = true;
+                    failed = true;
+                  } else {
+                    grpuuid = resp.uuid;
+                    if (!cntctgrp.resource.identifier) {
+                      cntctgrp.resource.identifier = [];
+                    }
+                    cntctgrp.resource.identifier.push({
+                      system: 'http://app.rapidpro.io/group-uuid',
+                      value: resp.uuid
+                    });
+                    modifiedGroups.entry.push({
+                      resource: cntctgrp.resource,
+                      request: {
+                        method: 'PUT',
+                        url: cntctgrp.resource.resourceType + '/' + cntctgrp.resource.id
+                      }
+                    });
+                  }
+                  resolve();
+                });
               }
             });
-            return nxtGrp();
+            checkUUID.then(() => {
+              if (!grpuuid || cancelSync) {
+                return resolve();
+              }
+              rpcontact.groups.push({
+                name: cntctgrp.resource.name,
+                uuid: grpuuid
+              });
+              resolve();
+            }).catch((err) => {
+              logger.error(err);
+              cancelSync = true;
+              failed = true;
+              resolve();
+            });
+          }));
+        }
+        Promise.all(promises).then(() => {
+          if (cancelSync) {
+            failed = true;
+            return nxt();
+          }
+          rapidpro.updateContact({
+            uuid: cntctuuid,
+            fields: rpcontact
+          }, (err) => {
+            if (err) {
+              failed = true;
+            }
+            return nxt();
           });
         });
       }, () => {
-        macm.saveResource(bundle, (err, response, body) => {
+        macm.saveResource(modifiedGroups, (err) => {
           if (err) {
-            res.status(500).send();
-          } else {
-            res.status(200).send('Done');
+            failed = true;
           }
-          logger.info('Done synchronizing contact groups');
+          if (failed) {
+            return res.status(500).send();
+          }
+          runsLastSync = moment()
+            .subtract('30', 'minutes')
+            .format('Y-MM-DDTH:mm:ss');
+          mixin.updateConfigFile(
+            ['lastSync', 'syncContactsGroups', 'time'],
+            runsLastSync,
+            () => {}
+          );
+          return res.status(201).send();
         });
+      });
+    });
+  });
+
+  app.get('/emNutt/RPContactGroupsSync', (req, res) => {
+    let runsLastSync = config.get('lastSync:syncContactsGroups:time');
+    const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
+    if (!isValid) {
+      runsLastSync = moment('1970-01-01').format('Y-MM-DD');
+    }
+    logger.info('Received a request to sync contact groups from rapidpro to POS');
+    const bundle = {};
+    bundle.resourceType = 'Bundle';
+    bundle.type = 'batch';
+    bundle.entry = [];
+    const queries = [{
+      name: 'after',
+      value: runsLastSync,
+    }];
+    rapidpro.getEndPointData({
+      endPoint: 'contacts.json',
+      queries,
+    }, (err, RPContacts) => {
+      if (err) {
+        logger.error(err);
+        return res.status(500).send();
+      }
+      async.each(RPContacts, (contact, nxt) => {
+        if (!contact.fields.globalid) {
+          return nxt();
+        }
+        for (let grp of contact.groups) {
+          let found = false;
+          for (let index in bundle.entry) {
+            let entry = bundle.entry[index];
+            if (entry.resource.id === grp.uuid) {
+              found = true;
+              bundle.entry[index].resource.member.push({
+                entity: {
+                  reference: contact.fields.globalid
+                }
+              });
+              break;
+            }
+          }
+          if (!found) {
+            bundle.entry.push({
+              resource: {
+                resourceType: 'Group',
+                id: grp.uuid,
+                name: grp.name,
+                type: 'practitioner',
+                actual: true,
+                member: [{
+                  entity: {
+                    reference: contact.fields.globalid
+                  }
+                }],
+              },
+              request: {
+                method: 'PUT',
+                url: 'Group/' + grp.uuid
+              }
+            });
+          }
+        }
+        if (bundle.entry.length >= 250) {
+          let tmpBundle = {
+            ...bundle
+          };
+          bundle.entry = [];
+          macm.saveResource(tmpBundle, () => {
+            return nxt();
+          });
+        } else {
+          return nxt();
+        }
+      }, () => {
+        runsLastSync = moment()
+          .subtract('30', 'minutes')
+          .format('Y-MM-DDTH:mm:ss');
+        mixin.updateConfigFile(
+          ['lastSync', 'syncContactsGroups', 'time'],
+          runsLastSync,
+          () => {}
+        );
+        logger.info('Done rapidpro group sync');
       });
     });
   });
 
   app.get('/emNutt/cacheFHIR2ES', (req, res) => {
     let caching = new CacheFhirToES({
-      ESBaseURL: config.get("elastic:baseURL"),
-      ESUsername: config.get("elastic:username"),
-      ESPassword: config.get("elastic:password"),
-      ESMaxCompilationRate: config.get("elastic:max_compilations_rate"),
-      FHIRBaseURL: config.get("macm:baseURL"),
-      FHIRUsername: config.get("macm:username"),
-      FHIRPassword: config.get("macm:password")
+      ESBaseURL: config.get('elastic:baseURL'),
+      ESUsername: config.get('elastic:username'),
+      ESPassword: config.get('elastic:password'),
+      ESMaxCompilationRate: config.get('elastic:max_compilations_rate'),
+      FHIRBaseURL: config.get('macm:baseURL'),
+      FHIRUsername: config.get('macm:username'),
+      FHIRPassword: config.get('macm:password'),
     });
     caching.cache();
     res.status(200).send();
@@ -581,7 +835,7 @@ function appRoutes() {
  */
 function reloadConfig(data, callback) {
   const tmpFile = `${__dirname}/../config/tmpConfig.json`;
-  fs.writeFile(tmpFile, JSON.stringify(data, 0, 2), err => {
+  fs.writeFile(tmpFile, JSON.stringify(data, 0, 2), (err) => {
     if (err) {
       throw err;
     }
@@ -598,7 +852,7 @@ function start(callback) {
       medUtils.registerMediator(
         config.get('mediator:api'),
         mediatorConfig,
-        err => {
+        (err) => {
           if (err) {
             logger.error('Failed to register this mediator, check your config');
             logger.error(err.stack);
@@ -617,11 +871,15 @@ function start(callback) {
               config.set('mediator:api:urn', mediatorConfig.urn);
               logger.info('Received initial config:', newConfig);
               logger.info('Successfully registered emNutt mediator!');
-              if (!config.get("app:installed")) {
+              if (!config.get('app:installed')) {
                 prerequisites.init((err) => {
                   if (!err) {
                     newConfig.app.installed = true;
-                    mixin.updateopenHIMConfig(mediatorConfig.urn, newConfig, () => {});
+                    mixin.updateopenHIMConfig(
+                      mediatorConfig.urn,
+                      newConfig,
+                      () => {}
+                    );
                   }
                 });
               }
@@ -630,15 +888,19 @@ function start(callback) {
                 const configEmitter = medUtils.activateHeartbeat(
                   config.get('mediator:api')
                 );
-                configEmitter.on('config', newConfig => {
+                configEmitter.on('config', (newConfig) => {
                   logger.info('Received updated config:', newConfig);
                   const updatedConfig = Object.assign(configFile, newConfig);
                   reloadConfig(updatedConfig, () => {
-                    if (!config.get("app:installed")) {
+                    if (!config.get('app:installed')) {
                       prerequisites.init((err) => {
                         if (!err) {
                           newConfig.app.installed = true;
-                          mixin.updateopenHIMConfig(mediatorConfig.urn, newConfig, () => {});
+                          mixin.updateopenHIMConfig(
+                            mediatorConfig.urn,
+                            newConfig,
+                            () => {}
+                          );
                         }
                       });
                     }
@@ -674,8 +936,8 @@ if (!module.parent) {
     start(() =>
       logger.info(
         `emNutt Server is running and listening on port: ${config.get(
-        'app:port'
-      )}`
+          'app:port'
+        )}`
       )
     );
   });
