@@ -130,6 +130,40 @@ const loadResources = (callback) => {
   });
 };
 
+const addRapidproDefaultData = (callback) => {
+  logger.info('Adding Global ID into Rapidpro');
+  let url = URI(config.get('rapidpro:baseURL'))
+    .segment('api')
+    .segment('v2')
+    .segment('fields.json');
+  url = url.toString();
+  let label = {
+    key: 'globalid',
+    label: 'globalid',
+    value_type: 'text'
+  };
+  const options = {
+    url,
+    headers: {
+      Authorization: `Token ${config.get('rapidpro:token')}`,
+    },
+    json: label,
+  };
+  request.post(options, (err, res, body) => {
+    logger.info('Done adding Global ID into Rapidpro');
+    if (res.statusCode === 400) {
+      logger.info('Field Global ID already exists');
+    } else if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+      err = 'An error occured while adding globalid field, Err Code ' + res.statusCode;
+      logger.info(body);
+    }
+    if (err) {
+      logger.error(err);
+    }
+    return callback(err, res, body);
+  });
+};
+
 const loadmHeroDashboards = (callback) => {
   let processingError = false;
   const folders = [
@@ -210,6 +244,11 @@ const init = (callback) => {
         if (err) {
           error = err;
         }
+        return callback(null);
+      });
+    },
+    addRapidproDefaultData: (callback) => {
+      addRapidproDefaultData((err) => {
         return callback(null);
       });
     }
