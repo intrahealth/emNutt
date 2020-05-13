@@ -240,7 +240,6 @@ module.exports = function () {
       } else {
         count = true;
       }
-
       logger.info(`Getting data for resource from server ${config.get('macm:baseURL')}`);
       async.whilst(
         callback => {

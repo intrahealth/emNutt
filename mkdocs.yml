@@ -1,0 +1,64 @@
+# Project information
+site_name: 'emNutt Documentation'
+site_description: 'Technical documentation for emNutt'
+site_author: 'IntraHealth'
+site_url: 'https://github.com/intrahealth/emNutt'
+
+# Repository
+repo_name: 'intrahealth/emNutt'
+repo_url: 'https://github.com/intrahealth/emNutt'
+
+# Copyright
+copyright: 'Copyright &copy; 2020 IntraHealth International'
+
+# Theme
+theme:
+  name: 'material'
+  palette:
+    primary: 'blue grey'
+    accent: 'indigo'
+  language: 'en'
+  features:
+    - tabs
+  font:
+    text: 'Roboto'
+    code: 'Roboto Mono'
+
+nav:
+  - Overview:
+      - 'index.md'
+  - User Manual:
+      - 'user/introduction.md'
+  - Developer Manual:
+      - 'Normal Installation':
+          - 'dev/prerequisites_normal.md'
+          - 'dev/installation_normal.md'
+      - 'Docker Installation':
+          - 'dev/prerequisites_docker.md'
+          - 'dev/installation_docker.md'
+      - 'dev/configuration.md'
+      - 'dev/endpoints.md'
+
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      toc_depth: '1-1'
+  - footnotes
+
+# https://github.com/zhaoterryy/mkdocs-pdf-export-plugin not working
+plugins:
+  - search
+  - git-revision-date-localized
+  - pdf-export:
+      combined: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/intrahealth/emNutt
+# theme:
+# logo: 'images/logo.png' must be 128x128
+# logo:
+#   icon: 'menu_book'

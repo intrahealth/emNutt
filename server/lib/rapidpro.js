@@ -61,7 +61,7 @@ module.exports = function () {
       }
       let urns = generateURNS(contact);
       const rpContactWithGlobalid = rpContacts.find(cntct => {
-        return cntct.fields && cntct.fields.globalid === contact.id;
+        return cntct.fields && cntct.fields.globalid === contact.resourceType + '/' + contact.id;
       });
       const rpContactWithoutGlobalid = rpContacts.find(cntct => {
         return cntct.urns.find(urn => {
@@ -133,7 +133,7 @@ module.exports = function () {
         }
         logger.info(body);
         if (err) {
-          logger.error(err + url);
+          logger.error(err + ' ' + url);
         }
         return callback(err, res, body);
       });
@@ -742,6 +742,10 @@ function generateURNS(resource) {
   if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
     for (const telecom of resource.telecom) {
       if (telecom.system && telecom.system === 'phone') {
+        if (!telecom.value.startsWith('+')) {
+          logger.error('Phone number ' + telecom.value + ' has no country code');
+          continue;
+        }
         urns.push('tel:' + telecom.value);
       }
     }
