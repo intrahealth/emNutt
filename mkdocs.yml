@@ -2,7 +2,7 @@
 site_name: 'emNutt Documentation'
 site_description: 'Technical documentation for emNutt'
 site_author: 'IntraHealth'
-site_url: 'https://github.com/intrahealth/emNutt'
+site_url: 'https://github.com/intrahealth/emNutt/'
 
 # Repository
 repo_name: 'intrahealth/emNutt'
