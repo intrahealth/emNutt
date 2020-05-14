@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>
      <loc>https://github.com/intrahealth/emNutt/</loc>
-     <lastmod>2020-05-13</lastmod>
+     <lastmod>2020-05-14</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://github.com/intrahealth/emNutt/user/introduction/</loc>
-     <lastmod>2020-05-13</lastmod>
+     <lastmod>2020-05-14</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://github.com/intrahealth/emNutt/dev/prerequisites_normal/</loc>
-     <lastmod>2020-05-13</lastmod>
+     <lastmod>2020-05-14</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://github.com/intrahealth/emNutt/dev/installation_normal/</loc>
-     <lastmod>2020-05-13</lastmod>
+     <lastmod>2020-05-14</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://github.com/intrahealth/emNutt/dev/prerequisites_docker/</loc>
-     <lastmod>2020-05-13</lastmod>
+     <lastmod>2020-05-14</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://github.com/intrahealth/emNutt/dev/installation_docker/</loc>
-     <lastmod>2020-05-13</lastmod>
+     <lastmod>2020-05-14</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://github.com/intrahealth/emNutt/dev/configuration/</loc>
-     <lastmod>2020-05-13</lastmod>
+     <lastmod>2020-05-14</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://github.com/intrahealth/emNutt/dev/endpoints/</loc>
-     <lastmod>2020-05-13</lastmod>
+     <lastmod>2020-05-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>
