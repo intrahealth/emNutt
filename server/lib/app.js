@@ -6,7 +6,6 @@ const async = require('async');
 const medUtils = require('openhim-mediator-utils');
 const cors = require('cors');
 const fs = require('fs');
-const helmet = require('helmet');
 const moment = require('moment');
 const request = require('request');
 const {
@@ -41,22 +40,6 @@ function appRoutes() {
     });
   });
 
-  var corsOptions = {
-    origin: function (origin, callback) {
-      console.log(origin);
-      if (config.get('origins').indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        console.log('Attempted request from unknown origin: ' + origin);
-      }
-    },
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  };
-
-  //app.use(helmet());
-
-  //app.use(cors(corsOptions));
   app.use(cors());
   app.use(bodyParser.json());
 
@@ -185,202 +168,91 @@ function appRoutes() {
 
   app.get('/emNutt/syncWorkflows', (req, res) => {
     logger.info('Received a request to synchronize workflows');
+    let enabledChannels = config.get("enabledCommChannels");
     let processingError = false;
-    let runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
-    const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
-    if (!isValid) {
-      runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
-    }
-    const queries = [{
-      name: 'after',
-      value: runsLastSync,
-    }, ];
-    rapidpro.getEndPointData({
-        endPoint: 'flows.json',
-        queries,
-      },
-      (err, flows) => {
-        runsLastSync = moment()
-          .subtract('30', 'minutes')
-          .format('Y-MM-DDTHH:mm:ss');
-        if (err) {
-          processingError = true;
+    async.parallel({
+      rapidpro: (callback) => {
+        if (!enabledChannels.includes('rapidpro')) {
+          logger.warn('Rapidpro is not enabled, not syncing workflows');
+          return callback(null);
         }
-        macm.rpFlowsToFHIR(flows, (err) => {
+        rapidpro.syncWorkflows((err) => {
           if (err) {
-            processingError = true;
+            processingError = err;
           }
-          if (!processingError) {
-            mixin.updateConfigFile(
-              ['lastSync', 'syncWorkflows', 'time'],
-              runsLastSync,
-              () => {}
-            );
-          }
-          logger.info('Done Synchronizing flows');
-          if (err) {
-            res.status(500).send(err);
-          } else {
-            res.status(200).send('Done');
-          }
+          return callback(null);
         });
       }
-    );
+    }, () => {
+      if (!processingError) {
+        let runsLastSync = moment()
+          .subtract('30', 'minutes')
+          .format('Y-MM-DDTHH:mm:ss');
+        mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], runsLastSync, () => {});
+      }
+      if (processingError) {
+        return res.status(500).send('Internal error occured');
+      }
+      res.status(200).send('Done');
+    });
   });
 
   app.get('/emNutt/syncWorkflowRunMessages', (req, res) => {
     logger.info('Received a request to sync workflow messages');
-    const query =
-      '_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows';
-    let runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+    let enabledChannels = config.get("enabledCommChannels");
     let processingError = false;
-    macm.getResource({
-        resource: 'Basic',
-        query,
-      },
-      (err, flows) => {
-        if (err) {
-          processingError = true;
+    async.parallel({
+      rapidpro: (callback) => {
+        if (!enabledChannels.includes('rapidpro')) {
+          logger.warn('Rapidpro is not enabled, not syncing workflows');
+          return callback(null);
         }
-        async.eachSeries(
-          flows.entry,
-          (flow, nxtFlow) => {
-            const promise1 = new Promise((resolve) => {
-              runsLastSync = config.get(
-                'lastSync:syncWorkflowRunMessages:time'
-              );
-              const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
-              if (!isValid) {
-                runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
-              }
-              const queries = [{
-                  name: 'flow',
-                  value: flow.resource.id,
-                },
-                {
-                  name: 'after',
-                  value: runsLastSync,
-                },
-              ];
-              rapidpro.getEndPointData({
-                  endPoint: 'runs.json',
-                  queries,
-                },
-                (err, runs) => {
-                  if (err) {
-                    processingError = true;
-                  }
-                  runsLastSync = moment()
-                    .subtract('10', 'minutes')
-                    .format('Y-MM-DDTHH:mm:ss');
-                  resolve(runs);
-                }
-              );
-            });
-            const promise2 = new Promise((resolve) => {
-              const queries = [{
-                name: 'flow',
-                value: flow.resource.id,
-              }, ];
-              rapidpro.getEndPointData({
-                  endPoint: 'definitions.json',
-                  queries,
-                  hasResultsKey: false,
-                },
-                (err, definitions) => {
-                  if (err) {
-                    processingError = true;
-                  }
-                  resolve(definitions);
-                }
-              );
-            });
-            Promise.all([promise1, promise2]).then((responses) => {
-              const runs = responses[0];
-              const definitions = responses[1];
-              async.each(
-                runs,
-                (run, nxtRun) => {
-                  const queries = [{
-                    name: 'uuid',
-                    value: run.contact.uuid,
-                  }, ];
-                  rapidpro.getEndPointData({
-                      endPoint: 'contacts.json',
-                      queries,
-                    },
-                    (err, contact) => {
-                      if (err) {
-                        processingError = true;
-                      }
-                      if (
-                        !Array.isArray(contact) ||
-                        contact.length !== 1 ||
-                        !contact[0].fields.globalid
-                      ) {
-                        return;
-                      }
-                      run.contact.globalid = contact[0].fields.globalid;
-                      macm.createCommunicationsFromRPRuns(
-                        run,
-                        definitions[0],
-                        (err) => {
-                          if (err) {
-                            processingError = true;
-                          }
-                          return nxtRun();
-                        }
-                      );
-                    }
-                  );
-                },
-                () => {
-                  return nxtFlow();
-                }
-              );
-            });
-          },
-          () => {
-            if (!processingError) {
-              mixin.updateConfigFile(
-                ['lastSync', 'syncWorkflowRunMessages', 'time'],
-                runsLastSync,
-                () => {}
-              );
-            }
-            logger.info('Done synchronizing flow messages');
-            res.status(200).send('Done');
+        rapidpro.syncWorkflowRunMessages((err) => {
+          if (err) {
+            processingError = err;
           }
-        );
+          return callback(null);
+        });
       }
-    );
+    }, () => {
+      if (!processingError) {
+        let runsLastSync = moment()
+          .subtract('10', 'minutes')
+          .format('Y-MM-DDTHH:mm:ss');
+        mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], runsLastSync, () => {});
+      }
+      if (processingError) {
+        return res.status(500).send('Internal error occured');
+      }
+      res.status(200).send('Done');
+    });
   });
 
   app.get('/emNutt/checkCommunicationRequest', (req, res) => {
     let processingError = false;
     let query = `status:not=completed`;
     macm.getResource({
-        resource: 'CommunicationRequest',
-        query,
-      },
-      (err, commReqs) => {
+      resource: 'CommunicationRequest',
+      query,
+    }, (err, commReqs) => {
+      if (err) {
+        processingError = true;
+      }
+      rapidpro.processCommunications(commReqs, (err) => {
         if (err) {
           processingError = true;
         }
-        rapidpro.processCommunications(commReqs, (err) => {
-          if (err) {
-            processingError = true;
-            return res.status(500).send('Done');
-          }
-          logger.info('Done checking communication requests');
-          res.status(200).send();
-        });
-      }
-    );
+        logger.info('Done checking communication requests');
+        if (processingError) {
+          return res.status(500).send('Done');
+        }
+        res.status(200).send();
+      });
+    });
   });
 
   app.post('/emNutt/syncContacts', (req, res) => {
-    let failed = false;
+    let processingError = false;
     logger.info('Received a bundle of contacts to be synchronized');
     if (!config.get('rapidpro:syncAllContacts')) {
       logger.warn('All Contacts sync is disabled, the server will sync only communicated contacts');
@@ -397,59 +269,30 @@ function appRoutes() {
       res.status(400).send('Request is not a bundle');
       return;
     }
-    rapidpro.getEndPointData({
-      endPoint: 'contacts.json',
-    }, (err, rpContacts) => {
-      let bundleModified = false;
-      async.eachOf(bundle.entry, (entry, index, nxtEntry) => {
-        rapidpro.addContact({
-          contact: entry.resource,
-          rpContacts,
-        }, (err, response, body) => {
+    async.series({
+      rapidpro: (callback) => {
+        rapidpro.syncContacts(bundle, (err) => {
           if (err) {
-            failed = true;
-            return nxtEntry();
+            processingError = err;
           }
-          const rpUUID = body.uuid;
-          if (rpUUID) {
-            bundleModified = true;
-            if (!bundle.entry[index].resource.identifier) {
-              bundle.entry[index].resource.identifier = [];
-            }
-            bundle.entry[index].resource.identifier.push({
-              system: 'http://app.rapidpro.io/contact-uuid',
-              value: rpUUID,
-            });
-            bundle.entry[index].request = {
-              method: 'PUT',
-              url: `${bundle.entry[index].resource.resourceType}/${bundle.entry[index].resource.id}`,
-            };
-          }
-          return nxtEntry();
+          return callback(null);
         });
-      }, () => {
-        if (bundleModified) {
-          bundle.type = 'batch';
-          macm.saveResource(bundle, () => {
-            logger.info('Contacts Sync Done');
-            if (failed) {
-              return res.status(500).send();
-            }
-            res.status(200).send('Suceessfully');
-          });
-        } else {
-          logger.info('Contacts Sync Done');
-          if (failed) {
-            return res.status(500).send();
-          }
-          res.status(200).send('Suceessfully');
+      }
+    }, () => {
+      bundle.type = 'batch';
+      macm.saveResource(bundle, () => {
+        logger.info('Contacts Sync Done');
+        if (processingError) {
+          return res.status(500).send('Some errors occured');
         }
+        res.status(200).send('Suceessfully');
       });
     });
   });
 
   app.get('/emNutt/syncContacts', (req, res) => {
     logger.info('Received a request to sync DB contacts');
+    let bundleModified = false;
     let runsLastSync = config.get('lastSync:syncContacts:time');
     const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
     if (!isValid) {
@@ -466,7 +309,11 @@ function appRoutes() {
         );
     }
     let processingError = false;
-    let contacts = [];
+    let bundle = {
+      type: 'batch',
+      resourceType: 'Bundle',
+      entry: []
+    };
     async.series({
       practitioners: (callback) => {
         let query = `_lastUpdated=ge${runsLastSync}`;
@@ -477,7 +324,7 @@ function appRoutes() {
           if (err) {
             processingError = true;
           }
-          contacts = contacts.concat(practs.entry);
+          bundle.entry = bundle.entry.concat(practs.entry);
           return callback(null);
         });
       },
@@ -490,7 +337,7 @@ function appRoutes() {
           if (err) {
             processingError = true;
           }
-          contacts = contacts.concat(pers.entry);
+          bundle.entry = bundle.entry.concat(pers.entry);
           return callback(null);
         });
       },
@@ -503,102 +350,80 @@ function appRoutes() {
           if (err) {
             processingError = true;
           }
-          contacts = contacts.concat(pers.entry);
+          bundle.entry = bundle.entry.concat(pers.entry);
           return callback(null);
         });
       },
     }, () => {
-      rapidpro.getEndPointData({
-        endPoint: 'contacts.json',
-      }, (err, rpContacts) => {
-        if (err) {
-          processingError = true;
-        }
-        let contModified = false;
-        async.eachOfSeries(contacts, (contact, index, nxtEntry) => {
-          rapidpro.addContact({
-            contact: contact.resource,
-            rpContacts,
-          }, (err, response, body) => {
-            if (!err) {
-              const rpUUID = body.uuid;
-              if (rpUUID) {
-                contModified = true;
-                if (!contacts[index].resource.identifier) {
-                  contacts[index].resource.identifier = [];
-                }
-                let totalId = contacts[index].resource.identifier.length;
-                let totalDeleted = 0;
-                for (let idIndex = 0; idIndex < totalId; idIndex++) {
-                  let modifiedIndex = idIndex - totalDeleted;
-                  let identifier = contacts[index].resource.identifier[modifiedIndex];
-                  if (identifier.system === 'http://app.rapidpro.io/contact-uuid') {
-                    contacts[index].resource.identifier.splice(modifiedIndex, 1);
-                    totalDeleted++;
-                  }
-                }
-                contacts[index].resource.identifier.push({
-                  system: 'http://app.rapidpro.io/contact-uuid',
-                  value: rpUUID,
-                });
-                contacts[index].request = {
-                  method: 'PUT',
-                  url: `${contacts[index].resource.resourceType}/${contacts[index].resource.id}`,
-                };
-              }
-            } else {
-              processingError = true;
+      async.series({
+        rapidpro: (callback) => {
+          rapidpro.syncContacts(bundle, (err, modified) => {
+            if (modified) {
+              bundleModified = true;
             }
-            return nxtEntry();
+            if (err) {
+              processingError = err;
+            }
+            return callback(null);
           });
-        }, () => {
-          runsLastSync = moment()
-            .subtract('30', 'minutes')
-            .format('Y-MM-DDTHH:mm:ss');
-          if (contModified) {
-            const bundle = {};
-            bundle.type = 'batch';
-            bundle.resourceType = 'Bundle';
-            bundle.entry = [];
-            bundle.entry = bundle.entry.concat(contacts);
-            macm.saveResource(bundle, (err) => {
-              if (!err && !processingError) {
-                mixin.updateConfigFile(
-                  ['lastSync', 'syncContacts', 'time'],
-                  runsLastSync,
-                  () => {}
-                );
-              } else {
-                return res.status(500).send('Some errors occured while syncing');
-              }
-              logger.info('Contacts Sync Done');
-              res.status(200).send('Suceessfully');
-            });
-          } else {
-            if (!processingError) {
-              mixin.updateConfigFile(
-                ['lastSync', 'syncContacts', 'time'],
-                runsLastSync,
-                () => {}
-              );
-            } else {
-              return res.status(500).send('Some errors occured while syncing');
-            }
-            logger.info('Contacts Sync Done');
-            res.status(200).send('Successfully');
+        }
+      }, () => {
+        if (!bundleModified) {
+          if (processingError) {
+            return res.status(500).send('Some errors occured');
           }
+          return res.status(200).send('Suceessfully');
+        }
+        macm.saveResource(bundle, () => {
+          logger.info('Contacts Sync Done');
+          if (processingError) {
+            return res.status(500).send('Some errors occured');
+          }
+          res.status(200).send('Suceessfully');
         });
       });
     });
   });
 
   app.get('/emNutt/syncContactsGroups', (req, res) => {
-    let source = config.get("app:contactGroupsSource");
-    if (source === 'pos') {
-      POSContactGroupsSync(req, res);
-    } else {
-      RPContactGroupsSync(req, res);
-    }
+    logger.info('Received a request to sync workflow messages');
+    let enabledChannels = config.get("enabledCommChannels");
+    let processingError = false;
+    async.parallel({
+      rapidpro: (callback) => {
+        if (!enabledChannels.includes('rapidpro')) {
+          logger.warn('Rapidpro is not enabled, not syncing contacts groups for rapidpro');
+          return callback(null);
+        }
+        let source = config.get('app:contactGroupsSource');
+        if (source === 'pos') {
+          rapidpro.POSContactGroupsSync((err) => {
+            if (err) {
+              processingError = err;
+            }
+            return callback(null);
+          });
+        } else {
+          rapidpro.RPContactGroupsSync((err) => {
+            if (err) {
+              processingError = err;
+            }
+            return callback(null);
+          });
+        }
+      }
+    }, () => {
+      if (!processingError) {
+        let runsLastSync = moment()
+          .subtract('30', 'minutes')
+          .format('Y-MM-DDTHH:mm:ss');
+        //mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], runsLastSync, () => {});
+      }
+      if (processingError) {
+        return res.status(500).send('Internal error occured');
+      }
+      res.status(200).send('Done');
+    });
   });
 
   app.get('/emNutt/cacheFHIR2ES', (req, res) => {
@@ -615,366 +440,6 @@ function appRoutes() {
     res.status(200).send();
   });
   return app;
-
-  function POSContactGroupsSync(req, res) {
-    let failed = false;
-    logger.info('Received a request to sync POS Contacts Groups');
-    let runsLastSync = config.get('lastSync:syncContactsGroups:time');
-    const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
-    if (!isValid) {
-      runsLastSync = moment('1970-01-01').format('Y-MM-DD');
-    }
-    let modifiedGroups = {
-      resourceType: 'Bundle',
-      type: 'batch',
-      entry: []
-    };
-    macm.getResource({
-      resource: 'Group',
-      query: `_include=Group:member&_lastUpdated=ge${runsLastSync}`
-    }, (err, resourceData) => {
-      if (err) {
-        failed = true;
-        return res.status(500).send();
-      }
-      let groups = resourceData.entry.filter((entry) => {
-        return entry.resource.resourceType === 'Group';
-      });
-      let people = resourceData.entry.filter((entry) => {
-        return entry.resource.resourceType === 'Practitioner' || entry.resource.resourceType === 'Patient' || entry.resource.resourceType === 'Person';
-      });
-      async.eachSeries(people, (ppl, nxt) => {
-        let cancelSync = false;
-        let cntctuuid;
-        let persIdentifier = ppl.resource.identifier && ppl.resource.identifier.find((identifier) => {
-          return identifier.system === 'http://app.rapidpro.io/contact-uuid';
-        });
-        if (!persIdentifier) {
-          return nxt();
-        }
-        let resourceType = ppl.resource.resourceType;
-        if (resourceType === 'Person') {
-          resourceType = 'Practitioner';
-        }
-        cntctuuid = persIdentifier.value;
-        let cntctgrps = groups.filter((group) => {
-          return group.resource.member.find((member) => {
-            return member.entity.reference === resourceType + '/' + ppl.resource.id;
-          });
-        });
-        let rpcontact = {
-          groups: []
-        };
-        let promises = [];
-        for (let cntctgrp of cntctgrps) {
-          if (cancelSync) {
-            continue;
-          }
-          promises.push(new Promise((resolve) => {
-            let grpuuid;
-            let identifier = cntctgrp.resource.identifier && cntctgrp.resource.identifier.find((identifier) => {
-              return identifier.system === "http://app.rapidpro.io/group-uuid";
-            });
-            if (!identifier) {
-              let modifiedGroup = modifiedGroups.entry.find((entry) => {
-                return entry.resource.identifier && entry.resource.identifier.find((identifier) => {
-                  return identifier.system === "http://app.rapidpro.io/group-uuid";
-                });
-              });
-              if (modifiedGroup) {
-                identifier = modifiedGroup.resource.identifier && modifiedGroup.resource.identifier.find((identifier) => {
-                  return identifier.system === "http://app.rapidpro.io/group-uuid";
-                });
-              }
-            }
-            let checkUUID = new Promise((resolve) => {
-              if (identifier) {
-                grpuuid = identifier.value;
-                resolve();
-              } else {
-                rapidpro.getOrAddGroup(cntctgrp.resource.name, (err, resp) => {
-                  if (err) {
-                    cancelSync = true;
-                    failed = true;
-                  } else {
-                    grpuuid = resp.uuid;
-                    if (!cntctgrp.resource.identifier) {
-                      cntctgrp.resource.identifier = [];
-                    }
-                    let totalId = cntctgrp.resource.identifier.length;
-                    let totalDeleted = 0;
-                    for (let idIndex = 0; idIndex < totalId; idIndex++) {
-                      let modifiedIndex = idIndex - totalDeleted;
-                      let identifier = cntctgrp.resource.identifier[modifiedIndex];
-                      if (identifier.system === 'http://app.rapidpro.io/group-uuid') {
-                        cntctgrp.resource.identifier.splice(modifiedIndex, 1);
-                        totalDeleted++;
-                      }
-                    }
-                    cntctgrp.resource.identifier.push({
-                      system: 'http://app.rapidpro.io/group-uuid',
-                      value: resp.uuid
-                    });
-                    modifiedGroups.entry.push({
-                      resource: cntctgrp.resource,
-                      request: {
-                        method: 'PUT',
-                        url: cntctgrp.resource.resourceType + '/' + cntctgrp.resource.id
-                      }
-                    });
-                  }
-                  resolve();
-                });
-              }
-            });
-            checkUUID.then(() => {
-              if (!grpuuid || cancelSync) {
-                return resolve();
-              }
-              rpcontact.groups.push(grpuuid);
-              resolve();
-            }).catch((err) => {
-              logger.error(err);
-              cancelSync = true;
-              failed = true;
-              resolve();
-            });
-          }));
-        }
-        Promise.all(promises).then(() => {
-          if (cancelSync) {
-            failed = true;
-            return nxt();
-          }
-          rapidpro.updateContact({
-            uuid: cntctuuid,
-            fields: rpcontact
-          }, (err) => {
-            if (err) {
-              failed = true;
-            }
-            return nxt();
-          });
-        });
-      }, () => {
-        macm.saveResource(modifiedGroups, (err) => {
-          if (err) {
-            failed = true;
-          }
-          if (failed) {
-            return res.status(500).send();
-          }
-          runsLastSync = moment()
-            .subtract('30', 'minutes')
-            .format('Y-MM-DDTHH:mm:ss');
-          mixin.updateConfigFile(
-            ['lastSync', 'syncContactsGroups', 'time'],
-            runsLastSync,
-            () => {}
-          );
-          return res.status(201).send();
-        });
-      });
-    });
-  }
-
-  function RPContactGroupsSync(req, res) {
-    let runsLastSync = config.get('lastSync:syncContactsGroups:time');
-    const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
-    if (!isValid) {
-      runsLastSync = moment('1970-01-01').format('Y-MM-DD');
-    }
-    logger.info('Received a request to sync contact groups from rapidpro to POS');
-    let failed = false;
-    const bundle = {};
-    bundle.resourceType = 'Bundle';
-    bundle.type = 'batch';
-    bundle.entry = [];
-    const queries = [{
-      name: 'after',
-      value: runsLastSync,
-    }];
-    rapidpro.getEndPointData({
-      endPoint: 'contacts.json',
-      queries,
-    }, (err, RPContacts) => {
-      if (err) {
-        logger.error(err);
-        return res.status(500).send();
-      }
-      logger.info('Processing ' + RPContacts.length + ' Contacts');
-      async.each(RPContacts, (contact, nxt) => {
-        if (!contact.fields.globalid) {
-          return nxt();
-        }
-        let addToGroup = new Promise((resolve) => {
-          if (contact.groups.length === 0) {
-            let editedGrps = [];
-            for (let index in bundle.entry) {
-              let entry = bundle.entry[index];
-              for (let memberIndex in entry.resource.member) {
-                let member = entry.resource.member[memberIndex];
-                if (member.entity.reference === contact.fields.globalid) {
-                  bundle.entry[index].resource.member.splice(memberIndex, 1);
-                  editedGrps.push(entry.resource.id);
-                }
-              }
-            }
-            macm.getResource({
-              resource: 'Group',
-              query: 'member=' + contact.fields.globalid
-            }, (err, grpRsrc) => {
-              if (err) {
-                failed = true;
-                return resolve();
-              }
-              if (grpRsrc.entry.length === 0) {
-                return resolve();
-              }
-              for (let group of grpRsrc.entry) {
-                let processed = editedGrps.find((edited) => {
-                  return edited === group.resource.id;
-                });
-                if (processed) {
-                  continue;
-                }
-                for (let index in group.resource.member) {
-                  let member = group.resource.member[index];
-                  if (member.entity.reference === contact.fields.globalid) {
-                    group.resource.member.splice(index, 1);
-                    bundle.entry.push({
-                      resource: group.resource,
-                      request: {
-                        method: 'PUT',
-                        url: 'Group/' + group.resource.id
-                      }
-                    });
-                  }
-                }
-              }
-              return resolve();
-            });
-          } else {
-            const promises = [];
-            for (let grp of contact.groups) {
-              promises.push(new Promise((resolve1) => {
-                let found = false;
-                for (let index in bundle.entry) {
-                  let entry = bundle.entry[index];
-                  if (entry.resource.id === grp.uuid) {
-                    found = true;
-                    let exist = bundle.entry[index].resource.member.find((member) => {
-                      return member.entity.reference === contact.fields.globalid;
-                    });
-                    if (!exist) {
-                      bundle.entry[index].resource.member.push({
-                        entity: {
-                          reference: contact.fields.globalid
-                        }
-                      });
-                    }
-                    break;
-                  }
-                }
-                if (found) {
-                  return resolve1();
-                }
-                macm.getResource({
-                  resource: 'Group',
-                  id: grp.uuid
-                }, (err, grpRsrc) => {
-                  if (err) {
-                    failed = true;
-                    return resolve1();
-                  }
-                  if (grpRsrc) {
-                    if (!grpRsrc.member) {
-                      grpRsrc.member = [];
-                    }
-                    let exist = grpRsrc.member.find((member) => {
-                      return member.entity.reference === contact.fields.globalid;
-                    });
-                    if (!exist) {
-                      grpRsrc.member.push({
-                        entity: {
-                          reference: contact.fields.globalid
-                        }
-                      });
-                    }
-                    bundle.entry.push({
-                      resource: grpRsrc,
-                      request: {
-                        method: 'PUT',
-                        url: 'Group/' + grpRsrc.id
-                      }
-                    });
-                  } else {
-                    bundle.entry.push({
-                      resource: {
-                        resourceType: 'Group',
-                        id: grp.uuid,
-                        name: grp.name,
-                        type: 'practitioner',
-                        actual: true,
-                        member: [{
-                          entity: {
-                            reference: contact.fields.globalid
-                          }
-                        }],
-                      },
-                      request: {
-                        method: 'PUT',
-                        url: 'Group/' + grp.uuid
-                      }
-                    });
-                  }
-                  return resolve1();
-                });
-              }));
-            }
-            Promise.all(promises).then(() => {
-              return resolve();
-            });
-          }
-        });
-        addToGroup.then(() => {
-          return nxt();
-        });
-      }, () => {
-        if (bundle.entry.length > 0) {
-          macm.saveResource(bundle, () => {
-            if (failed) {
-              return res.status(500).send('Some operations failed');
-            }
-            runsLastSync = moment()
-              .subtract('30', 'minutes')
-              .format('Y-MM-DDTHH:mm:ss');
-            mixin.updateConfigFile(
-              ['lastSync', 'syncContactsGroups', 'time'],
-              runsLastSync,
-              () => {}
-            );
-            logger.info('Done rapidpro group sync');
-            res.send('Done');
-          });
-        } else {
-          if (failed) {
-            return res.status(500).send('Some operations failed');
-          }
-          runsLastSync = moment()
-            .subtract('30', 'minutes')
-            .format('Y-MM-DDTHH:mm:ss');
-          mixin.updateConfigFile(
-            ['lastSync', 'syncContactsGroups', 'time'],
-            runsLastSync,
-            () => {}
-          );
-          logger.info('Done rapidpro group sync');
-          res.send('Done');
-        }
-      });
-    });
-  }
 }
 
 /**

@@ -162,7 +162,7 @@ module.exports = function () {
           logger.error(body);
           return callback(true, res, body);
         }
-        logger.info('Resource(s) data saved successfully', JSON.stringify(options, 0, 2));
+        logger.info('Resource(s) data saved successfully');
         callback(err, res, body);
       });
     },
@@ -240,6 +240,7 @@ module.exports = function () {
       } else {
         count = true;
       }
+      let errCode;
       logger.info(`Getting data for resource from server ${config.get('macm:baseURL')}`);
       async.whilst(
         callback => {
@@ -265,12 +266,13 @@ module.exports = function () {
               return callback(true, false);
             }
             if (res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+              errCode = res.statusCode;
               logger.error(body);
               logger.error('Getting resource Err Code ' + res.statusCode);
               return callback(true, false);
             }
             body = JSON.parse(body);
-            if (body.hasOwnProperty('total') && body.total === 0) {
+            if (Object.prototype.hasOwnProperty.call(body, 'total') && body.total === 0) {
               return callback(null, false);
             }
             if (!id && !body.entry) {
@@ -299,6 +301,9 @@ module.exports = function () {
             return callback(null, url);
           });
         }, (err) => {
+          if (err) {
+            err = errCode;
+          }
           logger.info(`Done Getting data for resource ${resource} from server ${config.get('macm:baseURL')}`);
           return callback(err, resourceData);
         }
