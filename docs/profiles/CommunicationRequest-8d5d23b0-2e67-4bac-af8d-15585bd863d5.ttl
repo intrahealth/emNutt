@@ -28,7 +28,7 @@
      ], [
        fhir:index 1;
        fhir:Extension.url [ fhir:value "contact_globalid" ];
-       fhir:Extension.valueString [ fhir:value "Practitioner/P7364" ]
+       fhir:Extension.valueString [ fhir:value "Practitioner/P7344" ]
      ], [
        fhir:index 2;
        fhir:Extension.url [ fhir:value "created_on" ];
@@ -45,6 +45,10 @@
        fhir:index 5;
        fhir:Extension.url [ fhir:value "status" ];
        fhir:Extension.valueString [ fhir:value "pending" ]
+     ], [
+       fhir:index 6;
+       fhir:Extension.url [ fhir:value "contact_globalid" ];
+       fhir:Extension.valueString [ fhir:value "Practitioner/P7364" ]
      ];
      fhir:Extension.url [ fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts" ]
   ];

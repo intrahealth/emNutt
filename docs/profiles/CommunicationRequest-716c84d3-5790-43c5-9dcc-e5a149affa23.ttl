@@ -28,11 +28,19 @@
      ], [
        fhir:index 1;
        fhir:Extension.url [ fhir:value "contact_globalid" ];
-       fhir:Extension.valueString [ fhir:value "Practitioner/P6209" ]
+       fhir:Extension.valueString [ fhir:value "Practitioner/P9359" ]
      ], [
        fhir:index 2;
        fhir:Extension.url [ fhir:value "created_on" ];
        fhir:Extension.valueDateTime [ fhir:value "2020-03-18T12:28:06.768319Z"^^xsd:dateTime ]
+     ], [
+       fhir:index 3;
+       fhir:Extension.url [ fhir:value "contact_globalid" ];
+       fhir:Extension.valueString [ fhir:value "Practitioner/P9354" ]
+     ], [
+       fhir:index 4;
+       fhir:Extension.url [ fhir:value "contact_globalid" ];
+       fhir:Extension.valueString [ fhir:value "Practitioner/P6209" ]
      ];
      fhir:Extension.url [ fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-comm-req-broadcast-starts" ]
   ];

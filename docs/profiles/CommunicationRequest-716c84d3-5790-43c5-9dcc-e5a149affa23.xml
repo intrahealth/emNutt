@@ -13,10 +13,16 @@
       <valueString value="7540339"/>
     </extension>
     <extension url="contact_globalid">
-      <valueString value="Practitioner/P6209"/>
+      <valueString value="Practitioner/P9359"/>
     </extension>
     <extension url="created_on">
       <valueDateTime value="2020-03-18T12:28:06.768319Z"/>
+    </extension>
+    <extension url="contact_globalid">
+      <valueString value="Practitioner/P9354"/>
+    </extension>
+    <extension url="contact_globalid">
+      <valueString value="Practitioner/P6209"/>
     </extension>
   </extension>
   <status value="completed"/>

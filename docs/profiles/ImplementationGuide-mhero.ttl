@@ -17,7 +17,7 @@
   fhir:ImplementationGuide.name [ fhir:value "mHeroImplementationGuide"];
   fhir:ImplementationGuide.title [ fhir:value "mHero Implementation Guide"];
   fhir:ImplementationGuide.status [ fhir:value "active"];
-  fhir:ImplementationGuide.date [ fhir:value "2020-05-22T13:53:54+03:00"^^xsd:dateTime];
+  fhir:ImplementationGuide.date [ fhir:value "2020-05-22T17:16:42+03:00"^^xsd:dateTime];
   fhir:ImplementationGuide.publisher [ fhir:value "Ally Shaban"];
   fhir:ImplementationGuide.contact [
      fhir:index 0;

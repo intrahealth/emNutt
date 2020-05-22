@@ -22,7 +22,7 @@ Description:    "Flow starts details of a communication request."
       flow_uuid         1..1 MS and
       status            1..1 MS
 * extension[contact_globalid].value[x] only string
-* extension[contact_globalid].valueString 0..1
+* extension[contact_globalid].valueString 1..1
 * extension[created_on].value[x] only dateTime
 * extension[created_on].valueDateTime 1..1
 * extension[modified_on].value[x] only dateTime
@@ -45,7 +45,7 @@ Description:    "Flow starts details of a communication request."
 * extension[broadcast_id].value[x] only string
 * extension[broadcast_id].valueString 1..1
 * extension[contact_globalid].value[x] only string
-* extension[contact_globalid].valueString 0..1
+* extension[contact_globalid].valueString 1..1
 * extension[created_on].value[x] only dateTime
 * extension[created_on].valueDateTime 1..1
 
@@ -60,8 +60,8 @@ Usage:          #example
 * extension[commReqFlowStarts].extension[flow_uuid].valueString = "b7a4770c-d034-4055-9f21-b17632ef311e"
 * extension[commReqFlowStarts].extension[modified_on].valueDateTime = "2020-03-10T14:17:47.817290Z"
 * extension[commReqFlowStarts].extension[created_on].valueDateTime = "2020-03-10T14:17:47.817188Z"
-* extension[commReqFlowStarts].extension[contact_globalid].valueString = "Practitioner/P7344"
-* extension[commReqFlowStarts].extension[contact_globalid].valueString = "Practitioner/P7364"
+* extension[commReqFlowStarts].extension[contact_globalid][0].valueString = "Practitioner/P7344"
+* extension[commReqFlowStarts].extension[contact_globalid][1].valueString = "Practitioner/P7364"
 * recipient[0] = Reference(Practitioner/P7364)
 * recipient[1] = Reference(Practitioner/P7344)
 * payload[0].contentAttachment.url = "b7a4770c-d034-4055-9f21-b17632ef311e"
@@ -73,9 +73,9 @@ Usage:          #example
 * status = #completed
 * extension[commReqBroadcastStarts].extension[broadcast_id].valueString = "7540339"
 * extension[commReqBroadcastStarts].extension[created_on].valueDateTime = "2020-03-18T12:28:06.768319Z"
-* extension[commReqBroadcastStarts].extension[contact_globalid].valueString = "Practitioner/P9359"
-* extension[commReqBroadcastStarts].extension[contact_globalid].valueString = "Practitioner/P9354"
-* extension[commReqBroadcastStarts].extension[contact_globalid].valueString = "Practitioner/P6209"
+* extension[commReqBroadcastStarts].extension[contact_globalid][0].valueString = "Practitioner/P9359"
+* extension[commReqBroadcastStarts].extension[contact_globalid][1].valueString = "Practitioner/P9354"
+* extension[commReqBroadcastStarts].extension[contact_globalid][2].valueString = "Practitioner/P6209"
 * recipient[0] = Reference(Practitioner/P7344)
 * recipient[1] = Reference(Practitioner/P7364)
 * payload[0].contentString = "Hello World"

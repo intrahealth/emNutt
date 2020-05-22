@@ -19,7 +19,7 @@
         },
         {
           "url": "contact_globalid",
-          "valueString": "Practitioner/P7364"
+          "valueString": "Practitioner/P7344"
         },
         {
           "url": "created_on",
@@ -36,6 +36,10 @@
         {
           "url": "status",
           "valueString": "pending"
+        },
+        {
+          "url": "contact_globalid",
+          "valueString": "Practitioner/P7364"
         }
       ],
       "url": "http://mHero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts"
