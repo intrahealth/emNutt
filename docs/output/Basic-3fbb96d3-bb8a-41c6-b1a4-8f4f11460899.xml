@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Basic xmlns="http://hl7.org/fhir">
+  <id value="3fbb96d3-bb8a-41c6-b1a4-8f4f11460899"/>
+  <meta>
+    <profile value="http://mHero.org/fhir/StructureDefinition/mhero-flow-run"/>
+  </meta>
+  <text>
+    <status value="generated"/><div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative</b></p><p><b>id</b>: 3fbb96d3-bb8a-41c6-b1a4-8f4f11460899</p><p><b>meta</b>: </p><p><b>code</b>: <span title="Codes: ">mHero Workflow Run Details</span></p></div>
+  </text>
+  <extension url="http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details">
+    <extension url="CommunicationRequest">
+      <valueReference>
+        <reference value="CommunicationRequest/feb3de06-a5e4-4a76-8a50-fe32cb209de1"/>
+      </valueReference>
+    </extension>
+    <extension url="flow">
+      <valueReference>
+        <reference value="Basic/b7a4770c-d034-4055-9f21-b17632ef311e"/>
+      </valueReference>
+    </extension>
+    <extension url="recipient">
+      <valueReference>
+        <reference value="Practitioner/P7479"/>
+      </valueReference>
+    </extension>
+    <extension url="responded">
+      <valueBoolean value="false"/>
+    </extension>
+    <extension url="created_on">
+      <valueDateTime value="2020-03-09T12:44:51.122549Z"/>
+    </extension>
+    <extension url="modified_on">
+      <valueDateTime value="2020-03-10T00:45:01.647066Z"/>
+    </extension>
+    <extension url="exit_type">
+      <valueString value="expired"/>
+    </extension>
+    <extension url="exited_on">
+      <valueDateTime value="2020-03-10T00:45:01.647066Z"/>
+    </extension>
+  </extension>
+  <code>
+    <text value="mHero Workflow Run Details"/>
+  </code>
+</Basic>

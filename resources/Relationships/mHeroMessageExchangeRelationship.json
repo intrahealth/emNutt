@@ -122,7 +122,7 @@
       },
       {
         "url": "linkTo",
-        "valueString": "mheromessageexchange.extension.where(url='http://mhero.org/fhir/StructureDefinition/mHeroCommunicationDetails').extension.where(url='mHeroFlowRun').valueReference.reference"
+        "valueString": "mheromessageexchange.extension.where(url='http://mHero.org/fhir/StructureDefinition/mhero-comm-flow-run').valueReference.reference"
       },
       {
         "url": "multiple",
@@ -136,7 +136,7 @@
           },
           {
             "url": "name",
-            "valueString": "extension.where(url='http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails').extension.where(url='created_on').valueString"
+            "valueString": "extension.where(url='http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details').extension.where(url='created_on').valueDateTime"
           }
         ]
       }
@@ -157,7 +157,7 @@
       },
       {
         "url": "linkTo",
-        "valueString": "mheroflowrun.extension.where(url='http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails').extension.where(url='flow').valueReference.reference"
+        "valueString": "mheroflowrun.extension.where(url='http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details').extension.where(url='flow').valueReference.reference"
       },
       {
         "url": "multiple",
@@ -165,7 +165,7 @@
       },
       {
         "url": "query",
-        "valueString": "meta.profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows"
+        "valueString": "meta.profile=http://mhero.org/fhir/StructureDefinition/mhero-workflows"
       },
       {
         "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
@@ -175,7 +175,7 @@
           },
           {
             "url": "name",
-            "valueString": "extension.where(url='http://mhero.org/fhir/StructureDefinition/mHeroWorkflowsDetails').extension.where(url='name').valueString"
+            "valueString": "extension.where(url='http://mhero.org/fhir/StructureDefinition/mhero-workflows-details').extension.where(url='name').valueString"
           }
         ]
       }

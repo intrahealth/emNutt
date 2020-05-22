@@ -1,0 +1,61 @@
+{
+  "resourceType": "Basic",
+  "id": "3fbb96d3-bb8a-41c6-b1a4-8f4f11460899",
+  "meta": {
+    "profile": [
+      "http://mHero.org/fhir/StructureDefinition/mhero-flow-run"
+    ]
+  },
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Generated Narrative</b></p><p><b>id</b>: 3fbb96d3-bb8a-41c6-b1a4-8f4f11460899</p><p><b>meta</b>: </p><p><b>code</b>: <span title=\"Codes: \">mHero Workflow Run Details</span></p></div>"
+  },
+  "extension": [
+    {
+      "extension": [
+        {
+          "url": "CommunicationRequest",
+          "valueReference": {
+            "reference": "CommunicationRequest/feb3de06-a5e4-4a76-8a50-fe32cb209de1"
+          }
+        },
+        {
+          "url": "flow",
+          "valueReference": {
+            "reference": "Basic/b7a4770c-d034-4055-9f21-b17632ef311e"
+          }
+        },
+        {
+          "url": "recipient",
+          "valueReference": {
+            "reference": "Practitioner/P7479"
+          }
+        },
+        {
+          "url": "responded",
+          "valueBoolean": false
+        },
+        {
+          "url": "created_on",
+          "valueDateTime": "2020-03-09T12:44:51.122549Z"
+        },
+        {
+          "url": "modified_on",
+          "valueDateTime": "2020-03-10T00:45:01.647066Z"
+        },
+        {
+          "url": "exit_type",
+          "valueString": "expired"
+        },
+        {
+          "url": "exited_on",
+          "valueDateTime": "2020-03-10T00:45:01.647066Z"
+        }
+      ],
+      "url": "http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details"
+    }
+  ],
+  "code": {
+    "text": "mHero Workflow Run Details"
+  }
+}

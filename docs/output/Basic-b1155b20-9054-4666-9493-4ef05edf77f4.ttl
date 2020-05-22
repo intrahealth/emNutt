@@ -1,0 +1,85 @@
+@prefix fhir: <http://hl7.org/fhir/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# - resource -------------------------------------------------------------------
+
+<http://mHero.org/fhir/Basic/b1155b20-9054-4666-9493-4ef05edf77f4> a fhir:Basic;
+  fhir:nodeRole fhir:treeRoot;
+  fhir:Resource.id [ fhir:value "b1155b20-9054-4666-9493-4ef05edf77f4"];
+  fhir:Resource.meta [
+     fhir:Meta.profile [
+       fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-workflows";
+       fhir:index 0;
+       fhir:link <http://mHero.org/fhir/StructureDefinition/mhero-workflows>
+     ]
+  ];
+  fhir:DomainResource.text [
+     fhir:Narrative.status [ fhir:value "generated" ];
+     fhir:Narrative.div "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Generated Narrative</b></p><p><b>id</b>: b1155b20-9054-4666-9493-4ef05edf77f4</p><p><b>meta</b>: </p><p><b>code</b>: <span title=\"Codes: \">mHero Workflow</span></p></div>"
+  ];
+  fhir:DomainResource.extension [
+     fhir:index 0;
+     fhir:Element.extension [
+       fhir:index 0;
+       fhir:Extension.url [ fhir:value "name" ];
+       fhir:Extension.valueString [ fhir:value "Sample Flow - Order Status Checker" ]
+     ], [
+       fhir:index 1;
+       fhir:Extension.url [ fhir:value "uuid" ];
+       fhir:Extension.valueString [ fhir:value "b1155b20-9054-4666-9493-4ef05edf77f4" ]
+     ], [
+       fhir:index 2;
+       fhir:Extension.url [ fhir:value "flow_type" ];
+       fhir:Extension.valueString [ fhir:value "message" ]
+     ], [
+       fhir:index 3;
+       fhir:Extension.url [ fhir:value "archived" ];
+       fhir:Extension.valueBoolean [ fhir:value "false"^^xsd:boolean ]
+     ], [
+       fhir:index 4;
+       fhir:Extension.url [ fhir:value "expires" ];
+       fhir:Extension.valueInteger [ fhir:value "720"^^xsd:integer ]
+     ], [
+       fhir:index 5;
+       fhir:Extension.url [ fhir:value "created_on" ];
+       fhir:Extension.valueDateTime [ fhir:value "2019-12-30T11:45:36.694585Z"^^xsd:dateTime ]
+     ], [
+       fhir:index 6;
+       fhir:Extension.url [ fhir:value "modified_on" ];
+       fhir:Extension.valueDateTime [ fhir:value "2019-12-30T11:45:37.229399Z"^^xsd:dateTime ]
+     ], [
+       fhir:index 7;
+       fhir:Element.extension [
+         fhir:index 0;
+         fhir:Extension.url [ fhir:value "active" ];
+         fhir:Extension.valueInteger [ fhir:value "0"^^xsd:integer ]
+       ], [
+         fhir:index 1;
+         fhir:Extension.url [ fhir:value "completed" ];
+         fhir:Extension.valueInteger [ fhir:value "5"^^xsd:integer ]
+       ], [
+         fhir:index 2;
+         fhir:Extension.url [ fhir:value "interrupted" ];
+         fhir:Extension.valueInteger [ fhir:value "12"^^xsd:integer ]
+       ], [
+         fhir:index 3;
+         fhir:Extension.url [ fhir:value "expired" ];
+         fhir:Extension.valueInteger [ fhir:value "0"^^xsd:integer ]
+       ];
+       fhir:Extension.url [ fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-run-summary" ]
+     ];
+     fhir:Extension.url [ fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-workflows-details" ]
+  ];
+  fhir:Basic.code [
+     fhir:CodeableConcept.text [ fhir:value "mHero Workflow" ]
+  ] .
+
+# - ontology header ------------------------------------------------------------
+
+<http://mHero.org/fhir/Basic/b1155b20-9054-4666-9493-4ef05edf77f4.ttl> a owl:Ontology;
+  owl:imports fhir:fhir.ttl .
+
+# -------------------------------------------------------------------------------------
+

@@ -863,27 +863,25 @@ module.exports = function () {
                         let recArr = recipient.reference.split('/');
                         const [resourceName, resID] = recArr;
                         macm.getResource({
-                            resource: resourceName,
-                            id: resID,
-                          },
-                          (err, recResource) => {
-                            if (recResource.resourceType) {
-                              resource = recResource;
-                            } else if (Object.keys(recResource).length === 0) {
-                              logger.error(
-                                `Reference ${recipient.reference} was not found on the server`
-                              );
-                            } else if (err) {
-                              logger.error(err);
-                              logger.error(
-                                'An error has occured while getting resource ' +
-                                recipient.reference
-                              );
-                              processingError = true;
-                            }
-                            resolve1();
+                          resource: resourceName,
+                          id: resID,
+                        }, (err, recResource) => {
+                          if (recResource.resourceType) {
+                            resource = recResource;
+                          } else if (Object.keys(recResource).length === 0) {
+                            logger.error(
+                              `Reference ${recipient.reference} was not found on the server`
+                            );
+                          } else if (err) {
+                            logger.error(err);
+                            logger.error(
+                              'An error has occured while getting resource ' +
+                              recipient.reference
+                            );
+                            processingError = true;
                           }
-                        );
+                          resolve1();
+                        });
                       }
                     });
                     promise1
@@ -1045,39 +1043,35 @@ module.exports = function () {
                           Promise.all(promises)
                             .then(() => {
                               if (flowBody.urns.length > 0) {
-                                this.sendMessage(
-                                  flowBody,
-                                  'workflow',
-                                  (err, res, body) => {
-                                    if (err) {
-                                      logger.error(err);
-                                      sendFailed = true;
-                                      processingError = true;
-                                    }
-                                    if (
-                                      res.statusCode &&
-                                      (res.statusCode < 200 ||
-                                        res.statusCode > 299)
-                                    ) {
-                                      sendFailed = true;
-                                      processingError = true;
-                                    }
-                                    if (!sendFailed) {
-                                      this.updateCommunicationRequest(
-                                        commReq,
-                                        body,
-                                        'workflow',
-                                        ids,
-                                        createNewReq,
-                                        (err, res, body) => {
-                                          return callback(null);
-                                        }
-                                      );
-                                    } else {
-                                      return callback(null);
-                                    }
+                                this.sendMessage(flowBody, 'workflow', (err, res, body) => {
+                                  if (err) {
+                                    logger.error(err);
+                                    sendFailed = true;
+                                    processingError = true;
                                   }
-                                );
+                                  if (
+                                    res.statusCode &&
+                                    (res.statusCode < 200 ||
+                                      res.statusCode > 299)
+                                  ) {
+                                    sendFailed = true;
+                                    processingError = true;
+                                  }
+                                  if (!sendFailed) {
+                                    this.updateCommunicationRequest(
+                                      commReq,
+                                      body,
+                                      'workflow',
+                                      ids,
+                                      createNewReq,
+                                      (err, res, body) => {
+                                        return callback(null);
+                                      }
+                                    );
+                                  } else {
+                                    return callback(null);
+                                  }
+                                });
                               } else {
                                 return callback(null);
                               }
@@ -1316,9 +1310,7 @@ module.exports = function () {
       if (!commReq.resource.meta.profile) {
         commReq.resource.meta.profile = [];
       }
-      commReq.resource.meta.profile.push(
-        'http://mhero.org/fhir/StructureDefinition/mHeroCommunicationRequest'
-      );
+      commReq.resource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunicationRequest');
       if (!commReq.resource.extension) {
         commReq.resource.extension = [];
       }
@@ -1332,42 +1324,38 @@ module.exports = function () {
         }
       }
 
-      const contactsExt = [];
-      for (const id of ids) {
-        contactsExt.push({
-          url: 'globalid',
-          valueString: id,
-        });
-      }
       commReq.resource.extension[extIndex] = {
         url: extUrl,
         extension: [{
-            url: 'id',
-            valueString: rpRunStatus.id,
-          },
-          {
-            url: 'http://mhero.org/fhir/StructureDefinition/contacts',
-            extension: contactsExt,
-          },
-          {
-            url: 'created_on',
-            valueDateTime: rpRunStatus.created_on,
-          },
-        ],
+          url: 'created_on',
+          valueDateTime: rpRunStatus.created_on,
+        }],
       };
       if (type === 'workflow') {
         commReq.resource.extension[extIndex].extension.push({
           url: 'modified_on',
           valueDateTime: rpRunStatus.modified_on,
         }, {
-          url: 'flow',
+          url: 'flow_uuid',
           valueString: rpRunStatus.flow.uuid,
         }, {
           url: 'status',
           valueString: rpRunStatus.status,
         }, {
-          url: 'uuid',
+          url: 'flow_starts_uuid',
           valueString: rpRunStatus.uuid,
+        });
+      } else if (type === 'sms') {
+        commReq.resource.extension[extIndex].extension.push({
+          url: "broadcast_id",
+          valueString: rpRunStatus.id
+        });
+      }
+      for (const id of ids) {
+        commReq.resource.extension;
+        [extIndex].extension.push({
+          url: 'contact_globalid',
+          valueString: id
         });
       }
 

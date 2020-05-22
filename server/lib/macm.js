@@ -23,24 +23,24 @@ module.exports = function () {
         entry: [],
       };
       for (const flow of flows) {
-        promises.push(new Promise((resolve, reject) => {
+        promises.push(new Promise((resolve) => {
           const resource = {};
           resource.id = flow.uuid;
           resource.resourceType = 'Basic';
           resource.meta = {};
           resource.meta.profile = [];
           resource.meta.profile.push(
-            'http://mhero.org/fhir/StructureDefinition/mHeroWorkflows'
+            'http://mHero.org/fhir/StructureDefinition/mhero-workflows'
           );
           resource.meta.code = {
             coding: [{
               system: 'http://mhero.org/fhir/CodeSystem/mhero-resource',
               code: 'mHeroWorkflows',
-            }, ],
+            }],
             text: 'mHeroWorkflows',
           };
           resource.extension = [{
-            url: 'http://mhero.org/fhir/StructureDefinition/mHeroWorkflowsDetails',
+            url: 'http://mHero.org/fhir/StructureDefinition/mhero-workflows-details',
             extension: [{
                 url: 'name',
                 valueString: flow.name,
@@ -50,7 +50,7 @@ module.exports = function () {
                 valueString: flow.uuid,
               },
               {
-                url: 'type',
+                url: 'flow_type',
                 valueString: flow.type,
               },
               {
@@ -62,7 +62,7 @@ module.exports = function () {
                 valueInteger: flow.expires,
               },
               {
-                url: 'http://mhero.org/fhir/StructureDefinition/mHeroWorkflowsRuns',
+                url: 'http://mHero.org/fhir/StructureDefinition/mhero-run-summary',
                 extension: [{
                     url: 'active',
                     valueInteger: flow.runs.active,
@@ -83,14 +83,14 @@ module.exports = function () {
               },
               {
                 url: 'created_on',
-                valueString: flow.created_on,
+                valueDateTime: flow.created_on,
               },
               {
                 url: 'modified_on',
-                valueString: flow.modified_on,
+                valueDateTime: flow.modified_on,
               },
             ],
-          }, ];
+          }];
           saveBundleFlows.entry.push({
             resource,
             request: {
@@ -355,13 +355,13 @@ module.exports = function () {
           }
         }, {
           url: 'responded',
-          valueString: run.responded
+          valueBoolean: run.responded
         }, {
           url: 'created_on',
-          valueString: run.created_on
+          valueDateTime: run.created_on
         }, {
           url: 'modified_on',
-          valueString: run.modified_on
+          valueDateTime: run.modified_on
         }];
         if (run.exit_type) {
           extension.push({
@@ -370,7 +370,7 @@ module.exports = function () {
           });
           extension.push({
             url: 'exited_on',
-            valueString: run.exited_on
+            valueDateTime: run.exited_on
           });
         }
         bundle.entry.push({
@@ -378,10 +378,10 @@ module.exports = function () {
             resourceType: 'Basic',
             id: run.uuid,
             meta: {
-              profile: ['http://mhero.org/fhir/StructureDefinition/mHeroFlowRun'],
+              profile: ['http://mHero.org/fhir/StructureDefinition/mhero-flow-run']
             },
             extension: [{
-              url: 'http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails',
+              url: 'http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details',
               extension
             }]
           },
@@ -444,7 +444,7 @@ module.exports = function () {
               const commResource = {};
               commResource.meta = {};
               commResource.meta.profile = [];
-              commResource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunication');
+              commResource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mhero-communication');
               commResource.resourceType = 'Communication';
               commResource.id = text.id;
               if (text.parent) {
@@ -472,13 +472,10 @@ module.exports = function () {
                 commResource.extension = [];
               }
               commResource.extension.push({
-                url: 'http://mhero.org/fhir/StructureDefinition/mHeroCommunicationDetails',
-                extension: [{
-                  url: 'mHeroFlowRun',
-                  valueReference: {
-                    reference: `Basic/${run.uuid}`
-                  }
-                }]
+                url: 'http://mHero.org/fhir/StructureDefinition/mhero-comm-flow-run',
+                valueReference: {
+                  reference: `Basic/${run.uuid}`
+                }
               });
               bundle.entry.push({
                 resource: commResource,

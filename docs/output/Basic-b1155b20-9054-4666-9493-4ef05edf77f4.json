@@ -1,0 +1,72 @@
+{
+  "resourceType": "Basic",
+  "id": "b1155b20-9054-4666-9493-4ef05edf77f4",
+  "meta": {
+    "profile": [
+      "http://mHero.org/fhir/StructureDefinition/mhero-workflows"
+    ]
+  },
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Generated Narrative</b></p><p><b>id</b>: b1155b20-9054-4666-9493-4ef05edf77f4</p><p><b>meta</b>: </p><p><b>code</b>: <span title=\"Codes: \">mHero Workflow</span></p></div>"
+  },
+  "extension": [
+    {
+      "extension": [
+        {
+          "url": "name",
+          "valueString": "Sample Flow - Order Status Checker"
+        },
+        {
+          "url": "uuid",
+          "valueString": "b1155b20-9054-4666-9493-4ef05edf77f4"
+        },
+        {
+          "url": "flow_type",
+          "valueString": "message"
+        },
+        {
+          "url": "archived",
+          "valueBoolean": false
+        },
+        {
+          "url": "expires",
+          "valueInteger": 720
+        },
+        {
+          "url": "created_on",
+          "valueDateTime": "2019-12-30T11:45:36.694585Z"
+        },
+        {
+          "url": "modified_on",
+          "valueDateTime": "2019-12-30T11:45:37.229399Z"
+        },
+        {
+          "extension": [
+            {
+              "url": "active",
+              "valueInteger": 0
+            },
+            {
+              "url": "completed",
+              "valueInteger": 5
+            },
+            {
+              "url": "interrupted",
+              "valueInteger": 12
+            },
+            {
+              "url": "expired",
+              "valueInteger": 0
+            }
+          ],
+          "url": "http://mHero.org/fhir/StructureDefinition/mhero-run-summary"
+        }
+      ],
+      "url": "http://mHero.org/fhir/StructureDefinition/mhero-workflows-details"
+    }
+  ],
+  "code": {
+    "text": "mHero Workflow"
+  }
+}

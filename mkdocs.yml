@@ -38,6 +38,7 @@ nav:
           - 'dev/installation_docker.md'
       - 'dev/configuration.md'
       - 'dev/endpoints.md'
+      - mHero FHIR Profiles: 'output/toc.html'
 
 markdown_extensions:
   - admonition

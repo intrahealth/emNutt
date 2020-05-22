@@ -1,0 +1,49 @@
+@prefix fhir: <http://hl7.org/fhir/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# - resource -------------------------------------------------------------------
+
+<http://mHero.org/fhir/Communication/a9c91fc1-20ce-59d8-94e3-48ed235e3379> a fhir:Communication;
+  fhir:nodeRole fhir:treeRoot;
+  fhir:Resource.id [ fhir:value "a9c91fc1-20ce-59d8-94e3-48ed235e3379"];
+  fhir:Resource.meta [
+     fhir:Meta.profile [
+       fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-communication";
+       fhir:index 0;
+       fhir:link <http://mHero.org/fhir/StructureDefinition/mhero-communication>
+     ]
+  ];
+  fhir:DomainResource.text [
+     fhir:Narrative.status [ fhir:value "generated" ];
+     fhir:Narrative.div "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Generated Narrative</b></p><p><b>id</b>: a9c91fc1-20ce-59d8-94e3-48ed235e3379</p><p><b>meta</b>: </p><p><b>status</b>: completed</p><p><b>sent</b>: Mar 9, 2020, 5:20:59 PM</p><p><b>received</b>: Mar 9, 2020, 5:20:59 PM</p><p><b>recipient</b>: <a href=\"Practitioner/P97111\">Practitioner/P97111</a></p><h3>Payloads</h3><table class=\"grid\"><tr><td>-</td><td><b>Content[x]</b></td></tr><tr><td>*</td><td>The most important treatment that can be given to a patient with Ebola to help them survive is? 1)Fluids 2)Antibiotics 3)Antivirals 4)Anti-pyretics/Anti-fever medications 5)There is no care that has been found to increase survival of patients with Ebola</td></tr></table></div>"
+  ];
+  fhir:DomainResource.extension [
+     fhir:index 0;
+     fhir:Extension.url [ fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-comm-flow-run" ];
+     fhir:Extension.valueReference [
+       fhir:link <http://mHero.org/fhir/Basic/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899>;
+       fhir:Reference.reference [ fhir:value "Basic/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899" ]
+     ]
+  ];
+  fhir:Communication.status [ fhir:value "completed"];
+  fhir:Communication.sent [ fhir:value "2020-03-09T14:20:59.685600Z"^^xsd:dateTime];
+  fhir:Communication.received [ fhir:value "2020-03-09T14:20:59.685600Z"^^xsd:dateTime];
+  fhir:Communication.recipient [
+     fhir:index 0;
+     fhir:link <http://mHero.org/fhir/Practitioner/P97111>;
+     fhir:Reference.reference [ fhir:value "Practitioner/P97111" ]
+  ];
+  fhir:Communication.payload [
+     fhir:index 0;
+     fhir:Communication.payload.contentString [ fhir:value "The most important treatment that can be given to a patient with Ebola to help them survive is? 1)Fluids 2)Antibiotics 3)Antivirals 4)Anti-pyretics/Anti-fever medications 5)There is no care that has been found to increase survival of patients with Ebola" ]
+  ] .
+
+# - ontology header ------------------------------------------------------------
+
+<http://mHero.org/fhir/Communication/a9c91fc1-20ce-59d8-94e3-48ed235e3379.ttl> a owl:Ontology;
+  owl:imports fhir:fhir.ttl .
+
+# -------------------------------------------------------------------------------------
+
