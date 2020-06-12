@@ -1,0 +1,218 @@
+
+  version: "3.3"
+  networks:
+    emnutt:
+
+  services:
+    emnutt:
+      image: intrahealth/emnutt:1.0
+      ports:
+        - "3002:3002"
+      restart: unless-stopped
+      networks:
+        emnutt:
+      environment:
+        NODE_ENV: docker
+        APP_PORT: 3002
+        APP_BASE_URL: http://localhost:3002/emNutt
+        APP_INSTALLED: "false"
+        MACM_BASE_URL:
+        MACM_USERNAME:
+        MACM_PASSWORD:
+        RAPIDPRO_BASE_URL:
+        RAPIDPRO_TOKEN:
+        RAPIDPRO_SYNC_ALL_CONTACTS: ""
+        ELASTIC_BASE_URL: http://elasticsearch:9200
+        ELASTIC_USERNAME:
+        ELASTIC_PASSWORD:
+        KIBANA_BASE_URL:
+        KIBANA_USERNAME:
+        KIBANA_PASSWORD:
+        MEDIATOR_API_URL:
+        MEDIATOR_API_USERNAME: root@openhim.org
+        MEDIATOR_API_PASSWORD: openhim-password
+        MEDIATOR_API_TRUST_SELF_SIGNED: "true"
+        MEDIATOR_ROUTER_URL:
+        MEDIATOR_REGISTER: "true"
+        MEDIATOR_API_USERNAME: root@openhim.org
+        MEDIATOR_API_PASSWORD: openhim-password
+
+    fhir:
+      container_name: hapi-fhir
+      image: hapiproject/hapi:latest
+      networks:
+        emnutt:
+      ports:
+        - '8080:8080'
+
+    mongo-db:
+      container_name: mongo-db
+      image: mongo:latest
+      networks:
+        - emnutt
+      restart: unless-stopped
+      environment:
+        NODE_ENV: 'docker'
+
+    openhim-core:
+      container_name: openhim-core
+      image: jembi/openhim-core:latest
+      restart: unless-stopped
+      environment:
+        mongo_url: 'mongodb://mongo-db/openhim-development'
+        mongo_atnaUrl: 'mongodb://mongo-db/openhim-development'
+        NODE_ENV: 'development'
+      ports:
+        - '5000:5000'
+        - '5001:5001'
+        - '8081:8080'
+      networks:
+        - emnutt
+      healthcheck:
+        test: 'curl -sSk https://openhim-core:8080/heartbeat || exit 1'
+        interval: 30s
+        timeout: 30s
+        retries: 3
+
+    openhim-console:
+      container_name: openhim-console
+      image: jembi/openhim-console:latest
+      restart: unless-stopped
+      networks:
+        - emnutt
+      ports:
+        - '9000:80'
+      healthcheck:
+        test: 'curl -sS http://openhim-console || exit 1'
+        interval: 30s
+        timeout: 30s
+        retries: 3
+
+    rapidpro:
+      image: rapidpro/rapidpro:v4
+      depends_on:
+        - redis
+        - postgresql
+      ports:
+        - '8000:8000'
+      environment:
+          MAILROOM_URL: "http://mailroom:8090"
+          DOMAIN_NAME: "localhost"
+          DJANGO_DEBUG: "off"
+          DATABASE_URL: postgresql://postgres:postgres@postgresql/rapidpro
+          REDIS_URL: redis://redis:6379/0
+          SECRET_KEY: super-secret-key
+          MANAGEPY_COLLECTSTATIC: "on"
+          MANAGEPY_COMPRESS: "on"
+          MANAGEPY_INIT_DB: "on"
+          MANAGEPY_MIGRATE: "on"
+          SEND_MESSAGES: "on"
+          SEND_WEBHOOKS: "on"
+          SEND_EMAILS: "on"
+          SEND_AIRTIME: "on"
+          SEND_CALLS: "on"
+          IS_PROD: "on"
+
+    celery_base:
+      image: rapidpro/rapidpro:v4
+      depends_on:
+        - rapidpro
+      links:
+        - redis
+        - postgresql
+      environment:
+          DATABASE_URL: postgresql://postgres:postgres@postgresql/rapidpro
+          REDIS_URL: redis://redis:6379/0
+          SECRET_KEY: super-secret-key
+      command:
+        [
+          '/venv/bin/celery',
+          '--beat',
+          '--app=temba',
+          'worker',
+          '--loglevel=INFO',
+          '--queues=celery,flows',
+        ]
+    celery_msgs:
+      image: rapidpro/rapidpro:v4
+      depends_on:
+        - rapidpro
+      links:
+        - redis
+        - postgresql
+      environment:
+          DATABASE_URL: postgresql://postgres:postgres@postgresql/rapidpro
+          REDIS_URL: redis://redis:6379/0
+          SECRET_KEY: super-secret-key
+      command:
+        [
+          '/venv/bin/celery',
+          '--app=temba',
+          'worker',
+          '--loglevel=INFO',
+          '--queues=msgs,handler',
+        ]
+    redis:
+      image: redis:alpine
+
+    postgresql:
+      image: mdillon/postgis:9.6
+      environment:
+        - POSTGRES_DB=rapidpro
+
+    courier:
+      image: praekeltfoundation/courier
+      depends_on:
+        - rapidpro
+      links:
+        - redis
+        - postgresql
+      environment:
+          COURIER_DOMAIN: "localhost"
+          COURIER_SPOOL_DIR: /tmp/courier/
+          COURIER_DB: postgres://postgres:postgres@postgresql/rapidpro
+          COURIER_REDIS: redis://redis:6379/8
+
+    mailroom:
+      image: praekeltfoundation/mailroom
+      depends_on:
+        - rapidpro
+      links:
+        - redis
+        - postgresql
+      environment:
+          MAILROOM_ADDRESS: 'localhost'
+          MAILROOM_DOMAIN: 'localhost'
+          MAILROOM_DB: postgres://postgres:postgres@postgresql/rapidpro?sslmode=disable
+          MAILROOM_REDIS: redis://redis:6379/15
+          MAILROOM_ELASTIC: http://elasticsearch:9200
+      ports:
+        - '8090:8090'
+
+    elasticsearch:
+      container_name: elasticsearch
+      image: elasticsearch:7.6.2
+      environment:
+        - node.name=elasticsearch
+        - cluster.name=es-docker-cluster
+        - discovery.seed_hosts=elasticsearch
+        - cluster.initial_master_nodes=elasticsearch
+        - bootstrap.memory_lock=true
+        - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      networks:
+        emnutt:
+      ports:
+        - '9200:9200'
+
+    kibana:
+      container_name: kibana
+      image: kibana:7.6.2
+      networks:
+        emnutt:
+      ports:
+        - '5601:5601'
+
