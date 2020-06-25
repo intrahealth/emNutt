@@ -6,6 +6,7 @@ const moment = require('moment');
 const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
+const mixin = require('./mixin');
 module.exports = function () {
   return {
     /**
@@ -897,6 +898,11 @@ module.exports = function () {
                                 telecom.system &&
                                 telecom.system === 'phone'
                               ) {
+                                telecom.value = mixin.updatePhoneNumber(telecom.value);
+                                if (!mixin.validatePhone(telecom.value)) {
+                                  logger.error('Phone number ' + telecom.value + ' is not valid');
+                                  continue;
+                                }
                                 recipients.push({
                                   urns: 'tel:' + telecom.value,
                                   id: resource.id,
@@ -1496,10 +1502,15 @@ function generateURNS(resource) {
   ) {
     for (const telecom of resource.telecom) {
       if (telecom.system && telecom.system === 'phone') {
+        telecom.value = mixin.updatePhoneNumber(telecom.value);
         if (!telecom.value.startsWith('+')) {
           logger.error(
             'Phone number ' + telecom.value + ' has no country code'
           );
+          continue;
+        }
+        if (!mixin.validatePhone(telecom.value)) {
+          logger.error('Phone number ' + telecom.value + ' is not valid');
           continue;
         }
         urns.push('tel:' + telecom.value);

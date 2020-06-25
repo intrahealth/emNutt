@@ -49,7 +49,36 @@ const updateopenHIMConfig = (urn, updatedConfig, callback) => {
   });
 };
 
+const updatePhoneNumber = (phone) => {
+  let countryCode = config.get("app:phoneCountryCode");
+  phone = phone.toString();
+  phone = phone.trim();
+  phone = phone.replace(/-/gi, '');
+  phone = phone.replace(/ /g, '');
+
+  if (!countryCode) {
+    return phone;
+  }
+
+  if (phone.startsWith(countryCode)) {
+    return '+' + phone;
+  }
+  if (phone.startsWith('0')) {
+    phone = phone.replace('0', countryCode);
+    return phone;
+  } else {
+    return countryCode + phone;
+  }
+};
+
+const validatePhone = (phoneNumber) => {
+  var re = /^\+{0,2}([\-\. ])?(\(?\d{0,3}\))?([\-\. ])?\(?\d{0,3}\)?([\-\. ])?\d{3}([\-\. ])?\d{4}/;
+  return re.test(phoneNumber);
+};
+
 module.exports = {
   updateConfigFile,
-  updateopenHIMConfig
+  updateopenHIMConfig,
+  updatePhoneNumber,
+  validatePhone
 };

@@ -2,7 +2,9 @@
   "app": {
     "port": 3002,
     "installed": true,
-    "baseURL": "http://localhost:3002/emNutt"
+    "baseURL": "http://localhost:3002/emNutt",
+    "contactGroupsSource": "rapidpro",
+    "phoneCountryCode": ""
   },
   "mediator": {
     "api": {

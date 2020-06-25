@@ -9,7 +9,8 @@ Below are emNutt configuration parameters
   "port": 3002,
   "installed": false,
   "baseURL": "http://localhost:3002/emNutt",
-  "contactGroupsSource": "pos"
+  "contactGroupsSource": "pos",
+  "phoneCountryCode": "+255"
 }
 ```
 
@@ -23,6 +24,9 @@ Below are emNutt configuration parameters
     or the name of the communication channel like rapidpro. If the value is pos then contact groups will be managed by
     Point of Service system like iHRIS, openMRS, DHIS2 etc, other wise then contacts groups will be managed through
     communications channel i.e rapidpro</li>
+  <li>
+    app.phoneCountryCode - tells the app the country code to be used. The app will use this to modify all contacts that doesnt have country code. leave this blank not to modify contacts.
+  </li>
 </ul>
 
 ## Mediator Config

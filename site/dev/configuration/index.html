@@ -552,7 +552,8 @@
   <span class="s2">&quot;port&quot;</span><span class="o">:</span> <span class="mi">3002</span><span class="p">,</span>
   <span class="s2">&quot;installed&quot;</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
   <span class="s2">&quot;baseURL&quot;</span><span class="o">:</span> <span class="s2">&quot;http://localhost:3002/emNutt&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;contactGroupsSource&quot;</span><span class="o">:</span> <span class="s2">&quot;pos&quot;</span>
+  <span class="s2">&quot;contactGroupsSource&quot;</span><span class="o">:</span> <span class="s2">&quot;pos&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;phoneCountryCode&quot;</span><span class="o">:</span> <span class="s2">&quot;+255&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
 
@@ -567,6 +568,9 @@
     or the name of the communication channel like rapidpro. If the value is pos then contact groups will be managed by
     Point of Service system like iHRIS, openMRS, DHIS2 etc, other wise then contacts groups will be managed through
     communications channel i.e rapidpro</li>
+  <li>
+    app.phoneCountryCode - tells the app the country code to be used. The app will use this to modify all contacts that doesnt have country code. leave this blank not to modify contacts.
+  </li>
 </ul>
 
 <h2>Mediator Config</h2>
