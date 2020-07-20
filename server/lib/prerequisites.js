@@ -151,7 +151,9 @@ const addRapidproDefaultData = (callback) => {
   };
   request.post(options, (err, res, body) => {
     logger.info('Done adding Global ID into Rapidpro');
-    if (res.statusCode === 400) {
+    if (!res) {
+      logger.error('An error occured while adding global ID into Rapidpro, this might be due to unreachable Rapidpro instance');
+    } else if (res.statusCode === 400) {
       logger.info('Field Global ID already exists');
     } else if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
       err = 'An error occured while adding globalid field, Err Code ' + res.statusCode;

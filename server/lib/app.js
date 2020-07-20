@@ -17,6 +17,7 @@ const logger = require('./winston');
 const config = require('./config');
 const envVars = require('./envVars');
 const rapidpro = require('./rapidpro')();
+const eidsr = require('./eidsr');
 const macm = require('./macm')();
 const prerequisites = require('./prerequisites');
 const mixin = require('./mixin');
@@ -42,6 +43,7 @@ function appRoutes() {
 
   app.use(cors());
   app.use(bodyParser.json());
+  app.use('/emNutt/eidsr/', eidsr);
 
   app.post('/emNutt/fhir/CommunicationRequest', (req, res) => {
     let resource = req.body;

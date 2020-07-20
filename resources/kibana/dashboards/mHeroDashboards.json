@@ -1,0 +1,203 @@
+{
+  "version": "6.8.8",
+  "objects": [{
+      "id": "63006280-82e6-11ea-aa44-bb2f715e634d",
+      "type": "dashboard",
+      "attributes": {
+        "title": "Complete Message Exchange by Contact",
+        "hits": 0,
+        "description": "",
+        "panelsJSON": "[{\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":25,\"i\":\"1\"},\"version\":\"6.8.8\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"id\":\"865114f0-6829-11ea-b869-59440bc44685\",\"embeddableConfig\":{}},{\"gridData\":{\"x\":0,\"y\":25,\"w\":14,\"h\":8,\"i\":\"2\"},\"version\":\"6.8.8\",\"panelIndex\":\"2\",\"type\":\"visualization\",\"id\":\"42b81270-82e6-11ea-aa44-bb2f715e634d\",\"embeddableConfig\":{}}]",
+        "optionsJSON": "{\"darkTheme\":false,\"useMargins\":true,\"hidePanelTitles\":false}",
+        "version": 1,
+        "timeRestore": false,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[{\"meta\":{\"index\":\"f8856120-6829-11ea-b869-59440bc44685\",\"controlledBy\":\"1587373328653\",\"type\":\"phrase\",\"key\":\"flow.keyword\",\"value\":\"Knowledge Workflow\",\"params\":{\"query\":\"Knowledge Workflow\",\"type\":\"phrase\"},\"disabled\":false,\"negate\":false,\"alias\":null},\"query\":{\"match\":{\"flow.keyword\":{\"query\":\"Knowledge Workflow\",\"type\":\"phrase\"}}},\"$state\":{\"store\":\"appState\"}}]}"
+        }
+      }
+    },
+    {
+      "id": "59c71980-82ea-11ea-aa44-bb2f715e634d",
+      "type": "dashboard",
+      "attributes": {
+        "title": "Detailed Workflow Completion Report",
+        "hits": 0,
+        "description": "",
+        "panelsJSON": "[{\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":20,\"i\":\"1\"},\"version\":\"6.8.8\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"id\":\"e5cb6a10-682a-11ea-b869-59440bc44685\",\"embeddableConfig\":{}},{\"gridData\":{\"x\":0,\"y\":20,\"w\":24,\"h\":15,\"i\":\"2\"},\"version\":\"6.8.8\",\"panelIndex\":\"2\",\"type\":\"visualization\",\"id\":\"914b0640-82eb-11ea-aa44-bb2f715e634d\",\"embeddableConfig\":{}},{\"gridData\":{\"x\":24,\"y\":20,\"w\":24,\"h\":15,\"i\":\"3\"},\"version\":\"6.8.8\",\"panelIndex\":\"3\",\"type\":\"visualization\",\"id\":\"42b81270-82e6-11ea-aa44-bb2f715e634d\",\"embeddableConfig\":{}}]",
+        "optionsJSON": "{\"darkTheme\":false,\"useMargins\":true,\"hidePanelTitles\":false}",
+        "version": 1,
+        "timeRestore": false,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "bb254260-c80e-11ea-a7e3-05ca65823946",
+      "type": "dashboard",
+      "attributes": {
+        "title": "Workflow Completion Summary Report",
+        "hits": 0,
+        "description": "",
+        "panelsJSON": "[{\"gridData\":{\"x\":0,\"y\":0,\"w\":24,\"h\":15,\"i\":\"1\"},\"version\":\"6.8.10\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"id\":\"87470fa0-c80e-11ea-a7e3-05ca65823946\",\"embeddableConfig\":{}},{\"gridData\":{\"x\":0,\"y\":15,\"w\":13,\"h\":7,\"i\":\"2\"},\"version\":\"6.8.10\",\"panelIndex\":\"2\",\"type\":\"visualization\",\"id\":\"42b81270-82e6-11ea-aa44-bb2f715e634d\",\"embeddableConfig\":{}}]",
+        "optionsJSON": "{\"darkTheme\":false,\"useMargins\":true,\"hidePanelTitles\":false}",
+        "version": 1,
+        "timeRestore": false,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "02a830b0-682f-11ea-b869-59440bc44685",
+      "type": "dashboard",
+      "attributes": {
+        "title": "mHero Dashboard",
+        "hits": 0,
+        "description": "",
+        "panelsJSON": "[{\"embeddableConfig\":{},\"gridData\":{\"x\":0,\"y\":15,\"w\":24,\"h\":15,\"i\":\"1\"},\"id\":\"865114f0-6829-11ea-b869-59440bc44685\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"version\":\"6.8.7\"},{\"embeddableConfig\":{},\"gridData\":{\"x\":24,\"y\":0,\"w\":24,\"h\":15,\"i\":\"2\"},\"id\":\"e5cb6a10-682a-11ea-b869-59440bc44685\",\"panelIndex\":\"2\",\"type\":\"visualization\",\"version\":\"6.8.7\"},{\"gridData\":{\"x\":1,\"y\":0,\"w\":23,\"h\":15,\"i\":\"4\"},\"version\":\"6.8.7\",\"panelIndex\":\"4\",\"type\":\"visualization\",\"id\":\"281a7bb0-682e-11ea-b869-59440bc44685\",\"embeddableConfig\":{\"vis\":{\"colors\":{\"false\":\"#BF1B00\",\"true\":\"#3F6833\"}}}},{\"gridData\":{\"w\":24,\"h\":15,\"x\":24,\"y\":15,\"i\":\"5\"},\"version\":\"6.8.10\",\"panelIndex\":\"5\",\"type\":\"visualization\",\"id\":\"87470fa0-c80e-11ea-a7e3-05ca65823946\",\"embeddableConfig\":{}}]",
+        "optionsJSON": "{\"darkTheme\":false,\"hidePanelTitles\":false,\"useMargins\":true}",
+        "version": 1,
+        "timeRestore": false,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"language\":\"kuery\",\"query\":\"\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "54250a90-681f-11ea-b869-59440bc44685",
+      "type": "index-pattern",
+      "attributes": {
+        "title": "mheromessageexchange",
+        "fields": "[{\"name\":\"_id\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"_index\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"_score\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":false,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"_source\",\"type\":\"_source\",\"count\":0,\"scripted\":false,\"searchable\":false,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"_type\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"mheromessageexchange\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"mheromessageexchange.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"family\",\"type\":\"string\",\"count\":1,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"family.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"flow\",\"type\":\"string\",\"count\":1,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"flow.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"flowStartDate\",\"type\":\"date\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"given\",\"type\":\"string\",\"count\":1,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"given.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"Message\",\"type\":\"string\",\"count\":3,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"Message.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"Received\",\"type\":\"date\",\"count\":1,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"Sent\",\"type\":\"date\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true}]"
+      },
+      "_migrationVersion": {
+        "index-pattern": "6.5.0"
+      }
+    },
+    {
+      "id": "f8856120-6829-11ea-b869-59440bc44685",
+      "type": "index-pattern",
+      "attributes": {
+        "title": "mheroflowrunsummary",
+        "fields": "[{\"name\":\"_id\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"_index\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"_score\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":false,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"_source\",\"type\":\"_source\",\"count\":0,\"scripted\":false,\"searchable\":false,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"_type\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"created_on\",\"type\":\"date\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"ExitType\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"ExitType.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"ExitedOn\",\"type\":\"date\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"family\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"family.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"flow\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"flow.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"given\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"given.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"responded\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"Responded.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true}]"
+      },
+      "_migrationVersion": {
+        "index-pattern": "6.5.0"
+      }
+    },
+    {
+      "id": "d6aa0310-682b-11ea-b869-59440bc44685",
+      "type": "index-pattern",
+      "attributes": {
+        "title": "mheroflowsummary",
+        "fields": "[{\"name\":\"ActiveRuns\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"Archived\",\"type\":\"boolean\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"CompletedRuns\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"Expired\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"Expires\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"Expires.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"InterruptedRuns\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"Name\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"Name.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"Type\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"Type.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"UUID\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"UUID.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"WorkflowCreatedAt\",\"type\":\"date\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"WorkflowLastmodified\",\"type\":\"date\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"_id\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"_index\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"_score\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":false,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"_source\",\"type\":\"_source\",\"count\":0,\"scripted\":false,\"searchable\":false,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"_type\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"mheroflowsummary\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true}]"
+      },
+      "_migrationVersion": {
+        "index-pattern": "6.5.0"
+      }
+    },
+    {
+      "id": "914b0640-82eb-11ea-aa44-bb2f715e634d",
+      "type": "visualization",
+      "attributes": {
+        "title": "Workflow Completion Filters",
+        "visState": "{\"title\":\"Workflow Completion Filters\",\"type\":\"input_control_vis\",\"params\":{\"controls\":[{\"id\":\"1587375384961\",\"indexPattern\":\"f8856120-6829-11ea-b869-59440bc44685\",\"fieldName\":\"ExitType.keyword\",\"parent\":\"\",\"label\":\"Run Status\",\"type\":\"list\",\"options\":{\"type\":\"terms\",\"multiselect\":false,\"dynamicOptions\":true,\"size\":5,\"order\":\"desc\"}},{\"id\":\"1587375625791\",\"indexPattern\":\"f8856120-6829-11ea-b869-59440bc44685\",\"fieldName\":\"Responded.keyword\",\"parent\":\"\",\"label\":\"Responded\",\"type\":\"list\",\"options\":{\"type\":\"terms\",\"multiselect\":true,\"dynamicOptions\":true,\"size\":5,\"order\":\"desc\"}},{\"id\":\"1587375705146\",\"fieldName\":\"\",\"parent\":\"\",\"label\":\"Start Date\",\"type\":\"list\",\"options\":{\"type\":\"terms\",\"multiselect\":true,\"dynamicOptions\":false,\"size\":10,\"order\":\"desc\"}}],\"updateFiltersOnChange\":false,\"useTimeFilter\":false,\"pinFilters\":false},\"aggs\":[]}",
+        "uiStateJSON": "{}",
+        "description": "",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      },
+      "_migrationVersion": {
+        "visualization": "6.7.2"
+      }
+    },
+    {
+      "id": "42b81270-82e6-11ea-aa44-bb2f715e634d",
+      "type": "visualization",
+      "attributes": {
+        "title": "Workflow Name Filter",
+        "visState": "{\"title\":\"Workflow Name Filter\",\"type\":\"input_control_vis\",\"params\":{\"controls\":[{\"id\":\"1587373328653\",\"indexPattern\":\"f8856120-6829-11ea-b869-59440bc44685\",\"fieldName\":\"flow.keyword\",\"parent\":\"\",\"label\":\"Workflow Name\",\"type\":\"list\",\"options\":{\"type\":\"terms\",\"multiselect\":true,\"dynamicOptions\":true,\"size\":5,\"order\":\"desc\"}}],\"updateFiltersOnChange\":false,\"useTimeFilter\":false,\"pinFilters\":false},\"aggs\":[]}",
+        "uiStateJSON": "{}",
+        "description": "",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      },
+      "_migrationVersion": {
+        "visualization": "6.7.2"
+      }
+    },
+    {
+      "id": "865114f0-6829-11ea-b869-59440bc44685",
+      "type": "visualization",
+      "attributes": {
+        "title": "Complete Message Exchange by Contact",
+        "visState": "{\"title\":\"Complete Message Exchange by Contact\",\"type\":\"table\",\"params\":{\"perPage\":10,\"showPartialRows\":false,\"showMetricsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":false,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"5\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"given.keyword\",\"size\":29,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Firstname\"}},{\"id\":\"6\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"family.keyword\",\"size\":43,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Surname\"}},{\"id\":\"7\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"flow.keyword\",\"size\":136,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Workflow\"}},{\"id\":\"8\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Message.keyword\",\"size\":117,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Message\"}},{\"id\":\"9\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Received\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Received Time\"}},{\"id\":\"10\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Sent\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Sent Time\"}}]}",
+        "uiStateJSON": "{\"vis\":{\"params\":{\"sort\":{\"columnIndex\":5,\"direction\":\"asc\"}}}}",
+        "description": "",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"54250a90-681f-11ea-b869-59440bc44685\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      },
+      "_migrationVersion": {
+        "visualization": "6.7.2"
+      }
+    },
+    {
+      "id": "e5cb6a10-682a-11ea-b869-59440bc44685",
+      "type": "visualization",
+      "attributes": {
+        "title": "Detailed Workflow Completion Report",
+        "visState": "{\"title\":\"Detailed Workflow Completion Report\",\"type\":\"table\",\"params\":{\"perPage\":10,\"showPartialRows\":false,\"showMetricsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":false,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"given.keyword\",\"size\":34,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Firstname\"}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"family.keyword\",\"size\":46,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Surname\"}},{\"id\":\"4\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"flow.keyword\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Workflow\"}},{\"id\":\"5\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"ExitType.keyword\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Workflow Run Status\"}},{\"id\":\"6\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Responded.keyword\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Responded\"}},{\"id\":\"7\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"created_on\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Workflow Start Date\"}},{\"id\":\"8\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"ExitedOn\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Workflow End Date\"}}]}",
+        "uiStateJSON": "{\"vis\":{\"params\":{\"sort\":{\"columnIndex\":null,\"direction\":null}}}}",
+        "description": "",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"f8856120-6829-11ea-b869-59440bc44685\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      },
+      "_migrationVersion": {
+        "visualization": "6.7.2"
+      }
+    },
+    {
+      "id": "281a7bb0-682e-11ea-b869-59440bc44685",
+      "type": "visualization",
+      "attributes": {
+        "title": "Workflow Response Rate",
+        "visState": "{\"title\":\"Workflow Response Rate\",\"type\":\"pie\",\"params\":{\"type\":\"pie\",\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"isDonut\":true,\"labels\":{\"show\":true,\"values\":true,\"last_level\":true,\"truncate\":100}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"segment\",\"params\":{\"field\":\"Responded.keyword\",\"size\":21,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\"}}]}",
+        "uiStateJSON": "{}",
+        "description": "",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"f8856120-6829-11ea-b869-59440bc44685\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      },
+      "_migrationVersion": {
+        "visualization": "6.7.2"
+      }
+    },
+    {
+      "id": "87470fa0-c80e-11ea-a7e3-05ca65823946",
+      "type": "visualization",
+      "attributes": {
+        "title": "Workflow Completion Summary Report",
+        "visState": "{\"title\":\"Workflow Completion Summary Report\",\"type\":\"table\",\"params\":{\"perPage\":10,\"showPartialRows\":false,\"showMetricsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":false,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Name.keyword\",\"size\":49,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Workflow Name\"}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Type.keyword\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Type\"}},{\"id\":\"4\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Expires.keyword\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Expires\"}},{\"id\":\"5\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"ActiveRuns\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Active\"}},{\"id\":\"6\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"CompletedRuns\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Completed\"}},{\"id\":\"7\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Expired\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Expired\"}},{\"id\":\"8\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"InterruptedRuns\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Interrupted\"}}]}",
+        "uiStateJSON": "{\"vis\":{\"params\":{\"sort\":{\"columnIndex\":null,\"direction\":null}}}}",
+        "description": "",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"d6aa0310-682b-11ea-b869-59440bc44685\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      },
+      "_migrationVersion": {
+        "visualization": "6.7.2"
+      }
+    }
+  ]
+}
