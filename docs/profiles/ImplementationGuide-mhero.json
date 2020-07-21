@@ -10,7 +10,7 @@
   "name": "mHeroImplementationGuide",
   "title": "mHero Implementation Guide",
   "status": "active",
-  "date": "2020-07-21T08:42:54+03:00",
+  "date": "2020-07-21T09:33:18+03:00",
   "publisher": "Ally Shaban",
   "contact": [
     {
@@ -559,6 +559,23 @@
         },
         "name": "mHero Communication Request (Flow) Example",
         "exampleCanonical": "http://mHero.org/fhir/StructureDefinition/mhero-communication-request"
+      },
+      {
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/resource-information",
+            "valueString": "Patient"
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/implementationguide-page",
+            "valueUri": "Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388.html"
+          }
+        ],
+        "reference": {
+          "reference": "Patient/a4g95gd4-64ce-69d8-94f3-48ed235e3388"
+        },
+        "name": "mHero eiDSR Suspected Case Example",
+        "exampleCanonical": "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-patient"
       },
       {
         "extension": [

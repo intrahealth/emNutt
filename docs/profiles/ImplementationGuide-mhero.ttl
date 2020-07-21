@@ -17,7 +17,7 @@
   fhir:ImplementationGuide.name [ fhir:value "mHeroImplementationGuide"];
   fhir:ImplementationGuide.title [ fhir:value "mHero Implementation Guide"];
   fhir:ImplementationGuide.status [ fhir:value "active"];
-  fhir:ImplementationGuide.date [ fhir:value "2020-07-21T08:42:54+03:00"^^xsd:dateTime];
+  fhir:ImplementationGuide.date [ fhir:value "2020-07-21T09:33:18+03:00"^^xsd:dateTime];
   fhir:ImplementationGuide.publisher [ fhir:value "Ally Shaban"];
   fhir:ImplementationGuide.contact [
      fhir:index 0;
@@ -558,6 +558,26 @@
        fhir:Element.extension [
          fhir:index 0;
          fhir:Extension.url [ fhir:value "http://hl7.org/fhir/tools/StructureDefinition/resource-information" ];
+         fhir:Extension.valueString [ fhir:value "Patient" ]
+       ], [
+         fhir:index 1;
+         fhir:Extension.url [ fhir:value "http://hl7.org/fhir/StructureDefinition/implementationguide-page" ];
+         fhir:Extension.valueUri [ fhir:value "Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388.html" ]
+       ];
+       fhir:ImplementationGuide.definition.resource.reference [
+         fhir:link <http://mHero.org/fhir/Patient/a4g95gd4-64ce-69d8-94f3-48ed235e3388>;
+         fhir:Reference.reference [ fhir:value "Patient/a4g95gd4-64ce-69d8-94f3-48ed235e3388" ]
+       ];
+       fhir:ImplementationGuide.definition.resource.name [ fhir:value "mHero eiDSR Suspected Case Example" ];
+       fhir:ImplementationGuide.definition.resource.exampleCanonical [
+         fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-patient";
+         fhir:link <http://mHero.org/fhir/StructureDefinition/mhero-eidsr-patient>
+       ]
+     ], [
+       fhir:index 16;
+       fhir:Element.extension [
+         fhir:index 0;
+         fhir:Extension.url [ fhir:value "http://hl7.org/fhir/tools/StructureDefinition/resource-information" ];
          fhir:Extension.valueString [ fhir:value "Communication" ]
        ], [
          fhir:index 1;
@@ -574,7 +594,7 @@
          fhir:link <http://mHero.org/fhir/StructureDefinition/mhero-communication>
        ]
      ], [
-       fhir:index 16;
+       fhir:index 17;
        fhir:Element.extension [
          fhir:index 0;
          fhir:Extension.url [ fhir:value "http://hl7.org/fhir/tools/StructureDefinition/resource-information" ];

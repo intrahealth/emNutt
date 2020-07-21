@@ -1,27 +1,28 @@
 ﻿mHeroImplementationGuide : Validation Results
 =========================================
 
-err = 8, warn = 8, info = 0
+err = 9, warn = 7, info = 0
 IG Publisher Version: v1.1.0 Out of date - current version is ?pub-ver-1?
-Generated Tue Jul 21 08:43:12 EAT 2020. FHIR version 4.0.1 for mhero#0.1.0 (canonical = http://mHero.org/fhir)
+Generated Tue Jul 21 09:33:35 EAT 2020. FHIR version 4.0.1 for mhero#0.1.0 (canonical = http://mHero.org/fhir)
 
- Build Errors : 117 / 5
+ Build Errors : 121 / 6
  /home/ally/emNutt/fsh/build/input/ImplementationGuide-mhero : 0 / 1
  /home/ally/emNutt/fsh/build/input/examples/Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899 : 3 / 0
  /home/ally/emNutt/fsh/build/input/examples/Basic-b1155b20-9054-4666-9493-4ef05edf77f4 : 0 / 0
  /home/ally/emNutt/fsh/build/input/examples/Communication-a9c91fc1-20ce-59d8-94e3-48ed235e3379 : 1 / 0
  /home/ally/emNutt/fsh/build/input/examples/CommunicationRequest-716c84d3-5790-43c5-9dcc-e5a149affa23 : 2 / 0
  /home/ally/emNutt/fsh/build/input/examples/CommunicationRequest-8d5d23b0-2e67-4bac-af8d-15585bd863d5 : 2 / 0
+ /home/ally/emNutt/fsh/build/input/examples/Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388 : 1 / 0
  /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-comm-flow-run : 0 / 0
  /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-comm-req-broadcast-starts : 0 / 0
  /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-comm-req-flow-starts : 0 / 0
- /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-eidsr-suspected-case : 0 / 1
+ /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-eidsr-suspected-case : 0 / 0
  /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-flow-run-details : 0 / 0
  /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-run-summary : 0 / 0
  /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-workflows-details : 0 / 0
  /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-communication : 0 / 0
  /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-communication-request : 0 / 0
- /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-eidsr-patient : 0 / 1
+ /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-eidsr-patient : 0 / 0
  /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-flow-run : 0 / 0
  /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-workflows : 0 / 0
 </table>
@@ -29,6 +30,7 @@ Generated Tue Jul 21 08:43:12 EAT 2020. FHIR version 4.0.1 for mhero#0.1.0 (cano
 WARNING: Unable to find ImplementationGuide.definition.resource.description for the resource Basic/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.  Descriptions are strongly encouraged if they cannot be inferred from the resource to allow proper population of the artifact list.
 WARNING: Unable to find ImplementationGuide.definition.resource.description for the resource CommunicationRequest/716c84d3-5790-43c5-9dcc-e5a149affa23.  Descriptions are strongly encouraged if they cannot be inferred from the resource to allow proper population of the artifact list.
 WARNING: Unable to find ImplementationGuide.definition.resource.description for the resource CommunicationRequest/8d5d23b0-2e67-4bac-af8d-15585bd863d5.  Descriptions are strongly encouraged if they cannot be inferred from the resource to allow proper population of the artifact list.
+WARNING: Unable to find ImplementationGuide.definition.resource.description for the resource Patient/a4g95gd4-64ce-69d8-94f3-48ed235e3388.  Descriptions are strongly encouraged if they cannot be inferred from the resource to allow proper population of the artifact list.
 WARNING: Unable to find ImplementationGuide.definition.resource.description for the resource Communication/a9c91fc1-20ce-59d8-94e3-48ed235e3379.  Descriptions are strongly encouraged if they cannot be inferred from the resource to allow proper population of the artifact list.
 WARNING: Unable to find ImplementationGuide.definition.resource.description for the resource Basic/b1155b20-9054-4666-9493-4ef05edf77f4.  Descriptions are strongly encouraged if they cannot be inferred from the resource to allow proper population of the artifact list.
 ERROR: /home/ally/emNutt/fsh/build/output/Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.html#/html/body/div/div/div/p/a at Line 184, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
@@ -56,6 +58,10 @@ ERROR: /home/ally/emNutt/fsh/build/output/CommunicationRequest-8d5d23b0-2e67-4ba
 ERROR: /home/ally/emNutt/fsh/build/output/CommunicationRequest-8d5d23b0-2e67-4bac-af8d-15585bd863d5.json.html#/html/body/div/div/div/p/a at Line 250, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/CommunicationRequest-8d5d23b0-2e67-4bac-af8d-15585bd863d5.ttl.html#/html/body/div/div/div/p/a at Line 253, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/CommunicationRequest-8d5d23b0-2e67-4bac-af8d-15585bd863d5.xml.html#/html/body/div/div/div/p/a at Line 234, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388.html#/html/body/div/div/div/p/a at Line 184, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388.json.html#/html/body/div/div/div/p/a at Line 237, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388.ttl.html#/html/body/div/div/div/p/a at Line 242, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388.xml.html#/html/body/div/div/div/p/a at Line 225, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-comm-flow-run-definitions.html#/html/body/div/div/div/p/a at Line 335, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-comm-flow-run-mappings.html#/html/body/div/div/div/p/a at Line 241, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-comm-flow-run.html#/html/body/div/div/div/p/a at Line 513, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
@@ -93,14 +99,14 @@ ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-communicatio
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-communication.profile.json.html#/html/body/div/div/div/p/a at Line 2014, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-communication.profile.ttl.html#/html/body/div/div/div/p/a at Line 1849, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-communication.profile.xml.html#/html/body/div/div/div/p/a at Line 1798, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient-definitions.html#/html/body/div/div/div/p/a at Line 779, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient-examples.html#/html/body/div/div/div/p/a at Line 231, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient-mappings.html#/html/body/div/div/div/p/a at Line 355, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.html#/html/body/div/div/div/p/a at Line 782, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.profile.history.html#/html/body/div/div/div/p/a at Line 220, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.profile.json.html#/html/body/div/div/div/p/a at Line 2868, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.profile.ttl.html#/html/body/div/div/div/p/a at Line 2504, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.profile.xml.html#/html/body/div/div/div/p/a at Line 2625, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient-definitions.html#/html/body/div/div/div/p/a at Line 789, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient-examples.html#/html/body/div/div/div/p/a at Line 252, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient-mappings.html#/html/body/div/div/div/p/a at Line 365, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.html#/html/body/div/div/div/p/a at Line 792, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.profile.history.html#/html/body/div/div/div/p/a at Line 230, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.profile.json.html#/html/body/div/div/div/p/a at Line 2878, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.profile.ttl.html#/html/body/div/div/div/p/a at Line 2514, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-patient.profile.xml.html#/html/body/div/div/div/p/a at Line 2635, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-suspected-case-definitions.html#/html/body/div/div/div/p/a at Line 661, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-suspected-case-mappings.html#/html/body/div/div/div/p/a at Line 275, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-eidsr-suspected-case.html#/html/body/div/div/div/p/a at Line 693, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
@@ -145,7 +151,7 @@ ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-workflows.pr
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-workflows.profile.json.html#/html/body/div/div/div/p/a at Line 1012, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-workflows.profile.ttl.html#/html/body/div/div/div/p/a at Line 946, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/StructureDefinition-mhero-workflows.profile.xml.html#/html/body/div/div/div/p/a at Line 931, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
-ERROR: /home/ally/emNutt/fsh/build/output/artifacts.html#/html/body/div/div/div/p/a at Line 301, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
+ERROR: /home/ally/emNutt/fsh/build/output/artifacts.html#/html/body/div/div/div/p/a at Line 307, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/index.html#/html/body/div/div/div/p/a at Line 153, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 ERROR: /home/ally/emNutt/fsh/build/output/toc.html#/html/body/div/div/div/p/a at Line 135, column 28: The link 'ashaban@intrahealth.org' for "Ally Shaban" cannot be resolved
 == /home/ally/emNutt/fsh/build/input/ImplementationGuide-mhero.json ==
@@ -163,17 +169,17 @@ ERROR: CommunicationRequest/716c84d3-5790-43c5-9dcc-e5a149affa23: CommunicationR
 == /home/ally/emNutt/fsh/build/input/examples/CommunicationRequest-8d5d23b0-2e67-4bac-af8d-15585bd863d5.json ==
 ERROR: CommunicationRequest/8d5d23b0-2e67-4bac-af8d-15585bd863d5: CommunicationRequest.recipient[0]: Unable to resolve resource "Practitioner/P7364"
 ERROR: CommunicationRequest/8d5d23b0-2e67-4bac-af8d-15585bd863d5: CommunicationRequest.recipient[1]: Unable to resolve resource "Practitioner/P7344"
+== /home/ally/emNutt/fsh/build/input/examples/Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388.json ==
+ERROR: Patient/a4g95gd4-64ce-69d8-94f3-48ed235e3388: Patient.extension[0].extension[1].value.ofType(Reference): Unable to resolve resource "Practitioner/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899"
 == /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-comm-flow-run.json ==
 == /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-comm-req-broadcast-starts.json ==
 == /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-comm-req-flow-starts.json ==
 == /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-eidsr-suspected-case.json ==
-WARNING: StructureDefinition.where(url = 'http://mHero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case'): The Implementation Guide contains no examples for this extension
 == /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-flow-run-details.json ==
 == /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-run-summary.json ==
 == /home/ally/emNutt/fsh/build/input/extensions/StructureDefinition-mhero-workflows-details.json ==
 == /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-communication.json ==
 == /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-communication-request.json ==
 == /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-eidsr-patient.json ==
-WARNING: StructureDefinition.where(url = 'http://mHero.org/fhir/StructureDefinition/mhero-eidsr-patient'): The Implementation Guide contains no examples for this profile
 == /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-flow-run.json ==
 == /home/ally/emNutt/fsh/build/input/profiles/StructureDefinition-mhero-workflows.json ==

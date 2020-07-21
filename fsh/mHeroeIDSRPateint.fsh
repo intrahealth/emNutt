@@ -55,7 +55,7 @@ Description:    "mHero eIDSR Suspected Case"
 * extension[internationalTravel].value[x] only boolean
 * extension[internationalTravel].valueBoolean 1..1
 
-Instance:       a9c91fc1-20ce-59d8-94e3-48ed235e3388
+Instance:       a4g95gd4-64ce-69d8-94f3-48ed235e3388
 InstanceOf:     MheroeIDSRPatient
 Title:          "mHero eiDSR Suspected Case Example"
 Usage:          #example
