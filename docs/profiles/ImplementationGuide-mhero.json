@@ -10,7 +10,7 @@
   "name": "mHeroImplementationGuide",
   "title": "mHero Implementation Guide",
   "status": "active",
-  "date": "2020-05-22T17:16:42+03:00",
+  "date": "2020-07-21T08:42:54+03:00",
   "publisher": "Ally Shaban",
   "contact": [
     {
@@ -369,6 +369,24 @@
         "extension": [
           {
             "url": "http://hl7.org/fhir/tools/StructureDefinition/resource-information",
+            "valueString": "StructureDefinition:resource"
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/implementationguide-page",
+            "valueUri": "StructureDefinition-mhero-eidsr-patient.html"
+          }
+        ],
+        "reference": {
+          "reference": "StructureDefinition/mhero-eidsr-patient"
+        },
+        "name": "mHero eIDSR Patient Profile",
+        "description": "mHero eIDSR profile for Patient.",
+        "exampleBoolean": false
+      },
+      {
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/resource-information",
             "valueString": "StructureDefinition:extension"
           },
           {
@@ -471,6 +489,24 @@
         },
         "name": "mHero Workflow Details Extension",
         "description": "Details of mHero workflow.",
+        "exampleBoolean": false
+      },
+      {
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/resource-information",
+            "valueString": "StructureDefinition:extension"
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/implementationguide-page",
+            "valueUri": "StructureDefinition-mhero-eidsr-suspected-case.html"
+          }
+        ],
+        "reference": {
+          "reference": "StructureDefinition/mhero-eidsr-suspected-case"
+        },
+        "name": "mHero eIDSR Suspected Case Extension",
+        "description": "mHero eIDSR Suspected Case",
         "exampleBoolean": false
       },
       {
@@ -611,6 +647,10 @@
       {
         "code": "path-resource",
         "value": "input/testing"
+      },
+      {
+        "code": "path-resource",
+        "value": "input/history"
       },
       {
         "code": "path-pages",

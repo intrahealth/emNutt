@@ -3,9 +3,9 @@
   "name": "mHeroImplementationGuide",
   "package-id": "mhero",
   "ig-ver": "0.1.0",
-  "date": "Fri, 22 May, 2020 17:16:42 +0300",
-  "errs": 0,
-  "warnings": 6,
+  "date": "Tue, 21 Jul, 2020 08:42:54 +0300",
+  "errs": 8,
+  "warnings": 8,
   "hints": 0,
   "version": "4.0.1",
   "tool": "4.4.0 (3)"

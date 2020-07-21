@@ -55,16 +55,15 @@ Description:    "mHero eIDSR Suspected Case"
 * extension[internationalTravel].value[x] only boolean
 * extension[internationalTravel].valueBoolean 1..1
 
-Instance:       a9c91fc1-20ce-59d8-94e3-48ed235e3379
+Instance:       a9c91fc1-20ce-59d8-94e3-48ed235e3388
 InstanceOf:     MheroeIDSRPatient
 Title:          "mHero eiDSR Suspected Case Example"
 Usage:          #example
-* status = #completed
-* gender = "male"
-* extension[diseaseCode].valueString = "covid19"
-* extension[reporterID].valueReference = Reference(Practitioner/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899)
-* extension[age].valueInteger = 32
-* extension[caseID].valueString = "LB-MND"
-* extension[specimenCollected].valueBoolean = true
-* extension[communityDetection].valueBoolean = true
-* extension[internationalTravel].valueBoolean = false
+* gender = #male
+* extension[suspectedCase].extension[diseaseCode].valueString = "covid19"
+* extension[suspectedCase].extension[reporterID].valueReference = Reference(Practitioner/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899)
+* extension[suspectedCase].extension[age].valueInteger = 32
+* extension[suspectedCase].extension[caseID].valueString = "LB-MND"
+* extension[suspectedCase].extension[specimenCollected].valueBoolean = true
+* extension[suspectedCase].extension[communityDetection].valueBoolean = true
+* extension[suspectedCase].extension[internationalTravel].valueBoolean = false

@@ -37,11 +37,12 @@
   </head>
   <body>
 
-    <style type="text/css">h2{--heading-prefix:"2.11"}
-    h3,h4,h5,h6{--heading-prefix:"2.11"}</style>
+    <style type="text/css">h2{--heading-prefix:"2.13"}
+    h3,h4,h5,h6{--heading-prefix:"2.13"}</style>
     <div id="segment-header" class="segment">    <!-- segment-header -->
       <div class="container">    <!-- container -->
-        
+          <!-- Placeholder for child template header declarations -->
+
 
         <div id="ig-status">
           <p><span style="font-size:12pt;font-weight:bold">mHero Implementation Guide</span><br/>0.1.0 - CI Build</p>
@@ -99,59 +100,88 @@
       <div class="container">    <!-- container -->
         <div class="row">
           <div class="inner-wrapper">
-
-
-
 <div class="col-12">
     <!-- ReleaseHeader --><p id="publish-box">mHero Implementation Guide - Local Development build (v0.1.0). See the <a href="http://mHero.org/fhir/history.html">Directory of published versions</a></p>  <!-- EndReleaseHeader -->
+
+  
+
+
+
+
+
+
+<ul class="nav nav-tabs">
+
+  <li class="active">
+    <a href="#">Narrative Content</a>
+  </li>
+
+
+  
+    <li>
+      <a href="Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.xml.html">XML</a>
+    </li>
+  
+
+
+  
+    <li>
+      <a href="Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.json.html">JSON</a>
+    </li>
+  
+
+
+  
+    <li>
+      <a href="Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.ttl.html">TTL</a>
+    </li>
+  
+
+
+
+</ul>
+
+
   <a name="root"> </a>
 
 
   <h2 id="root">Example Basic: mHero Workflow Run Details Example</h2>
-  <p>
-    Format(s):
-  </p>
-  <ul>
-
-    <li>
-      <a href="Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.xml.html">XML</a>
-    </li>
 
 
-    <li>
-      <a href="Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.json.html">JSON</a> 
-    </li>
 
-
-    <li>
-      <a href="Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.ttl.html">Turtle</a>
-    </li>
-
-  </ul>
-
-  
+    <!-- insert intro if present -->
   
 
-  <p>
-    <b>Narrative view</b>
-  </p>
+
+
   <div><p><b>Generated Narrative</b></p><p><b>id</b>: 3fbb96d3-bb8a-41c6-b1a4-8f4f11460899</p><p><b>meta</b>: </p><p><b>code</b>: <span title="Codes: ">mHero Workflow Run Details</span></p></div>
 
+    <!-- insert notes if present -->
   
-  
-  
+
+
+
 </div>
         </div>    <!-- /inner-wrapper -->
       </div>    <!-- /row -->
     </div>    <!-- /container -->
   </div>    <!-- /segment-content -->
 
+  <script src="assets/js/jquery.js" type="text/javascript"> </script>       <!-- note keep space here, otherwise it will be transformed to empty tag -> fails -->
+  <script src="assets/js/jquery-ui.min.js" type="text/javascript"> </script>
 
+  <script type="text/javascript">
+    $(document).ready(function(){
+      if(window.location.hash != "") {
+          $('a[href="' + window.location.hash + '"]').click()
+      }
+    });
+  </script>
   <div igtool="footer" id="segment-footer" class="segment">    <!-- segment-footer -->
     <div class="container">    <!-- container -->
       <div class="inner-wrapper">
-        <p><a name="46450ce0-8658-4b80-b0b9-495fa666be8c">​</a>
-          IG &copy; 2020+ <a style="color: #81BEF7" href="ashaban@intrahealth.org">Ally Shaban</a>.  Package mhero#0.1.0 based on <a style="color: #81BEF7" href="http://hl7.org/fhir/R4/">FHIR 4.0.1</a>. Generated <span title="Fri, May 22, 2020 17:16+0300">2020-05-22</span>
+        <p><a name="c28ec705-2700-4dac-8d4d-9de8d4b75e20">​</a>
+          IG &copy; 2020+ <a style="color: #81BEF7" href="ashaban@intrahealth.org">Ally Shaban</a>.  Package mhero#0.1.0 based on <a style="color: #81BEF7" href="http://hl7.org/fhir/R4/">FHIR 4.0.1</a>. Generated <span title="Tue, Jul 21, 2020 08:42+0300">2020-07-21</span>
           <br/>
           <span style="color: #FFFF77">
                       Links: <a style="color: #81BEF7" href="toc.html">Table of Contents</a> |
@@ -171,7 +201,6 @@
     <!-- Bootstrap core JavaScript
   ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-  <script src="assets/js/jquery.js" type="text/javascript"> </script>       <!-- note keep space here, otherwise it will be transformed to empty tag -> fails -->
   <script src="assets/js/bootstrap.min.js" type="text/javascript"> </script>
   <script src="assets/js/respond.min.js" type="text/javascript"> </script>
   <script src="assets/js/anchor.min.js" type="text/javascript"> </script>

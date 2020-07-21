@@ -17,7 +17,7 @@
   fhir:StructureDefinition.name [ fhir:value "MheroFlowRun"];
   fhir:StructureDefinition.title [ fhir:value "mHero Workflow Run Profile"];
   fhir:StructureDefinition.status [ fhir:value "active"];
-  fhir:StructureDefinition.date [ fhir:value "2020-05-22T17:16:42+03:00"^^xsd:dateTime];
+  fhir:StructureDefinition.date [ fhir:value "2020-07-21T08:42:54+03:00"^^xsd:dateTime];
   fhir:StructureDefinition.publisher [ fhir:value "Ally Shaban"];
   fhir:StructureDefinition.contact [
      fhir:index 0;

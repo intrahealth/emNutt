@@ -148,6 +148,82 @@
       ]
     },
     {
+      "url": "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case",
+      "title": "mHero eIDSR Suspected Case Extension",
+      "types": [
+        "string",
+        "string",
+        "Reference",
+        "Reference",
+        "string",
+        "Extension",
+        "string",
+        "uri",
+        "Identifier",
+        "string",
+        "integer",
+        "integer",
+        "string",
+        "string",
+        "boolean",
+        "boolean",
+        "boolean",
+        "boolean",
+        "boolean",
+        "boolean",
+        "base64Binary",
+        "boolean",
+        "canonical",
+        "code",
+        "date",
+        "dateTime",
+        "decimal",
+        "id",
+        "instant",
+        "integer",
+        "markdown",
+        "oid",
+        "positiveInt",
+        "string",
+        "time",
+        "unsignedInt",
+        "uri",
+        "url",
+        "uuid",
+        "Address",
+        "Age",
+        "Annotation",
+        "Attachment",
+        "CodeableConcept",
+        "Coding",
+        "ContactPoint",
+        "Count",
+        "Distance",
+        "Duration",
+        "HumanName",
+        "Identifier",
+        "Money",
+        "Period",
+        "Quantity",
+        "Range",
+        "Ratio",
+        "Reference",
+        "SampledData",
+        "Signature",
+        "Timing",
+        "ContactDetail",
+        "Contributor",
+        "DataRequirement",
+        "Expression",
+        "ParameterDefinition",
+        "RelatedArtifact",
+        "TriggerDefinition",
+        "UsageContext",
+        "Dosage",
+        "Meta"
+      ]
+    },
+    {
       "url": "http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details",
       "title": "mHero Workflow Run Details Extension",
       "types": [
@@ -385,6 +461,12 @@
         "title": "mHero Communication Request Profile"
       }
     ],
+    "Patient": [
+      {
+        "url": "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-patient",
+        "title": "mHero eIDSR Patient Profile"
+      }
+    ],
     "Basic": [
       {
         "url": "http://mHero.org/fhir/StructureDefinition/mhero-flow-run",
@@ -415,7 +497,13 @@
     "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable": [
       "StructureDefinition.snapshot.element"
     ],
+    "http://hl7.org/fhir/StructureDefinition/structuredefinition-explicit-type-name": [
+      "StructureDefinition.snapshot.element"
+    ],
     "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type": [
+      "StructureDefinition.snapshot.element.type"
+    ],
+    "http://hl7.org/fhir/StructureDefinition/structuredefinition-hierarchy": [
       "StructureDefinition.snapshot.element.type"
     ],
     "http://hl7.org/fhir/tools/StructureDefinition/ig-parameter": [
@@ -432,6 +520,9 @@
     ],
     "http://mHero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts": [
       "CommunicationRequest"
+    ],
+    "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case": [
+      "Patient"
     ],
     "http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details": [
       "Basic"
