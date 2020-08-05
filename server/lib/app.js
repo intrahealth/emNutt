@@ -19,6 +19,7 @@ const envVars = require('./envVars');
 const rapidpro = require('./rapidpro')();
 const eidsr = require('./eidsr');
 const macm = require('./macm')();
+const floip = require('./floip');
 const prerequisites = require('./prerequisites');
 const mixin = require('./mixin');
 
@@ -196,6 +197,22 @@ function appRoutes() {
         return res.status(500).send('Internal error occured');
       }
       res.status(200).send('Done');
+    });
+  });
+
+  app.get('/emNutt/syncFloipFlowResults', (req, res) => {
+    logger.info("Received a request to sync flow results from FLOIP server");
+    floip.flowResultsToQuestionnaire((err) => {
+      logger.info("Done Synchronizing flow results from FLOIP server");
+      if(!err) {
+        let runsLastSync = moment()
+          .subtract('10', 'minutes')
+          .format('Y-MM-DD HH:mm:ss');
+        mixin.updateConfigFile(['lastSync', 'syncFloipFlowResults', 'time'], runsLastSync, () => {});
+        return res.status(200).send();
+      } else {
+        return res.status(500).send();
+      }
     });
   });
 
@@ -419,7 +436,7 @@ function appRoutes() {
         let runsLastSync = moment()
           .subtract('30', 'minutes')
           .format('Y-MM-DDTHH:mm:ss');
-        //mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], runsLastSync, () => {});
+        mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], runsLastSync, () => {});
       }
       if (processingError) {
         return res.status(500).send('Internal error occured');

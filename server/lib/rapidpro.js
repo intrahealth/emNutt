@@ -255,11 +255,9 @@ module.exports = function () {
         async.eachSeries(people, (ppl, nxt) => {
           let cancelSync = false;
           let cntctuuid;
-          let persIdentifier =
-            ppl.resource.identifier &&
-            ppl.resource.identifier.find((identifier) => {
-              return (identifier.system === 'http://app.rapidpro.io/contact-uuid');
-            });
+          let persIdentifier = ppl.resource.identifier && ppl.resource.identifier.find((identifier) => {
+            return (identifier.system === 'http://app.rapidpro.io/contact-uuid');
+          });
           if (!persIdentifier) {
             return nxt();
           }
@@ -270,10 +268,7 @@ module.exports = function () {
           cntctuuid = persIdentifier.value;
           let cntctgrps = groups.filter((group) => {
             return group.resource.member && group.resource.member.find((member) => {
-              return (
-                member.entity.reference ===
-                resourceType + '/' + ppl.resource.id
-              );
+              return (member.entity.reference === resourceType + '/' + ppl.resource.id);
             });
           });
           let rpcontact = {
