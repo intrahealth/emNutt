@@ -30,6 +30,7 @@ module.exports = function () {
           queries,
         },
         (err, flows) => {
+          logger.error(JSON.stringify(flows,0,2));
           if (err) {
             processingError = true;
           }
@@ -816,12 +817,13 @@ module.exports = function () {
                       resource: resourceName,
                       id: resID,
                     }, (err, recResource) => {
-                      if (recResource.resourceType) {
+                      if (recResource.resourceType && recResource.resourceType !== 'OperationOutcome') {
                         resource = recResource;
                       } else if (Object.keys(recResource).length === 0) {
                         logger.error(
                           `Reference ${recipient.reference} was not found on the server`
                         );
+                        processingError = true;
                       } else if (err) {
                         logger.error(err);
                         logger.error(

@@ -152,7 +152,9 @@ module.exports = function () {
         },
         json: resource,
       };
+      logger.error(JSON.stringify(resource,0,2));
       request.post(options, (err, res, body) => {
+        logger.error(JSON.stringify(body,0,2));
         if (err) {
           logger.error(err);
           logger.error(body);

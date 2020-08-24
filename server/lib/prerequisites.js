@@ -63,7 +63,10 @@ const loadResources = (callback) => {
       promises.push(new Promise((resolve) => {
         logger.info('Loading ' + file + ' into FHIR server...');
         fs.readFile(`${folder}/${file}`, (err, data) => {
-          if (err) throw err;
+          if (err) {
+	    console.log(err);
+	    return;
+	  }
           let fhir;
           if (file.substring(file.length - 3) === 'xml') {
             fhir = convert.xmlToObj(data);

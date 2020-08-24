@@ -60,7 +60,7 @@ function appRoutes() {
       if (err) {
         return res.status(500).send('Done');
       }
-      logger.info('Done checking communication requests');
+      logger.info('Done processing communication requests');
       res.status(200).send();
     });
   });
