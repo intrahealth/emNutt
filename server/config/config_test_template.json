@@ -17,22 +17,19 @@
     },
     "register": false
   },
-  "origins": [
-    "http://localhost:8080"
-  ],
-  "floip": {
-    "baseURL": "https://go.votomobile.org",
-    "token": "6b61527f0c81de0e9fd665f0e"
-  },
   "rapidpro": {
-    "baseURL": "http://app.rapidpro.io",
-    "token": "369958889jk10930de856fc15lmefjkd73f0390c",
+    "baseURL": "https://app.rapidpro.io",
+    "token": "XXXXXXXXXXXXX",
     "syncAllContacts": true
   },
+  "floip": {
+    "baseURL": "https://go.votomobile.org",
+    "token": "YYYYYYYYYYYYYY"
+  },
   "macm": {
-    "baseURL": "http://localhost:8080/hapi-fhir-jpaserver/fhir",
-    "username": "",
-    "password": ""
+    "username": "hapi",
+    "password": "hapi",
+    "baseURL": "http://localhost:8081/hapi/fhir"
   },
   "elastic": {
     "baseURL": "http://localhost:9200",
@@ -45,24 +42,68 @@
     "username": "",
     "password": ""
   },
+  "eidsr": {
+    "orderedFields": [
+      "diseaseCode",
+      "gender",
+      "age",
+      "specimenCollected"
+    ],
+    "notifications": {
+      "groups": [
+        "a7bd90f4-475f-4f64-98b3-f5fe21434694",
+        "462443c1-8600-431b-81e2-e7d2b434bbec"
+      ],
+      "designation": [
+        {
+          "name": "District Surveillance Officer",
+          "geographicalLocationLimit": true,
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} With IDSRID {{caseID}} By {{reporterName}} ({{reporterPhone}}). Please call or visit health facility to verify"
+        },
+        {
+          "name": "County Surveillance Officer",
+          "geographicalLocationLimit": true,
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}}).  Please verify with DSO"
+        },
+        {
+          "name": "County Diagnostic Officer",
+          "geographicalLocationLimit": true,
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}})"
+        }
+      ],
+      "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}})"
+    }
+  },
+  "communicationChannels": [
+    {
+      "id": "rapidpro",
+      "name": "Rapidpro"
+    }
+  ],
+  "enabledCommChannels": [
+    "rapidpro"
+  ],
+  "origins": [
+    "http://localhost"
+  ],
   "lastSync": {
     "syncWorkflows": {
-      "time": "1970-01-01T00:00:00"
+      "time": "2020-08-24T08:54:27"
     },
     "syncWorkflowRunMessages": {
-      "time": "1970-01-01T00:00:00"
+      "time": "1970-03-09T17:32:44"
     },
     "syncFloipFlowResults": {
       "time": "2020-08-05 22:36:03"
     },
     "checkCommunicationRequest": {
-      "time": "1970-01-01T00:00:00"
+      "time": "2020-02-27T14:14:39"
     },
     "syncContacts": {
-      "time": "1970-01-01T00:00:00"
+      "time": "1970-05-11T13:38:52"
     },
     "syncContactsGroups": {
-      "time": "1970-01-01T00:00:00"
+      "time": "1970-05-18T10:57:07"
     }
   }
 }

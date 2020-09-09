@@ -1,6 +1,6 @@
 {
   "resourceType": "Basic",
-  "id": "mheroflowrunsummary",
+  "id": "ihris-es-report-mhero-flow-run-summary",
   "meta": {
     "versionId": "1",
     "lastUpdated": "2019-07-30T07:34:24.098+00:00",
@@ -12,7 +12,7 @@
     "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportDetails",
     "extension": [{
       "url": "label",
-      "valueString": "mHero Flow Run Summary"
+      "valueString": "Detailed Workflow Completion Report"
     }, {
       "url": "name",
       "valueString": "mheroflowrunsummary"
@@ -21,21 +21,35 @@
       "valueString": "Basic"
     }, {
       "url": "query",
-      "valueString": "meta.profile=http://mHero.org/fhir/StructureDefinition/mhero-flow-run"
+      "valueString": "_profile=http://mHero.org/fhir/StructureDefinition/mhero-flow-run"
     }, {
       "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
       "extension": [{
-        "url": "label",
+        "url": "display",
         "valueString": "Responded"
+      }, {
+        "url": "label",
+        "valueString": "responded"
       }, {
         "url": "name",
         "valueString": "extension.where(url='http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details').extension.where(url='responded').valueBoolean"
+      },
+      {
+        "url": "filter",
+        "valueBoolean": true
+      },
+      {
+        "url": "dropDownFilter",
+        "valueBoolean": true
       }]
     }, {
       "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
       "extension": [{
-        "url": "label",
+        "url": "display",
         "valueString": "Started"
+      }, {
+        "url": "label",
+        "valueString": "started"
       }, {
         "url": "name",
         "valueString": "extension.where(url='http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details').extension.where(url='created_on').valueDateTime"
@@ -43,8 +57,11 @@
     }, {
       "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
       "extension": [{
-        "url": "label",
+        "url": "display",
         "valueString": "Modified On"
+      }, {
+        "url": "label",
+        "valueString": "modified_on"
       }, {
         "url": "name",
         "valueString": "extension.where(url='http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details').extension.where(url='modified_on').valueDateTime"
@@ -52,8 +69,11 @@
     }, {
       "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
       "extension": [{
+        "url": "display",
+        "valueString": "Workflow End Date"
+      }, {
         "url": "label",
-        "valueString": "Exited On"
+        "valueString": "exited_on"
       }, {
         "url": "name",
         "valueString": "extension.where(url='http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details').extension.where(url='exited_on').valueDateTime"
@@ -61,8 +81,11 @@
     }, {
       "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
       "extension": [{
+        "url": "display",
+        "valueString": "Workflow Run Status"
+      }, {
         "url": "label",
-        "valueString": "Exit Type"
+        "valueString": "exit_type"
       }, {
         "url": "name",
         "valueString": "extension.where(url='http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details').extension.where(url='exit_type').valueString"
@@ -97,6 +120,9 @@
       {
         "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
         "extension": [{
+          "url": "display",
+          "valueString": "Firstname"
+        }, {
             "url": "label",
             "valueString": "given"
           },
@@ -109,6 +135,9 @@
       {
         "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
         "extension": [{
+          "url": "display",
+          "valueString": "Surname"
+        }, {
             "url": "label",
             "valueString": "family"
           },
@@ -155,11 +184,14 @@
       },
       {
         "url": "query",
-        "valueString": "meta.profile=http://mHero.org/fhir/StructureDefinition/mhero-workflows"
+        "valueString": "_profile=http://mHero.org/fhir/StructureDefinition/mhero-workflows"
       },
       {
         "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
         "extension": [{
+          "url": "display",
+          "valueString": "Workflow"
+        }, {
             "url": "label",
             "valueString": "WorkflowName"
           },

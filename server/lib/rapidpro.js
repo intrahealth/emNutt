@@ -100,6 +100,7 @@ module.exports = function () {
             const definitions = responses[1];
             async.each(runs, (run, nxtRun) => {
               let globalid;
+              let entityType;
               let query = `identifier=http://app.rapidpro.io/contact-uuid|${run.contact.uuid}`;
               async.parallel({
                 practitioner: (callback) => {
@@ -112,6 +113,7 @@ module.exports = function () {
                     }
                     if (practs.entry.length > 0) {
                       globalid = practs.entry[0].resource.id;
+                      entityType = practs.entry[0].resource.resourceType;
                     }
                     return callback(null);
                   });
@@ -126,6 +128,7 @@ module.exports = function () {
                     }
                     if (pat.entry.length > 0) {
                       globalid = pat.entry[0].resource.id;
+                      entityType = pat.entry[0].resource.resourceType;
                     }
                     return callback(null);
                   });
@@ -140,6 +143,7 @@ module.exports = function () {
                     }
                     if (pers.entry.length > 0) {
                       globalid = pers.entry[0].resource.id;
+                      entityType = pers.entry[0].resource.resourceType;
                     }
                     return callback(null);
                   });
@@ -147,6 +151,7 @@ module.exports = function () {
               }, () => {
                 if (globalid) {
                   run.contact.globalid = globalid;
+                  run.contact.mheroEntityType = entityType;
                   if (err) {
                     processingError = true;
                   }
@@ -425,7 +430,7 @@ module.exports = function () {
                 for (let memberIndex = 0; memberIndex < totalElements; memberIndex++) {
                   let modifiedIndex = memberIndex - totalDeleted;
                   let member = entry.resource.member[modifiedIndex];
-                  if (member.entity.reference === contact.fields.globalid) {
+                  if (member.entity.reference === `${contact.fields.mheroEntityType}/${contact.fields.globalid}`) {
                     bundle.entry[index].resource.member.splice(modifiedIndex, 1);
                     editedGrps.push(entry.resource.id);
                     totalDeleted++;
@@ -434,7 +439,7 @@ module.exports = function () {
               }
               macm.getResource({
                 resource: 'Group',
-                query: 'member=' + contact.fields.globalid,
+                query: `member=${contact.fields.mheroEntityType}/${contact.fields.globalid}`,
               }, (err, grpRsrc) => {
                 if (err) {
                   failed = true;
@@ -452,7 +457,7 @@ module.exports = function () {
                   }
                   for (let index in group.resource.member) {
                     let member = group.resource.member[index];
-                    if (member.entity.reference === contact.fields.globalid) {
+                    if (member.entity.reference === `${contact.fields.mheroEntityType}/${contact.fields.globalid}`) {
                       group.resource.member.splice(index, 1);
                       bundle.entry.push({
                         resource: group.resource,
@@ -474,12 +479,12 @@ module.exports = function () {
                   if (entry.resource.id === grp.uuid) {
                     found = true;
                     let exist = bundle.entry[index].resource.member.find((member) => {
-                      return (member.entity.reference === contact.fields.globalid);
+                      return (member.entity.reference === `${contact.fields.mheroEntityType}/${contact.fields.globalid}`);
                     });
                     if (!exist) {
                       bundle.entry[index].resource.member.push({
                         entity: {
-                          reference: contact.fields.globalid,
+                          reference: `${contact.fields.mheroEntityType}/${contact.fields.globalid}`,
                         },
                       });
                     }
@@ -504,13 +509,13 @@ module.exports = function () {
                     let exist = grpRsrc.member.find((member) => {
                       return (
                         member.entity.reference ===
-                        contact.fields.globalid
+                        `${contact.fields.mheroEntityType}/${contact.fields.globalid}`
                       );
                     });
                     if (!exist) {
                       grpRsrc.member.push({
                         entity: {
-                          reference: contact.fields.globalid,
+                          reference: `${contact.fields.mheroEntityType}/${contact.fields.globalid}`,
                         },
                       });
                     }
@@ -531,7 +536,7 @@ module.exports = function () {
                         actual: true,
                         member: [{
                           entity: {
-                            reference: contact.fields.globalid,
+                            reference: `${contact.fields.mheroEntityType}/${contact.fields.globalid}`,
                           },
                         }],
                       },
@@ -619,7 +624,7 @@ module.exports = function () {
       const rpContactWithGlobalid = rpContacts.find((cntct) => {
         return (
           cntct.fields &&
-          cntct.fields.globalid === contact.resourceType + '/' + contact.id
+          cntct.fields.globalid === contact.id
         );
       });
       const rpContactWithoutGlobalid = rpContacts.find((cntct) => {
@@ -649,7 +654,9 @@ module.exports = function () {
         if (contact.resourceType === 'Patient') {
           resourceType = contact.resourceType;
         }
-        body.fields.globalid = `${resourceType}/${contact.id}`;
+        body.fields.globalid = contact.id;
+        body.fields.mheroEntityType = contact.resourceType;
+
         body.urns = urns;
       } else {
         if (rpContactWithGlobalid) {
@@ -665,7 +672,8 @@ module.exports = function () {
         // end of ensuring urns are unique
         body.urns = urns;
         if (rpContactWithoutGlobalid && !rpContactWithGlobalid) {
-          body.fields.globalid = `${contact.resourceType}/${contact.id}`;
+          body.fields.globalid = contact.id;
+          body.fields.mheroEntityType = contact.resourceType;
         }
       }
       if (body.urns.length === 0) {
@@ -687,14 +695,8 @@ module.exports = function () {
         json: body,
       };
       request.post(options, (err, res, body) => {
-        if (
-          !err &&
-          res.statusCode &&
-          (res.statusCode < 200 || res.statusCode > 399)
-        ) {
-          err =
-            'An error occured while adding a contact, Err Code ' +
-            res.statusCode;
+        if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+          err = 'An error occured while adding a contact, Err Code ' + res.statusCode;
         }
         logger.info(body);
         if (err) {

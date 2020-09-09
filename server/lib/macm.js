@@ -152,9 +152,7 @@ module.exports = function () {
         },
         json: resource,
       };
-      logger.error(JSON.stringify(resource,0,2));
       request.post(options, (err, res, body) => {
-        logger.error(JSON.stringify(body,0,2));
         if (err) {
           logger.error(err);
           logger.error(body);
@@ -353,7 +351,7 @@ module.exports = function () {
         }, {
           url: 'recipient',
           valueReference: {
-            reference: run.contact.globalid
+            reference: `${run.contact.mheroEntityType}/${run.contact.globalid}`
           }
         }, {
           url: 'responded',
@@ -459,13 +457,13 @@ module.exports = function () {
                 commResource.sent = text.time;
                 commResource.received = text.time;
                 commResource.recipient = [{
-                  reference: run.contact.globalid
+                  reference: `${run.contact.mheroEntityType}/${run.contact.globalid}`
                 }];
               } else if (text.type === 'reply') {
                 commResource.received = text.time;
                 commResource.sent = text.time;
                 commResource.sender = {
-                  reference: run.contact.globalid
+                  reference: `${run.contact.mheroEntityType}/${run.contact.globalid}`
                 };
               }
 

@@ -134,38 +134,49 @@ const loadResources = (callback) => {
 };
 
 const addRapidproDefaultData = (callback) => {
-  logger.info('Adding Global ID into Rapidpro');
+  logger.info('Adding Fields into Rapidpro');
   let url = URI(config.get('rapidpro:baseURL'))
     .segment('api')
     .segment('v2')
     .segment('fields.json');
   url = url.toString();
-  let label = {
+  let labels = [{
     key: 'globalid',
     label: 'globalid',
     value_type: 'text'
-  };
-  const options = {
-    url,
-    headers: {
-      Authorization: `Token ${config.get('rapidpro:token')}`,
-    },
-    json: label,
-  };
-  request.post(options, (err, res, body) => {
-    logger.info('Done adding Global ID into Rapidpro');
-    if (!res) {
-      logger.error('An error occured while adding global ID into Rapidpro, this might be due to unreachable Rapidpro instance');
-    } else if (res.statusCode === 400) {
-      logger.info('Field Global ID already exists');
-    } else if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
-      err = 'An error occured while adding globalid field, Err Code ' + res.statusCode;
-      logger.info(body);
-    }
-    if (err) {
-      logger.error(err);
-    }
-    return callback(err, res, body);
+  }, {
+    key: 'mheroEntityType',
+    label: 'mheroEntityType',
+    value_type: 'text'
+  }];
+  let error = false;
+  async.each(labels, (label, nxtLabel) => {
+    const options = {
+      url,
+      headers: {
+        Authorization: `Token ${config.get('rapidpro:token')}`,
+      },
+      json: label,
+    };
+    request.post(options, (err, res, body) => {
+      logger.info(`Done adding field ${label.key} into Rapidpro`);
+      if (!res) {
+        logger.error(`An error occured while adding field ${label.key} into Rapidpro, this might be due to unreachable Rapidpro instance`);
+        error = true;
+      } else if (res.statusCode === 400) {
+        logger.info(`Field ${label.key} already exists`);
+      } else if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+        err = `An error occured while adding field ${label.key}, Err Code ${res.statusCode}`;
+        error = true;
+        logger.info(body);
+      }
+      if (err) {
+        logger.error(err);
+      }
+      return nxtLabel();
+    });
+  }, () => {
+    return callback(error);
   });
 };
 

@@ -1,0 +1,23 @@
+{
+  "name": "mhero",
+  "version": "0.1.0",
+  "canonical": "http://mHero.org/fhir",
+  "url": "http://mHero.org/fhir",
+  "title": "mHero Implementation Guide",
+  "description": "Conformance resources that define the base installation of mHero",
+  "fhirVersions": [
+    "4.0.1"
+  ],
+  "dependencies": {
+    "hl7.fhir.r4.core": "4.0.1"
+  },
+  "keywords": [],
+  "author": "Ally Shaban",
+  "maintainers": [
+    {
+      "name": "Ally Shaban",
+      "email": "ashaban@intrahealth.org"
+    }
+  ],
+  "license": "CC0-1.0"
+}
