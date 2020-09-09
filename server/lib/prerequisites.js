@@ -145,8 +145,8 @@ const addRapidproDefaultData = (callback) => {
     label: 'globalid',
     value_type: 'text'
   }, {
-    key: 'mheroEntityType',
-    label: 'mheroEntityType',
+    key: 'mheroentitytype',
+    label: 'mHero Entity Type',
     value_type: 'text'
   }];
   let error = false;

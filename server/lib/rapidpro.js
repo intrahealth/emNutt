@@ -7,6 +7,7 @@ const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
 const mixin = require('./mixin');
+const { delete } = require('request');
 module.exports = function () {
   return {
     /**
@@ -151,7 +152,7 @@ module.exports = function () {
               }, () => {
                 if (globalid) {
                   run.contact.globalid = globalid;
-                  run.contact.mheroEntityType = entityType;
+                  run.contact.mheroentitytype = entityType;
                   if (err) {
                     processingError = true;
                   }
@@ -430,7 +431,7 @@ module.exports = function () {
                 for (let memberIndex = 0; memberIndex < totalElements; memberIndex++) {
                   let modifiedIndex = memberIndex - totalDeleted;
                   let member = entry.resource.member[modifiedIndex];
-                  if (member.entity.reference === `${contact.fields.mheroEntityType}/${contact.fields.globalid}`) {
+                  if (member.entity.reference === `${contact.fields.mheroentitytype}/${contact.fields.globalid}`) {
                     bundle.entry[index].resource.member.splice(modifiedIndex, 1);
                     editedGrps.push(entry.resource.id);
                     totalDeleted++;
@@ -439,7 +440,7 @@ module.exports = function () {
               }
               macm.getResource({
                 resource: 'Group',
-                query: `member=${contact.fields.mheroEntityType}/${contact.fields.globalid}`,
+                query: `member=${contact.fields.mheroentitytype}/${contact.fields.globalid}`,
               }, (err, grpRsrc) => {
                 if (err) {
                   failed = true;
@@ -457,7 +458,7 @@ module.exports = function () {
                   }
                   for (let index in group.resource.member) {
                     let member = group.resource.member[index];
-                    if (member.entity.reference === `${contact.fields.mheroEntityType}/${contact.fields.globalid}`) {
+                    if (member.entity.reference === `${contact.fields.mheroentitytype}/${contact.fields.globalid}`) {
                       group.resource.member.splice(index, 1);
                       bundle.entry.push({
                         resource: group.resource,
@@ -479,12 +480,12 @@ module.exports = function () {
                   if (entry.resource.id === grp.uuid) {
                     found = true;
                     let exist = bundle.entry[index].resource.member.find((member) => {
-                      return (member.entity.reference === `${contact.fields.mheroEntityType}/${contact.fields.globalid}`);
+                      return (member.entity.reference === `${contact.fields.mheroentitytype}/${contact.fields.globalid}`);
                     });
                     if (!exist) {
                       bundle.entry[index].resource.member.push({
                         entity: {
-                          reference: `${contact.fields.mheroEntityType}/${contact.fields.globalid}`,
+                          reference: `${contact.fields.mheroentitytype}/${contact.fields.globalid}`,
                         },
                       });
                     }
@@ -509,13 +510,13 @@ module.exports = function () {
                     let exist = grpRsrc.member.find((member) => {
                       return (
                         member.entity.reference ===
-                        `${contact.fields.mheroEntityType}/${contact.fields.globalid}`
+                        `${contact.fields.mheroentitytype}/${contact.fields.globalid}`
                       );
                     });
                     if (!exist) {
                       grpRsrc.member.push({
                         entity: {
-                          reference: `${contact.fields.mheroEntityType}/${contact.fields.globalid}`,
+                          reference: `${contact.fields.mheroentitytype}/${contact.fields.globalid}`,
                         },
                       });
                     }
@@ -536,7 +537,7 @@ module.exports = function () {
                         actual: true,
                         member: [{
                           entity: {
-                            reference: `${contact.fields.mheroEntityType}/${contact.fields.globalid}`,
+                            reference: `${contact.fields.mheroentitytype}/${contact.fields.globalid}`,
                           },
                         }],
                       },
@@ -655,14 +656,20 @@ module.exports = function () {
           resourceType = contact.resourceType;
         }
         body.fields.globalid = contact.id;
-        body.fields.mheroEntityType = contact.resourceType;
+        body.fields.mheroentitytype = contact.resourceType;
 
         body.urns = urns;
       } else {
         if (rpContactWithGlobalid) {
-          body = rpContactWithGlobalid;
+          body.uuid = rpContactWithGlobalid.uuid;
+          body.name = rpContactWithGlobalid.name;
+          body.urns = rpContactWithGlobalid.urns;
+          body.fields = rpContactWithGlobalid.fields;
         } else {
-          body = rpContactWithoutGlobalid;
+          body.uuid = rpContactWithoutGlobalid.uuid;
+          body.name = rpContactWithoutGlobalid.name;
+          body.urns = rpContactWithoutGlobalid.urns;
+          body.fields = rpContactWithoutGlobalid.fields;
         }
         body.name = fullName;
         urns = body.urns.concat(urns);
@@ -673,7 +680,10 @@ module.exports = function () {
         body.urns = urns;
         if (rpContactWithoutGlobalid && !rpContactWithGlobalid) {
           body.fields.globalid = contact.id;
-          body.fields.mheroEntityType = contact.resourceType;
+          body.fields.mheroentitytype = contact.resourceType;
+        }
+        if(!body.fields.mheroentitytype) {
+          body.fields.mheroentitytype = contact.resourceType;
         }
       }
       if (body.urns.length === 0) {
@@ -694,15 +704,18 @@ module.exports = function () {
         },
         json: body,
       };
-      request.post(options, (err, res, body) => {
+      request.post(options, (err, res, respBody) => {
         if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
           err = 'An error occured while adding a contact, Err Code ' + res.statusCode;
         }
-        logger.info(body);
         if (err) {
+          logger.error(JSON.stringify(body, 0, 2));
           logger.error(err + ' ' + url);
+          logger.error(JSON.stringify(respBody, 0, 2));
+        } else {
+          logger.info(JSON.stringify(respBody, 0, 2));
         }
-        return callback(err, res, body);
+        return callback(err, res, respBody);
       });
     },
     updateContact({
