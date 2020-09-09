@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <StructureDefinition xmlns="http://hl7.org/fhir">
   <id value="mHeroWorkflowsDetails" />
-  <url value="http://mhero.org/fhir/StructureDefinition/mHeroWorkflowsDetails" />
+  <url value="http://mhero.org/fhir/StructureDefinition/mhero-workflows-details" />
   <name value="WorkflowsDetails" />
   <status value="draft" />
   <fhirVersion value="4.0.0" />

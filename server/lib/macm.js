@@ -30,7 +30,7 @@ module.exports = function () {
           resource.meta = {};
           resource.meta.profile = [];
           resource.meta.profile.push(
-            'http://mHero.org/fhir/StructureDefinition/mhero-workflows'
+            'http://mhero.org/fhir/StructureDefinition/mhero-workflows'
           );
           resource.meta.code = {
             coding: [{
@@ -40,7 +40,7 @@ module.exports = function () {
             text: 'mHeroWorkflows',
           };
           resource.extension = [{
-            url: 'http://mHero.org/fhir/StructureDefinition/mhero-workflows-details',
+            url: 'http://mhero.org/fhir/StructureDefinition/mhero-workflows-details',
             extension: [{
                 url: 'name',
                 valueString: flow.name,

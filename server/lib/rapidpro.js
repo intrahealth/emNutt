@@ -7,7 +7,6 @@ const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
 const mixin = require('./mixin');
-const { delete } = require('request');
 module.exports = function () {
   return {
     /**
@@ -46,7 +45,7 @@ module.exports = function () {
       );
     },
     syncWorkflowRunMessages(callback) {
-      const query = '_profile=http://mhero.org/fhir/StructureDefinition/mHeroWorkflows';
+      const query = '_profile=http://mhero.org/fhir/StructureDefinition/mhero-workflows';
       let runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
       let processingError = false;
       macm.getResource({
@@ -57,6 +56,7 @@ module.exports = function () {
           processingError = true;
         }
         async.eachSeries(flows.entry, (flow, nxtFlow) => {
+          logger.info('Checking messages for workflow ' + flow.resource.id);
           const promise1 = new Promise((resolve) => {
             runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
             const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
