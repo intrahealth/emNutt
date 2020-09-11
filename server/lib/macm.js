@@ -62,7 +62,7 @@ module.exports = function () {
                 valueInteger: flow.expires,
               },
               {
-                url: 'http://mHero.org/fhir/StructureDefinition/mhero-run-summary',
+                url: 'http://mhero.org/fhir/StructureDefinition/mhero-run-summary',
                 extension: [{
                     url: 'active',
                     valueInteger: flow.runs.active,
@@ -472,7 +472,7 @@ module.exports = function () {
                 commResource.extension = [];
               }
               commResource.extension.push({
-                url: 'http://mHero.org/fhir/StructureDefinition/mhero-comm-flow-run',
+                url: 'http://mhero.org/fhir/StructureDefinition/mhero-comm-flow-run',
                 valueReference: {
                   reference: `Basic/${run.uuid}`
                 }

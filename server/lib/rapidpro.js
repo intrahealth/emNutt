@@ -955,9 +955,7 @@ module.exports = function () {
                             flowBody.urns = [];
                             this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
                               if (err) {
-                                logger.error(
-                                  'An error has occured while starting a workflow'
-                                );
+                                logger.error('An error has occured while starting a workflow');
                                 logger.error(err);
                                 sendFailed = true;
                                 processingError = true;
@@ -1205,9 +1203,9 @@ module.exports = function () {
       let extUrl;
       if (type === 'sms') {
         extUrl =
-          'http://mhero.org/fhir/StructureDefinition/mHeroBroadcastStarts';
+          'http://mhero.org/fhir/StructureDefinition/mhero-broadcast-starts';
       } else if (type === 'workflow') {
-        extUrl = 'http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts';
+        extUrl = 'http://mhero.org/fhir/StructureDefinition/mhero-flow-starts';
       }
       commReq.resource.id = rpRunStatus.uuid;
       if (!commReq.resource.meta) {
@@ -1216,7 +1214,7 @@ module.exports = function () {
       if (!commReq.resource.meta.profile) {
         commReq.resource.meta.profile = [];
       }
-      commReq.resource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mHeroCommunicationRequest');
+      commReq.resource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mhero-communication-request');
       if (!commReq.resource.extension) {
         commReq.resource.extension = [];
       }
