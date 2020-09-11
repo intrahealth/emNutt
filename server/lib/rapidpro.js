@@ -867,7 +867,10 @@ module.exports = function () {
                             logger.error('Phone number ' + telecom.value + ' is not valid');
                             continue;
                           }
-                          recipients.push('tel:' + telecom.value);
+                          recipients.push({
+                            urns: 'tel:' + telecom.value,
+                            id: resource.id,
+                          });
                         }
                       }
                     } else {
@@ -1029,7 +1032,8 @@ module.exports = function () {
                 let createNewReq = false;
                 for (const recipient of recipients) {
                   promises.push(new Promise((resolve) => {
-                    smsBody.urns.push(recipient);
+                    smsBody.urns.push(recipient.urns);
+                    ids.push(recipient.id);
                     if (smsBody.urns.length > 90) {
                       const tmpSmsBody = {
                         ...smsBody,
