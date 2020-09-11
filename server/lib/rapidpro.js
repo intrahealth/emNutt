@@ -1027,7 +1027,7 @@ module.exports = function () {
                 const smsBody = {};
                 smsBody.text = msg;
                 smsBody.urns = [];
-                let ids;
+                let ids = [];
                 const promises = [];
                 let createNewReq = false;
                 for (const recipient of recipients) {
