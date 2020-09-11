@@ -378,10 +378,10 @@ module.exports = function () {
             resourceType: 'Basic',
             id: run.uuid,
             meta: {
-              profile: ['http://mHero.org/fhir/StructureDefinition/mhero-flow-run']
+              profile: ['http://mhero.org/fhir/StructureDefinition/mhero-flow-run']
             },
             extension: [{
-              url: 'http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details',
+              url: 'http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details',
               extension
             }]
           },

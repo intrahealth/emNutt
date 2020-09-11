@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <StructureDefinition xmlns="http://hl7.org/fhir">
   <id value="mHeroCommunication" />
-  <url value="http://mhero.org/fhir/StructureDefinition/mHeroCommunication" />
+  <url value="http://mhero.org/fhir/StructureDefinition/mhero-communication" />
   <name value="Communication" />
   <status value="draft" />
   <fhirVersion value="4.0.0" />
@@ -43,7 +43,7 @@
       <max value="1" />
       <type>
         <code value="Extension" />
-        <profile value="http://example.org/fhir/StructureDefinition/mHeroCommunicationDetails" />
+        <profile value="http://example.org/fhir/StructureDefinition/mhero-communication-details" />
       </type>
     </element>
   </differential>

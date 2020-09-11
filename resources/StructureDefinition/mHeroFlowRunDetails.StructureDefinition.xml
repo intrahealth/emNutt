@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <StructureDefinition xmlns="http://hl7.org/fhir">
   <id value="mHeroFlowRunDetails" />
-  <url value="http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails" />
+  <url value="http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details" />
   <name value="FlowRunDetails" />
   <status value="draft" />
   <fhirVersion value="4.0.0" />
@@ -180,7 +180,7 @@
     </element>
     <element id="Extension.url">
       <path value="Extension.url" />
-      <fixedUri value="http://mhero.org/fhir/StructureDefinition/mHeroFlowRunDetails" />
+      <fixedUri value="http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details" />
     </element>
     <element id="Extension.value[x]">
       <path value="Extension.value[x]" />

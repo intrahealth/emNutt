@@ -1,7 +1,7 @@
 {
   "resourceType": "StructureDefinition",
   "id": "mhero-eidsr-suspected-case",
-  "url": "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case",
+  "url": "http://mhero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case",
   "version": "0.1.0",
   "name": "MheroeIDSRSuspectedCase",
   "title": "mHero eIDSR Suspected Case Extension",
@@ -360,7 +360,7 @@
       {
         "id": "Extension.url",
         "path": "Extension.url",
-        "fixedUri": "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case"
+        "fixedUri": "http://mhero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case"
       },
       {
         "id": "Extension.value[x]",

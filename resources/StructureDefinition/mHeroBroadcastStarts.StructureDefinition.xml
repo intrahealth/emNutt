@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <StructureDefinition xmlns="http://hl7.org/fhir">
   <id value="mHeroBroadcastStarts" />
-  <url value="http://mhero.org/fhir/StructureDefinition/mHeroBroadcastStarts" />
+  <url value="http://mhero.org/fhir/StructureDefinition/mhero-broadcast-starts" />
   <name value="BroadcastStarts" />
   <status value="draft" />
   <fhirVersion value="4.0.0" />
@@ -246,7 +246,7 @@
     </element>
     <element id="Extension.url">
       <path value="Extension.url" />
-      <fixedUri value="http://mhero.org/fhir/StructureDefinition/mHeroBroadcastStarts" />
+      <fixedUri value="http://mhero.org/fhir/StructureDefinition/mhero-broadcast-starts" />
     </element>
     <element id="Extension.value[x]">
       <path value="Extension.value[x]" />

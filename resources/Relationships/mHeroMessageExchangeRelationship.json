@@ -122,7 +122,7 @@
       },
       {
         "url": "linkTo",
-        "valueString": "mheromessageexchange.extension.where(url='http://mHero.org/fhir/StructureDefinition/mhero-comm-flow-run').valueReference.reference"
+        "valueString": "mheromessageexchange.extension.where(url='http://mhero.org/fhir/StructureDefinition/mhero-comm-flow-run').valueReference.reference"
       },
       {
         "url": "multiple",

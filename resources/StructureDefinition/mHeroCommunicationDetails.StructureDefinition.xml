@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <StructureDefinition xmlns="http://hl7.org/fhir">
   <id value="mHeroCommunicationDetails" />
-  <url value="http://example.org/fhir/StructureDefinition/mHeroCommunicationDetails" />
+  <url value="http://example.org/fhir/StructureDefinition/mhero-communication-details" />
   <name value="CommunicationDetails" />
   <status value="draft" />
   <fhirVersion value="4.0.0" />

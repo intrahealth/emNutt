@@ -1,7 +1,7 @@
 {
   "resourceType": "StructureDefinition",
   "id": "mhero-eidsr-patient",
-  "url": "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-patient",
+  "url": "http://mhero.org/fhir/StructureDefinition/mhero-eidsr-patient",
   "version": "0.1.0",
   "name": "MheroeIDSRPatient",
   "title": "mHero eIDSR Patient Profile",
@@ -67,7 +67,7 @@
           {
             "code": "Extension",
             "profile": [
-              "http://mHero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case"
+              "http://mhero.org/fhir/StructureDefinition/mhero-eidsr-suspected-case"
             ]
           }
         ]

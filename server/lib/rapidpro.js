@@ -30,7 +30,6 @@ module.exports = function () {
           queries,
         },
         (err, flows) => {
-          logger.error(JSON.stringify(flows,0,2));
           if (err) {
             processingError = true;
           }
@@ -868,10 +867,7 @@ module.exports = function () {
                             logger.error('Phone number ' + telecom.value + ' is not valid');
                             continue;
                           }
-                          recipients.push({
-                            urns: 'tel:' + telecom.value,
-                            id: resource.id,
-                          });
+                          recipients.push('tel:' + telecom.value);
                         }
                       }
                     } else {
@@ -1258,8 +1254,7 @@ module.exports = function () {
         });
       }
       for (const id of ids) {
-        commReq.resource.extension;
-        [extIndex].extension.push({
+        commReq.resource.extension[extIndex].extension.push({
           url: 'contact_globalid',
           valueString: id
         });
