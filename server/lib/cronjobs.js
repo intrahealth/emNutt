@@ -5,11 +5,13 @@ const config = require('./config');
 const logger = require('./winston');
 
 function scheduleCommunicationRequests() {
+  logger.info('Checking Scheduled Communication Requests');
   macm.getResource({
     resource: 'CommunicationRequest',
-    query: 'scheduletime=',
+    query: '_total=accurate&scheduletime=',
     noCaching: true,
   }, (err, commReqs) => {
+    logger.info(`Scheduling ${commReqs.entry.length} Communication Requests`);
     if(err) {
       logger.error('An error occured while getting scheduled communication requests');
       return;

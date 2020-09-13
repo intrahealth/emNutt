@@ -15,6 +15,7 @@ const {
 } = require('fhir2es');
 const isJSON = require('is-json');
 const URI = require('urijs');
+require('./cronjobs');
 const logger = require('./winston');
 const config = require('./config');
 const envVars = require('./envVars');
