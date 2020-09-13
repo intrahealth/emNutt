@@ -146,7 +146,7 @@ const addRapidproDefaultData = (callback) => {
     value_type: 'text'
   }, {
     key: 'mheroentitytype',
-    label: 'mHero Entity Type',
+    label: 'mheroentitytype',
     value_type: 'text'
   }];
   let error = false;
