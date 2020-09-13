@@ -42,6 +42,21 @@
     "username": "",
     "password": ""
   },
+  "profiles": {
+    "CommunicationRequest": "http://mhero.org/fhir/StructureDefinition/mhero-communication-request",
+    "Communication": "http://mhero.org/fhir/StructureDefinition/mhero-communication",
+    "Workflows": "http://mhero.org/fhir/StructureDefinition/mhero-workflows",
+    "WorkflowRun": "http://mhero.org/fhir/StructureDefinition/mhero-flow-run",
+    "EidsrPatient": "http://mhero.org/fhir/StructureDefinition/mhero-eidsr-patient"
+  },
+  "extensions": {
+    "CommReqFlowStarts": "http://mhero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts",
+    "CommReqBroadcastStarts": "http://mhero.org/fhir/StructureDefinition/mhero-comm-req-broadcast-starts",
+    "WorkflowRunDetails": "http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details",
+    "CommunicationFlowRun": "http://mhero.org/fhir/StructureDefinition/mhero-comm-flow-run",
+    "WorkflowsDetails": "http://mhero.org/fhir/StructureDefinition/mhero-workflows-details",
+    "WorkflowsRunSummary": "http://mhero.org/fhir/StructureDefinition/mhero-run-summary"
+  },
   "eidsr": {
     "orderedFields": [
       "diseaseCode",
@@ -82,9 +97,6 @@
   ],
   "enabledCommChannels": [
     "rapidpro"
-  ],
-  "origins": [
-    "http://localhost"
   ],
   "lastSync": {
     "syncWorkflows": {

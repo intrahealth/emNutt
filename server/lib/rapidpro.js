@@ -3,6 +3,7 @@ const URI = require('urijs');
 const request = require('request');
 const async = require('async');
 const moment = require('moment');
+const uuid5 = require('uuid/v5');
 const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
@@ -44,7 +45,7 @@ module.exports = function () {
       );
     },
     syncWorkflowRunMessages(callback) {
-      const query = '_profile=http://mhero.org/fhir/StructureDefinition/mhero-workflows';
+      const query = `_profile=${config.get("profiles:Workflows")}`;
       let runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
       let processingError = false;
       macm.getResource({
@@ -735,20 +736,49 @@ module.exports = function () {
         json: fields,
       };
       request.post(options, (err, res, body) => {
-        if (
-          !err &&
-          res.statusCode &&
-          (res.statusCode < 200 || res.statusCode > 399)
-        ) {
-          err =
-            'An error occured while updating a contact, Err Code ' +
-            res.statusCode;
+        if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+          err = 'An error occured while updating a contact, Err Code ' + res.statusCode;
         }
         logger.info(body);
         if (err) {
           logger.error(err);
         }
         return callback(err, res, body);
+      });
+    },
+    processSchedCommReq(id, callback) {
+      macm.getResource({resource: 'CommunicationRequest', id}, (err, commReq) => {
+        if(err) {
+          logger.error(err);
+          return callback(err);
+        }
+        for(let index in commReq.extension) {
+          let ext = commReq.extension[index];
+          if(ext.url === config.get("extensions:CommReqRecurrance")) {
+            delete commReq.extension[index];
+          }
+        }
+        for(let index in commReq.extension) {
+          let ext = commReq.extension[index];
+          if(ext.url === config.get("extensions:CommReqFlowStarts") || ext.url === config.get("extensions:CommReqBroadcastStarts")) {
+            delete commReq.extension[index];
+          }
+        }
+        commReq.basedOn = [{
+          reference: `CommunicationRequest/${commReq.id}`
+        }];
+        let commBundle = {
+          entry: [{
+            resource: commReq,
+          }]
+        };
+        this.processCommunications(commBundle, (err) => {
+          if (err) {
+            return callback(true);
+          }
+          logger.info('Done processing scheduled communication request');
+          return callback(false);
+        });
       });
     },
     processCommunications(commReqs, callback) {
@@ -765,7 +795,7 @@ module.exports = function () {
               logger.error(
                 'An error has occured while getting rapidpro contacts, checking communication requests has been stopped'
               );
-              return res.status(500).send('An error has occured while getting rapidpro contacts, checking communication requests has been stopped');
+              return resolve([]);
             }
             resolve(rpContacts);
           });
@@ -1195,26 +1225,28 @@ module.exports = function () {
       createNewReq,
       callback
     ) {
-      logger.info(
-        'Updating communication request ' +
-        commReq.resource.id +
-        ' to completed'
-      );
+      logger.info('Updating communication request ' + commReq.resource.id + ' to completed');
       let extUrl;
       if (type === 'sms') {
-        extUrl =
-          'http://mhero.org/fhir/StructureDefinition/mhero-broadcast-starts';
+        extUrl = config.get("extensions:CommReqBroadcastStarts");
+        commReq.resource.id = uuid5(rpRunStatus.id.toString(), config.get("namespaces:broadcastID"));
       } else if (type === 'workflow') {
-        extUrl = 'http://mhero.org/fhir/StructureDefinition/mhero-flow-starts';
+        extUrl = config.get("extensions:CommReqFlowStarts");
+        commReq.resource.id = rpRunStatus.uuid;
       }
-      commReq.resource.id = rpRunStatus.uuid;
       if (!commReq.resource.meta) {
         commReq.resource.meta = {};
       }
       if (!commReq.resource.meta.profile) {
         commReq.resource.meta.profile = [];
       }
-      commReq.resource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mhero-communication-request');
+
+      let profExists = commReq.resource.meta.profile.find((prof) => {
+        return prof === config.get("profiles:CommunicationRequest");
+      });
+      if(!profExists) {
+        commReq.resource.meta.profile.push(config.get("profiles:CommunicationRequest"));
+      }
       if (!commReq.resource.extension) {
         commReq.resource.extension = [];
       }
@@ -1271,7 +1303,8 @@ module.exports = function () {
           method: 'PUT',
           url: `CommunicationRequest/${commReq.resource.id}`,
         },
-      }, ];
+      }];
+      logger.error(JSON.stringify(bundle,0,2));
       macm.saveResource(bundle, (err, res, body) => {
         return callback(err, res, body);
       });

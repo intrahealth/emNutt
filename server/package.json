@@ -21,6 +21,7 @@
     "is-json": "^2.0.1",
     "moment": "^2.24.0",
     "nconf": "^0.10.0",
+    "node-cron": "^2.0.3",
     "openhim-mediator-utils": "^0.2.3",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.8",

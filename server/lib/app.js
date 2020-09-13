@@ -8,6 +8,8 @@ const cors = require('cors');
 const fs = require('fs');
 const moment = require('moment');
 const request = require('request');
+const cron = require('node-cron');
+const uuid4 = require('uuid/v4');
 const {
   CacheFhirToES
 } = require('fhir2es');
@@ -51,18 +53,54 @@ function appRoutes() {
     if (!resource) {
       return res.status(400).send();
     }
-    let commBundle = {
-      entry: [{
-        resource,
-      }, ],
-    };
-    rapidpro.processCommunications(commBundle, (err) => {
-      if (err) {
-        return res.status(500).send('Done');
-      }
-      logger.info('Done processing communication requests');
-      res.status(200).send();
+    let recurrance = resource.extension && resource.extension.find((ext) => {
+      return ext.url === config.get("extensions:CommReqRecurrance");
     });
+    if(recurrance) {
+      resource.id = uuid4();
+      let cronExpression = recurrance.valueString;
+      cron.schedule(cronExpression, () => {
+        logger.info('Processing scheduled communication request with id ' + resource.id);
+        rapidpro.processSchedCommReq(resource.id, (err) => {
+          if(err) {
+            logger.error('An error occured while processing scheduled communication request with id ' + resource.id);
+          } else {
+            logger.info(`Scheduled communication request with id ${resource.id} processed successfully`);
+          }
+        });
+      });
+      let bundle = {
+        resourceType: 'Bundle',
+        type: 'batch',
+        entry: [{
+          resource,
+          request: {
+            method: 'PUT',
+            url: `${resource.resourceType}/${resource.id}`,
+          },
+        }],
+      };
+      macm.saveResource(bundle, (err) => {
+        if (err) {
+          return res.status(500).send();
+        }
+        logger.info('Done processing communication requests');
+        res.status(200).send();
+      });
+    } else {
+      let commBundle = {
+        entry: [{
+          resource,
+        }]
+      };
+      rapidpro.processCommunications(commBundle, (err) => {
+        if (err) {
+          return res.status(500).send();
+        }
+        logger.info('Done processing communication requests');
+        res.status(200).send();
+      });
+    }
   });
 
   app.post('/emNutt/fhir', (req, res) => {

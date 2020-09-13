@@ -29,9 +29,7 @@ module.exports = function () {
           resource.resourceType = 'Basic';
           resource.meta = {};
           resource.meta.profile = [];
-          resource.meta.profile.push(
-            'http://mhero.org/fhir/StructureDefinition/mhero-workflows'
-          );
+          resource.meta.profile.push(config.get("profiles:Workflows"));
           resource.meta.code = {
             coding: [{
               system: 'http://mhero.org/fhir/CodeSystem/mhero-resource',
@@ -40,7 +38,7 @@ module.exports = function () {
             text: 'mHeroWorkflows',
           };
           resource.extension = [{
-            url: 'http://mhero.org/fhir/StructureDefinition/mhero-workflows-details',
+            url: config.get("profiles:WorkflowsDetails"),
             extension: [{
                 url: 'name',
                 valueString: flow.name,
@@ -62,7 +60,7 @@ module.exports = function () {
                 valueInteger: flow.expires,
               },
               {
-                url: 'http://mhero.org/fhir/StructureDefinition/mhero-run-summary',
+                url: config.get("profiles:WorkflowsRunSummary"),
                 extension: [{
                     url: 'active',
                     valueInteger: flow.runs.active,
@@ -204,7 +202,8 @@ module.exports = function () {
       url,
       id,
       query,
-      count
+      count,
+      noCaching = false,
     }, callback) {
       let resourceData = {};
       if (!id) {
@@ -240,6 +239,12 @@ module.exports = function () {
       } else {
         count = true;
       }
+      let headers = {};
+      if (noCaching) {
+        headers = {
+          'Cache-Control': 'no-cache',
+        };
+      }
       let errCode;
       logger.info(`Getting data for resource from server ${config.get('macm:baseURL')}`);
       async.whilst(
@@ -254,6 +259,7 @@ module.exports = function () {
               username: config.get('macm:username'),
               password: config.get('macm:password'),
             },
+            headers
           };
           request.get(options, (err, res, body) => {
             url = false;
@@ -378,10 +384,10 @@ module.exports = function () {
             resourceType: 'Basic',
             id: run.uuid,
             meta: {
-              profile: ['http://mhero.org/fhir/StructureDefinition/mhero-flow-run']
+              profile: [config.get("profiles:WorkflowRun")]
             },
             extension: [{
-              url: 'http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details',
+              url: config.get("profiles:WorkflowRunDetails"),
               extension
             }]
           },
@@ -444,7 +450,7 @@ module.exports = function () {
               const commResource = {};
               commResource.meta = {};
               commResource.meta.profile = [];
-              commResource.meta.profile.push('http://mhero.org/fhir/StructureDefinition/mhero-communication');
+              commResource.meta.profile.push(config.get("profiles:Communication"));
               commResource.resourceType = 'Communication';
               commResource.id = text.id;
               if (text.parent) {
@@ -472,7 +478,7 @@ module.exports = function () {
                 commResource.extension = [];
               }
               commResource.extension.push({
-                url: 'http://mhero.org/fhir/StructureDefinition/mhero-comm-flow-run',
+                url: config.get("profiles:CommunicationFlowRun"),
                 valueReference: {
                   reference: `Basic/${run.uuid}`
                 }

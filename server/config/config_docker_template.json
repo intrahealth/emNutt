@@ -45,6 +45,62 @@
     "username": "",
     "password": ""
   },
+  "profiles": {
+    "CommunicationRequest": "http://mhero.org/fhir/StructureDefinition/mhero-communication-request",
+    "Communication": "http://mhero.org/fhir/StructureDefinition/mhero-communication",
+    "Workflows": "http://mhero.org/fhir/StructureDefinition/mhero-workflows",
+    "WorkflowRun": "http://mhero.org/fhir/StructureDefinition/mhero-flow-run",
+    "EidsrPatient": "http://mhero.org/fhir/StructureDefinition/mhero-eidsr-patient"
+  },
+  "extensions": {
+    "CommReqFlowStarts": "http://mhero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts",
+    "CommReqBroadcastStarts": "http://mhero.org/fhir/StructureDefinition/mhero-comm-req-broadcast-starts",
+    "WorkflowRunDetails": "http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details",
+    "CommunicationFlowRun": "http://mhero.org/fhir/StructureDefinition/mhero-comm-flow-run",
+    "WorkflowsDetails": "http://mhero.org/fhir/StructureDefinition/mhero-workflows-details",
+    "WorkflowsRunSummary": "http://mhero.org/fhir/StructureDefinition/mhero-run-summary"
+  },
+  "eidsr": {
+    "orderedFields": [
+      "diseaseCode",
+      "gender",
+      "age",
+      "specimenCollected"
+    ],
+    "notifications": {
+      "groups": [
+        "a7bd90f4-475f-4f64-98b3-f5fe21434694",
+        "462443c1-8600-431b-81e2-e7d2b434bbec"
+      ],
+      "designation": [
+        {
+          "name": "District Surveillance Officer",
+          "geographicalLocationLimit": true,
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} With IDSRID {{caseID}} By {{reporterName}} ({{reporterPhone}}). Please call or visit health facility to verify"
+        },
+        {
+          "name": "County Surveillance Officer",
+          "geographicalLocationLimit": true,
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}}).  Please verify with DSO"
+        },
+        {
+          "name": "County Diagnostic Officer",
+          "geographicalLocationLimit": true,
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}})"
+        }
+      ],
+      "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}})"
+    }
+  },
+  "communicationChannels": [
+    {
+      "id": "rapidpro",
+      "name": "Rapidpro"
+    }
+  ],
+  "enabledCommChannels": [
+    "rapidpro"
+  ],
   "lastSync": {
     "syncWorkflows": {
       "time": "1970-01-01T00:00:00"
