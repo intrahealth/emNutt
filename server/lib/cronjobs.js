@@ -20,6 +20,9 @@ function scheduleCommunicationRequests() {
       let recurrance = commReq.resource.extension && commReq.resource.extension.find((ext) => {
         return ext.url === config.get("extensions:CommReqRecurrance");
       });
+      if(!recurrance) {
+        continue;
+      }
       let cronExpression = recurrance.valueString;
       cron.schedule(cronExpression, () => {
         logger.info(`Processing scheduled communication request with id ${commReq.resource.id}`);

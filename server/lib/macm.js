@@ -38,7 +38,7 @@ module.exports = function () {
             text: 'mHeroWorkflows',
           };
           resource.extension = [{
-            url: config.get("profiles:WorkflowsDetails"),
+            url: config.get("extensions:WorkflowsDetails"),
             extension: [{
                 url: 'name',
                 valueString: flow.name,
@@ -60,7 +60,7 @@ module.exports = function () {
                 valueInteger: flow.expires,
               },
               {
-                url: config.get("profiles:WorkflowsRunSummary"),
+                url: config.get("extensions:WorkflowsRunSummary"),
                 extension: [{
                     url: 'active',
                     valueInteger: flow.runs.active,
@@ -387,7 +387,7 @@ module.exports = function () {
               profile: [config.get("profiles:WorkflowRun")]
             },
             extension: [{
-              url: config.get("profiles:WorkflowRunDetails"),
+              url: config.get("extensions:WorkflowRunDetails"),
               extension
             }]
           },
@@ -478,7 +478,7 @@ module.exports = function () {
                 commResource.extension = [];
               }
               commResource.extension.push({
-                url: config.get("profiles:CommunicationFlowRun"),
+                url: config.get("extensions:CommunicationFlowRun"),
                 valueReference: {
                   reference: `Basic/${run.uuid}`
                 }
