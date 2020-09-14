@@ -10,13 +10,25 @@ const convert = new Fhir();
 const checkDependencies = (callback) => {
   let dependencies = [{
     name: 'hapi',
-    url: URI(config.get('macm:baseURL')).segment('Communication').toString()
+    url: URI(config.get('macm:baseURL')).segment('Communication').toString(),
+    auth: {
+      username: config.get('macm:username'),
+      password: config.get('macm:password')
+    }
   }, {
     name: 'kibana',
-    url: URI(config.get('kibana:baseURL')).segment('api').segment("kibana").segment("dashboards").segment("export").addQuery("dashboard", "XXX").toString()
+    url: URI(config.get('kibana:baseURL')).segment('api').segment("kibana").segment("dashboards").segment("export").addQuery("dashboard", "XXX").toString(),
+    auth: {
+      username: config.get('kibana:username'),
+      password: config.get('kibana:password')
+    }
   }, {
     name: 'elasticsearch',
-    url: URI(config.get('elastic:baseURL')).toString()
+    url: URI(config.get('elastic:baseURL')).toString(),
+    auth: {
+      username: config.get('elastic:username'),
+      password: config.get('elastic:password')
+    }
   }];
   async.each(dependencies, (dependence, nxt) => {
     isRunning(dependence, () => {
@@ -29,7 +41,8 @@ const checkDependencies = (callback) => {
   function isRunning(dependence, callback) {
     logger.info('Checking if ' + dependence.name + ' is running');
     const options = {
-      url: dependence.url
+      url: dependence.url,
+      auth: dependence.auth
     };
     request.get(options, (err, res) => {
       if (res && res.statusCode) {
