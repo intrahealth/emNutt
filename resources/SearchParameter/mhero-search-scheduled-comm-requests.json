@@ -1,0 +1,22 @@
+{
+  "resourceType": "SearchParameter",
+  "id": "scheduled-communication-requests",
+  "name": "Search Parameter on scheduled CommunicationRequest",
+  "status": "active",
+  "experimental": false,
+  "publisher": "mhero.org",
+  "contact": [{
+    "telecom": [{
+      "system": "url",
+      "value": "http://mhero.org/"
+    }]
+  }],
+  "description": "Search for scheduled communication requests",
+  "code": "scheduletime",
+  "base": ["CommunicationRequest"],
+  "type": "string",
+  "expression": "CommunicationRequest.extension.where(url='http://mhero.org/fhir/StructureDefinition/recurrance-cron-expression')",
+  "xpathUsage": "normal",
+  "target": ["CommunicationRequest"],
+  "modifier": [ "missing", "exact", "contains" ]
+}
