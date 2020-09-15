@@ -754,7 +754,7 @@ module.exports = function () {
         }
         for(let index in commReq.extension) {
           let ext = commReq.extension[index];
-          if(ext.url === config.get("extensions:CommReqRecurrance")) {
+          if(ext.url === config.get("extensions:CommReqSchedule")) {
             delete commReq.extension[index];
           }
         }
@@ -1225,7 +1225,7 @@ module.exports = function () {
       createNewReq,
       callback
     ) {
-      logger.info('Updating communication request ' + commReq.resource.id + ' to completed');
+      logger.info('Updating communication request to completed');
       let extUrl;
       if (type === 'sms') {
         extUrl = config.get("extensions:CommReqBroadcastStarts");
@@ -1304,7 +1304,6 @@ module.exports = function () {
           url: `CommunicationRequest/${commReq.resource.id}`,
         },
       }];
-      logger.error(JSON.stringify(bundle,0,2));
       macm.saveResource(bundle, (err, res, body) => {
         return callback(err, res, body);
       });

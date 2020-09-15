@@ -55,7 +55,8 @@
     "WorkflowRunDetails": "http://mhero.org/fhir/StructureDefinition/mhero-flow-run-details",
     "CommunicationFlowRun": "http://mhero.org/fhir/StructureDefinition/mhero-comm-flow-run",
     "WorkflowsDetails": "http://mhero.org/fhir/StructureDefinition/mhero-workflows-details",
-    "WorkflowsRunSummary": "http://mhero.org/fhir/StructureDefinition/mhero-run-summary"
+    "WorkflowsRunSummary": "http://mhero.org/fhir/StructureDefinition/mhero-run-summary",
+    "CommReqSchedule": "http://mhero.org/fhir/StructureDefinition/sms-cron-expression-schedule"
   },
   "eidsr": {
     "orderedFields": [

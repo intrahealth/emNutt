@@ -11,11 +11,19 @@ Description:    "mHero profile for Communication Request."
       MheroCommReqBroadcastStarts named commReqBroadcastStarts 0..1
 
 Extension:      MheroCommReqRecurrance
-Id:             recurrance-cron-expression
+Id:             sms-cron-expression-schedule
 Title:          "Cron Expression of the Communication Request"
 Description:    "Must be a Cron Expression of the Communication Request if the Communication Request is Reccuring"
-* value[x] only string
-* valueString 1..1
+* extension contains
+      frequency  1..1 MS and
+      sendCategory  1..* MS and
+      cronExpression        1..1 MS
+* extension[frequency].value[x] only string
+* extension[frequency].valueString 1..1
+* extension[sendCategory].value[x] only string
+* extension[sendCategory].valueString 0..1
+* extension[cronExpression].value[x] only string
+* extension[cronExpression].valueString 0..1
 
 Extension:      MheroCommReqFlowStarts
 Id:             mhero-comm-req-flow-starts
@@ -62,7 +70,9 @@ InstanceOf:     MheroCommunicationRequest
 Title:          "mHero Communication Request (Flow) Example"
 Usage:          #example
 * status = #completed
-* extension[MheroCommReqRecurrance].valueString = "14 14 */3 * *"
+* extension[MheroCommReqRecurrance].extension[frequency].valueString = "once"
+* extension[MheroCommReqRecurrance].extension[sendCategory].valueString = "later"
+* extension[MheroCommReqRecurrance].extension[cronExpression].valueString = "06 14 05 09 *"
 * extension[commReqFlowStarts].extension[flow_starts_uuid].valueString = "8d5d23b0-2e67-4bac-af8d-15585bd863d5"
 * extension[commReqFlowStarts].extension[status].valueString = "pending"
 * extension[commReqFlowStarts].extension[flow_uuid].valueString = "b7a4770c-d034-4055-9f21-b17632ef311e"
@@ -79,7 +89,8 @@ InstanceOf:     MheroCommunicationRequest
 Title:          "mHero Communication Request (Broadcast) Example"
 Usage:          #example
 * status = #completed
-* extension[MheroCommReqRecurrance].valueString = "14 14 */3 * *"
+* extension[MheroCommReqRecurrance].extension[frequency].valueString = "recurring"
+* extension[MheroCommReqRecurrance].extension[cronExpression].valueString = "14 14 */3 * *"
 * extension[commReqBroadcastStarts].extension[broadcast_id].valueString = "7540339"
 * extension[commReqBroadcastStarts].extension[created_on].valueDateTime = "2020-03-18T12:28:06.768319Z"
 * extension[commReqBroadcastStarts].extension[contact_globalid][0].valueString = "Practitioner/P9359"

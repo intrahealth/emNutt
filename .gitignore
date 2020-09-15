@@ -7,3 +7,4 @@ node_modules/
 # Config files
 config_development.json
 docs
+server/lib/logs

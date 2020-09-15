@@ -8,7 +8,7 @@ function scheduleCommunicationRequests() {
   logger.info('Checking Scheduled Communication Requests');
   macm.getResource({
     resource: 'CommunicationRequest',
-    query: '_total=accurate&scheduletime=',
+    query: '_total=accurate&status=on-hold',
     noCaching: true,
   }, (err, commReqs) => {
     logger.info(`Scheduling ${commReqs.entry.length} Communication Requests`);
@@ -17,13 +17,21 @@ function scheduleCommunicationRequests() {
       return;
     }
     for(let commReq of commReqs.entry) {
-      let recurrance = commReq.resource.extension && commReq.resource.extension.find((ext) => {
-        return ext.url === config.get("extensions:CommReqRecurrance");
+      let schedule = commReq.resource.extension && commReq.resource.extension.find((ext) => {
+        return ext.url === config.get("extensions:CommReqSchedule");
       });
-      if(!recurrance) {
+      let cronExpression;
+      if(schedule) {
+        let cronDet = schedule.extension.find((ext) => {
+          return ext.url === 'cronExpression';
+        });
+        if(cronDet && cronDet.valueString) {
+          cronExpression = cronDet.valueString;
+        }
+      }
+      if(!cronExpression) {
         continue;
       }
-      let cronExpression = recurrance.valueString;
       cron.schedule(cronExpression, () => {
         logger.info(`Processing scheduled communication request with id ${commReq.resource.id}`);
         rapidpro.processSchedCommReq(commReq.resource.id, (err) => {

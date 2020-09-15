@@ -54,12 +54,22 @@ function appRoutes() {
     if (!resource) {
       return res.status(400).send();
     }
-    let recurrance = resource.extension && resource.extension.find((ext) => {
-      return ext.url === config.get("extensions:CommReqRecurrance");
+    let schedule = resource.extension && resource.extension.find((ext) => {
+      return ext.url === config.get("extensions:CommReqSchedule");
     });
-    if(recurrance) {
+    let cronExpression;
+    if(schedule) {
+      let cronDet = schedule.extension.find((ext) => {
+        return ext.url === 'cronExpression';
+      });
+      if(cronDet && cronDet.valueString) {
+        cronExpression = cronDet.valueString;
+      }
+    }
+    if(cronExpression) {
+      logger.info('Scheduling to send this message with cron expression ' + cronExpression);
       resource.id = uuid4();
-      let cronExpression = recurrance.valueString;
+      resource.status = 'on-hold';
       cron.schedule(cronExpression, () => {
         logger.info('Processing scheduled communication request with id ' + resource.id);
         rapidpro.processSchedCommReq(resource.id, (err) => {
@@ -85,10 +95,11 @@ function appRoutes() {
         if (err) {
           return res.status(500).send();
         }
-        logger.info('Done processing communication requests');
+        logger.info('Done processing scheduled communication request');
         res.status(200).send();
       });
     } else {
+      logger.info('Sending message now');
       let commBundle = {
         entry: [{
           resource,
