@@ -6,13 +6,9 @@ const async = require('async');
 const medUtils = require('openhim-mediator-utils');
 const cors = require('cors');
 const fs = require('fs');
-const moment = require('moment');
 const request = require('request');
 const cron = require('node-cron');
 const uuid4 = require('uuid/v4');
-const {
-  CacheFhirToES
-} = require('fhir2es');
 const isJSON = require('is-json');
 const URI = require('urijs');
 require('./cronjobs');
@@ -20,9 +16,10 @@ const logger = require('./winston');
 const config = require('./config');
 const envVars = require('./envVars');
 const rapidpro = require('./rapidpro')();
-const eidsr = require('./eidsr');
+const eidsr = require('./routes/eidsr');
+const dataSync = require('./routes/dataSync');
+
 const macm = require('./macm')();
-const floip = require('./floip');
 const prerequisites = require('./prerequisites');
 const mixin = require('./mixin');
 
@@ -47,7 +44,8 @@ function appRoutes() {
 
   app.use(cors());
   app.use(bodyParser.json());
-  app.use('/emNutt/eidsr/', eidsr);
+  app.use('/eidsr', eidsr);
+  app.use('/sync', dataSync);
 
   app.post('/emNutt/fhir/CommunicationRequest', (req, res) => {
     let resource = req.body;
@@ -105,9 +103,9 @@ function appRoutes() {
           resource,
         }]
       };
-      rapidpro.processCommunications(commBundle, (err) => {
+      rapidpro.processCommunications(commBundle, (err, status) => {
         if (err) {
-          return res.status(500).send();
+          return res.status(500).json(status);
         }
         logger.info('Done processing communication requests');
         res.status(200).send();
@@ -217,296 +215,6 @@ function appRoutes() {
       return res.status(204).send();
     }
     return res.status(200).send(paramValue);
-  });
-
-  app.get('/emNutt/syncWorkflows', (req, res) => {
-    logger.info('Received a request to synchronize workflows');
-    let enabledChannels = config.get("enabledCommChannels");
-    let processingError = false;
-    async.parallel({
-      rapidpro: (callback) => {
-        if (!enabledChannels.includes('rapidpro')) {
-          logger.warn('Rapidpro is not enabled, not syncing workflows');
-          return callback(null);
-        }
-        rapidpro.syncWorkflows((err) => {
-          if (err) {
-            processingError = err;
-          }
-          return callback(null);
-        });
-      }
-    }, () => {
-      if (!processingError) {
-        let runsLastSync = moment()
-          .subtract('30', 'minutes')
-          .format('Y-MM-DDTHH:mm:ss');
-        mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], runsLastSync, () => {});
-      }
-      if (processingError) {
-        return res.status(500).send('Internal error occured');
-      }
-      res.status(200).send('Done');
-    });
-  });
-
-  app.get('/emNutt/syncFloipFlowResults', (req, res) => {
-    logger.info("Received a request to sync flow results from FLOIP server");
-    floip.flowResultsToQuestionnaire((err) => {
-      logger.info("Done Synchronizing flow results from FLOIP server");
-      if(!err) {
-        let runsLastSync = moment()
-          .subtract('10', 'minutes')
-          .format('Y-MM-DD HH:mm:ss');
-        mixin.updateConfigFile(['lastSync', 'syncFloipFlowResults', 'time'], runsLastSync, () => {});
-        return res.status(200).send();
-      } else {
-        return res.status(500).send();
-      }
-    });
-  });
-
-  app.get('/emNutt/syncWorkflowRunMessages', (req, res) => {
-    logger.info('Received a request to sync workflow messages');
-    let enabledChannels = config.get("enabledCommChannels");
-    let processingError = false;
-    async.parallel({
-      rapidpro: (callback) => {
-        if (!enabledChannels.includes('rapidpro')) {
-          logger.warn('Rapidpro is not enabled, not syncing workflows');
-          return callback(null);
-        }
-        rapidpro.syncWorkflowRunMessages((err) => {
-          if (err) {
-            processingError = err;
-          }
-          return callback(null);
-        });
-      }
-    }, () => {
-      if (!processingError) {
-        let runsLastSync = moment()
-          .subtract('10', 'minutes')
-          .format('Y-MM-DDTHH:mm:ss');
-        mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], runsLastSync, () => {});
-      }
-      if (processingError) {
-        return res.status(500).send('Internal error occured');
-      }
-      res.status(200).send('Done');
-    });
-  });
-
-  app.get('/emNutt/checkCommunicationRequest', (req, res) => {
-    let processingError = false;
-    let query = `status:not=completed`;
-    macm.getResource({
-      resource: 'CommunicationRequest',
-      query,
-    }, (err, commReqs) => {
-      if (err) {
-        processingError = true;
-      }
-      rapidpro.processCommunications(commReqs, (err) => {
-        if (err) {
-          processingError = true;
-        }
-        logger.info('Done checking communication requests');
-        if (processingError) {
-          return res.status(500).send('Done');
-        }
-        res.status(200).send();
-      });
-    });
-  });
-
-  app.post('/emNutt/syncContacts', (req, res) => {
-    let processingError = false;
-    logger.info('Received a bundle of contacts to be synchronized');
-    if (!config.get('rapidpro:syncAllContacts')) {
-      logger.warn('All Contacts sync is disabled, the server will sync only communicated contacts');
-      res.status(403).send('All Contacts sync is disabled, the server will sync only communicated contacts');
-    }
-    const bundle = req.body;
-    if (!bundle) {
-      logger.error('Received empty request');
-      res.status(400).send('Empty request body');
-      return;
-    }
-    if (bundle.resourceType !== 'Bundle') {
-      logger.error('Request is not a bundle');
-      res.status(400).send('Request is not a bundle');
-      return;
-    }
-    async.series({
-      rapidpro: (callback) => {
-        rapidpro.syncContacts(bundle, (err) => {
-          if (err) {
-            processingError = err;
-          }
-          return callback(null);
-        });
-      }
-    }, () => {
-      bundle.type = 'batch';
-      macm.saveResource(bundle, () => {
-        logger.info('Contacts Sync Done');
-        if (processingError) {
-          return res.status(500).send('Some errors occured');
-        }
-        res.status(200).send('Suceessfully');
-      });
-    });
-  });
-
-  app.get('/emNutt/syncContacts', (req, res) => {
-    logger.info('Received a request to sync DB contacts');
-    let bundleModified = false;
-    let runsLastSync = config.get('lastSync:syncContacts:time');
-    const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
-    if (!isValid) {
-      runsLastSync = moment('1970-01-01').format('Y-MM-DD');
-    }
-    if (!config.get('rapidpro:syncAllContacts')) {
-      logger.warn(
-        'All Contacts sync is disabled, the server will sync only communicated contacts'
-      );
-      return res
-        .status(403)
-        .send(
-          'All Contacts sync is disabled, the server will sync only communicated contacts'
-        );
-    }
-    let processingError = false;
-    let bundle = {
-      type: 'batch',
-      resourceType: 'Bundle',
-      entry: []
-    };
-    async.series({
-      practitioners: (callback) => {
-        let query = `_lastUpdated=ge${runsLastSync}`;
-        macm.getResource({
-          resource: 'Practitioner',
-          query,
-        }, (err, practs) => {
-          if (err) {
-            processingError = true;
-          }
-          bundle.entry = bundle.entry.concat(practs.entry);
-          return callback(null);
-        });
-      },
-      person: (callback) => {
-        let query = `_lastUpdated=ge${runsLastSync}`;
-        macm.getResource({
-          resource: 'Person',
-          query,
-        }, (err, pers) => {
-          if (err) {
-            processingError = true;
-          }
-          bundle.entry = bundle.entry.concat(pers.entry);
-          return callback(null);
-        });
-      },
-      patients: (callback) => {
-        let query = `_lastUpdated=ge${runsLastSync}`;
-        macm.getResource({
-          resource: 'Patient',
-          query,
-        }, (err, pers) => {
-          if (err) {
-            processingError = true;
-          }
-          bundle.entry = bundle.entry.concat(pers.entry);
-          return callback(null);
-        });
-      },
-    }, () => {
-      async.series({
-        rapidpro: (callback) => {
-          rapidpro.syncContacts(bundle, (err, modified) => {
-            if (modified) {
-              bundleModified = true;
-            }
-            if (err) {
-              processingError = err;
-            }
-            return callback(null);
-          });
-        }
-      }, () => {
-        if (!bundleModified) {
-          if (processingError) {
-            return res.status(500).send('Some errors occured');
-          }
-          return res.status(200).send('Suceessfully');
-        }
-        macm.saveResource(bundle, () => {
-          logger.info('Contacts Sync Done');
-          if (processingError) {
-            return res.status(500).send('Some errors occured');
-          }
-          res.status(200).send('Suceessfully');
-        });
-      });
-    });
-  });
-
-  app.get('/emNutt/syncContactsGroups', (req, res) => {
-    logger.info('Received a request to sync workflow messages');
-    let enabledChannels = config.get("enabledCommChannels");
-    let processingError = false;
-    async.parallel({
-      rapidpro: (callback) => {
-        if (!enabledChannels.includes('rapidpro')) {
-          logger.warn('Rapidpro is not enabled, not syncing contacts groups for rapidpro');
-          return callback(null);
-        }
-        let source = config.get('app:contactGroupsSource');
-        if (source === 'pos') {
-          rapidpro.POSContactGroupsSync((err) => {
-            if (err) {
-              processingError = err;
-            }
-            return callback(null);
-          });
-        } else {
-          rapidpro.RPContactGroupsSync((err) => {
-            if (err) {
-              processingError = err;
-            }
-            return callback(null);
-          });
-        }
-      }
-    }, () => {
-      if (!processingError) {
-        let runsLastSync = moment()
-          .subtract('30', 'minutes')
-          .format('Y-MM-DDTHH:mm:ss');
-        mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], runsLastSync, () => {});
-      }
-      if (processingError) {
-        return res.status(500).send('Internal error occured');
-      }
-      res.status(200).send('Done');
-    });
-  });
-
-  app.get('/emNutt/cacheFHIR2ES', (req, res) => {
-    let caching = new CacheFhirToES({
-      ESBaseURL: config.get('elastic:baseURL'),
-      ESUsername: config.get('elastic:username'),
-      ESPassword: config.get('elastic:password'),
-      ESMaxCompilationRate: config.get('elastic:max_compilations_rate'),
-      FHIRBaseURL: config.get('macm:baseURL'),
-      FHIRUsername: config.get('macm:username'),
-      FHIRPassword: config.get('macm:password'),
-    });
-    caching.cache();
-    res.status(200).send();
   });
   return app;
 }

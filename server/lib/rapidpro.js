@@ -784,6 +784,11 @@ module.exports = function () {
     processCommunications(commReqs, callback) {
       let processingError = false;
       let sendFailed = false;
+      let status = {
+        failed: 0,
+        success: 0,
+        descriptions: {}
+      };
       logger.info(`Processing ${commReqs.entry.length} communication requests`);
       const promise = new Promise((resolve, reject) => {
         if (!config.get('rapidpro:syncAllContacts')) {
@@ -834,12 +839,14 @@ module.exports = function () {
           const recipients = [];
           const recPromises = [];
           for (const recipient of commReq.resource.recipient) {
+            let isContained = false;
             recPromises.push(new Promise((resolve) => {
               if (recipient.reference) {
                 let resource;
                 const promise1 = new Promise((resolve1) => {
                   if (recipient.reference.startsWith('#')) {
                     if (commReq.resource.contained) {
+                      isContained = true;
                       const contained = commReq.resource.contained.find((contained) => {
                         return (contained.id === recipient.reference.substring(1));
                       });
@@ -887,20 +894,50 @@ module.exports = function () {
                       Array.isArray(resource.telecom) &&
                       resource.telecom.length > 0
                     ) {
-                      for (const telecom of resource.telecom) {
-                        if (
-                          telecom.system &&
-                          telecom.system === 'phone'
-                        ) {
-                          telecom.value = mixin.updatePhoneNumber(telecom.value);
-                          if (!mixin.validatePhone(telecom.value)) {
-                            logger.error('Phone number ' + telecom.value + ' is not valid');
-                            continue;
+                      let rpuuid = resource.identifier.find((ident) => {
+                        return ident.system === 'http://app.rapidpro.io/contact-uuid';
+                      });
+                      if(rpuuid) {
+                        recipients.push({
+                          contact: rpuuid.value,
+                          id: resource.id,
+                        });
+                      } else if(isContained) {
+                        for (const telecom of resource.telecom) {
+                          if (
+                            telecom.system &&
+                            telecom.system === 'phone'
+                          ) {
+                            telecom.value = mixin.updatePhoneNumber(telecom.value);
+                            if (!mixin.validatePhone(telecom.value)) {
+                              logger.error('Phone number ' + telecom.value + ' is not valid');
+                              continue;
+                            }
+                            recipients.push({
+                              urns: 'tel:' + telecom.value,
+                              id: resource.id,
+                            });
                           }
-                          recipients.push({
-                            urns: 'tel:' + telecom.value,
-                            id: resource.id,
-                          });
+                        }
+                      } else {
+                        status.failed = status.failed + 1;
+                        if(resource.name.length > 0) {
+                          let name = '';
+                          if(resource.name[0].text) {
+                            name = resource.name[0].text;
+                          } else {
+                            if(resource.name[0].given && resource.name[0].given.length > 0) {
+                              name = resource.name[0].given.join(" ");
+                            }
+                            if(resource.name[0].family) {
+                              if(name) {
+                                name += ", " + resource.name[0].family;
+                              } else {
+                                name = resource.name[0].family;
+                              }
+                            }
+                          }
+                          status.descriptions[name] = 'Not found in rapidpro';
                         }
                       }
                     } else {
@@ -921,10 +958,15 @@ module.exports = function () {
                           if (!resource.identifier) {
                             resource.identifier = [];
                           }
-                          resource.identifier.push({
-                            system: 'http://app.rapidpro.io/contact-uuid',
-                            value: rpUUID,
+                          let exist = resource.identifier.find((ident) => {
+                            return ident.system === 'http://app.rapidpro.io/contact-uuid';
                           });
+                          if(!exist) {
+                            resource.identifier.push({
+                              system: 'http://app.rapidpro.io/contact-uuid',
+                              value: rpUUID,
+                            });
+                          }
                           const bundle = {};
                           bundle.type = 'batch';
                           bundle.resourceType = 'Bundle';
@@ -969,20 +1011,26 @@ module.exports = function () {
                     const flowBody = {};
                     flowBody.flow = workflow;
                     flowBody.urns = [];
+                    flowBody.contacts = [];
                     let ids = [];
                     const promises = [];
                     for (const recipient of recipients) {
                       promises.push(
                         new Promise((resolve) => {
-                          flowBody.urns.push(recipient.urns);
+                          if(recipient.contact) {
+                            flowBody.contacts.push(recipient.contact);
+                          } else if(recipient.urns) {
+                            flowBody.urns.push(recipient.urns);
+                          }
                           ids.push(recipient.id);
-                          if (flowBody.urns.length > 90) {
+                          if (flowBody.urns.length + flowBody.contacts.length > 90) {
                             const tmpFlowBody = {
                               ...flowBody,
                             };
                             const tmpIds = [...ids];
                             ids = [];
                             flowBody.urns = [];
+                            flowBody.contacts = [];
                             this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
                               if (err) {
                                 logger.error('An error has occured while starting a workflow');
@@ -1000,10 +1048,12 @@ module.exports = function () {
                                 logger.error('Send Message Err Code ' + res.statusCode);
                               }
                               if (!sendFailed) {
+                                status.success = status.success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
                                 this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (err, res, body) => {
                                   resolve();
                                 });
                               } else {
+                                status.failed = status.failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
                                 resolve();
                               }
                             });
@@ -1014,7 +1064,7 @@ module.exports = function () {
                       );
                     }
                     Promise.all(promises).then(() => {
-                      if (flowBody.urns.length > 0) {
+                      if (flowBody.urns.length + flowBody.contacts.length > 0) {
                         this.sendMessage(flowBody, 'workflow', (err, res, body) => {
                           if (err) {
                             logger.error(err);
@@ -1030,10 +1080,12 @@ module.exports = function () {
                             processingError = true;
                           }
                           if (!sendFailed) {
+                            status.success = status.success + flowBody.urns.length + flowBody.contacts.length;
                             this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (err, res, body) => {
                               return callback(null);
                             });
                           } else {
+                            status.failed = status.failed + flowBody.urns.length + flowBody.contacts.length;
                             return callback(null);
                           }
                         });
@@ -1055,20 +1107,26 @@ module.exports = function () {
                 const smsBody = {};
                 smsBody.text = msg;
                 smsBody.urns = [];
+                smsBody.contacts = [];
                 let ids = [];
                 const promises = [];
                 let createNewReq = false;
                 for (const recipient of recipients) {
                   promises.push(new Promise((resolve) => {
-                    smsBody.urns.push(recipient.urns);
+                    if(recipient.contact) {
+                      smsBody.contacts.push(recipient.contact);
+                    } else if(recipient.urns) {
+                      smsBody.urns.push(recipient.urns);
+                    }
                     ids.push(recipient.id);
-                    if (smsBody.urns.length > 90) {
+                    if (smsBody.urns.length + smsBody.contacts.length > 90) {
                       const tmpSmsBody = {
                         ...smsBody,
                       };
                       const tmpIds = [...ids];
                       ids = [];
                       smsBody.urns = [];
+                      smsBody.contacts = [];
                       this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
                         if (err) {
                           logger.error(err);
@@ -1083,10 +1141,12 @@ module.exports = function () {
                           processingError = true;
                         }
                         if (!sendFailed) {
+                          status.success = status.success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
                           this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (err, res, body) => {
                             resolve();
                           });
                         } else {
+                          status.failed = status.failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
                           resolve();
                         }
                       });
@@ -1096,7 +1156,7 @@ module.exports = function () {
                   }));
                 }
                 Promise.all(promises).then(() => {
-                  if (smsBody.urns.length > 0) {
+                  if (smsBody.urns.length + smsBody.contacts.length > 0) {
                     this.sendMessage(smsBody, 'sms', (err, res, body) => {
                       if (err) {
                         logger.error(err);
@@ -1111,10 +1171,12 @@ module.exports = function () {
                         processingError = true;
                       }
                       if (!sendFailed) {
+                        status.success = status.success + smsBody.urns.length + smsBody.contacts.length;
                         this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (err, res, body) => {
                           return callback(null);
                         });
                       } else {
+                        status.failed = status.failed + smsBody.urns.length + smsBody.contacts.length;
                         return callback(null);
                       }
                     });
@@ -1135,7 +1197,7 @@ module.exports = function () {
             throw err;
           });
         }, () => {
-          return callback(processingError);
+          return callback(processingError, status);
         });
       });
     },

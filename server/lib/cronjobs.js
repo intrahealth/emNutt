@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const macm = require('./macm')();
 const rapidpro = require('./rapidpro')();
+const dataSync = require('./dataSync');
 const config = require('./config');
 const logger = require('./winston');
 
@@ -46,4 +47,51 @@ function scheduleCommunicationRequests() {
   });
 }
 
+function scheduleDataSync() {
+  if (config.get('mediator:register')) {
+    return false;
+  }
+  let cronWorkflowsSync = config.get("lastSync:syncWorkflows:cronTime");
+  let cronContactsSync = config.get("lastSync:syncContacts:cronTime");
+  let cronContactGroupsSync = config.get("lastSync:syncContactsGroups:cronTime");
+  let cronRunMsgsSync = config.get("lastSync:syncWorkflowRunMessages:cronTime");
+  let cronFloipFlowResSync = config.get("lastSync:syncFloipFlowResults:cronTime");
+
+  cron.schedule(cronWorkflowsSync, () => {
+    logger.info('Running cron job for workflows synchronization');
+    dataSync.syncWorkflows(() => {
+      logger.info('Done running cron job for workflows synchronization');
+    });
+  });
+
+  cron.schedule(cronContactsSync, () => {
+    logger.info('Running cron job for contacts synchronization');
+    dataSync.syncContacts(() => {
+      logger.info('Done running cron job for contacts synchronization');
+    });
+  });
+
+  cron.schedule(cronContactGroupsSync, () => {
+    logger.info('Running cron job for contact groups synchronization');
+    dataSync.syncContactsGroups(() => {
+      logger.info('Done running cron job for contact groups synchronization');
+    });
+  });
+
+  cron.schedule(cronRunMsgsSync, () => {
+    logger.info('Running cron job for workflows run messages synchronization');
+    dataSync.syncWorkflowRunMessages(() => {
+      logger.info('Done running cron job for workflows run messages synchronization');
+    });
+  });
+
+  cron.schedule(cronFloipFlowResSync, () => {
+    logger.info('Running cron job for FLOIP flow results synchronization');
+    dataSync.syncFloipFlowResults(() => {
+      logger.info('Done running cron job for FLOIP flow results synchronization');
+    });
+  });
+}
+
 scheduleCommunicationRequests();
+scheduleDataSync();
