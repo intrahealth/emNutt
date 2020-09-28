@@ -184,7 +184,8 @@ module.exports = function () {
         endPoint: 'contacts.json',
       }, (err, rpContacts) => {
         let bundleModified = false;
-        async.eachOf(bundle.entry, (entry, index, nxtEntry) => {
+        async.eachOfSeries(bundle.entry, (entry, index, nxtEntry) => {
+          logger.info(`Synchronizing ${index++} of ${bundle.entry.length}`);
           this.addContact({
             contact: entry.resource,
             rpContacts,
@@ -622,6 +623,9 @@ module.exports = function () {
         return callback(true);
       }
       let urns = generateURNS(contact);
+      // ensure urns are unique
+      const urnsSet = new Set(urns);
+      urns = [...urnsSet];
       const rpContactWithGlobalid = rpContacts.find((cntct) => {
         return (
           cntct.fields &&
@@ -705,17 +709,25 @@ module.exports = function () {
         json: body,
       };
       request.post(options, (err, res, respBody) => {
-        if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
-          err = 'An error occured while adding a contact, Err Code ' + res.statusCode;
-        }
-        if (err) {
-          logger.error(JSON.stringify(body, 0, 2));
-          logger.error(err + ' ' + url);
-          logger.error(JSON.stringify(respBody, 0, 2));
-        } else {
-          logger.info(JSON.stringify(respBody, 0, 2));
-        }
-        return callback(err, res, respBody);
+        this.isThrottled(body, (wasThrottled) => {
+          if (wasThrottled) {
+            this.addContact({contact, rpContacts}, (err, res, respBody) => {
+              return callback(err, res, respBody);
+            });
+          } else {
+            if (!err && res.statusCode && (res.statusCode < 200 || res.statusCode > 399)) {
+              err = 'An error occured while adding a contact, Err Code ' + res.statusCode;
+            }
+            if (err) {
+              logger.error(JSON.stringify(body, 0, 2));
+              logger.error(err + ' ' + url);
+              logger.error(JSON.stringify(respBody, 0, 2));
+            } else {
+              logger.info(JSON.stringify(respBody, 0, 2));
+              return callback(err, res, respBody);
+            }
+          }
+        });
       });
     },
     updateContact({
@@ -1258,12 +1270,8 @@ module.exports = function () {
             (det, nxtDet) => {
               if (!isNaN(det)) {
                 // add 5 more seconds on top of the wait time expected by rapidpro then convert to miliseconds
-                var wait_time = parseInt(det) * 1000 + 5;
-                logger.warn(
-                  'Rapidpro has throttled my requests,i will wait for ' +
-                  wait_time / 1000 +
-                  ' Seconds Before i proceed,please dont interrupt me'
-                );
+                var wait_time = parseInt(det) * 1000 + 10;
+                logger.warn('Rapidpro has throttled my requests,i will wait for ' + wait_time / 1000 + ' Seconds Before i proceed,please dont interrupt me');
                 setTimeout(function () {
                   return callback(true);
                 }, wait_time);
