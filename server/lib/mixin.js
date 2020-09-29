@@ -50,10 +50,11 @@ const updateopenHIMConfig = (urn, updatedConfig, callback) => {
 };
 
 const updatePhoneNumber = (phone) => {
-  let countryCode = config.get("app:phoneCountryCode");
+  let countryCode = config.get("app:phone:countryCode");
   phone = phone.toString();
   phone = phone.trim();
   phone = phone.replace(/-/gi, '');
+  phone = phone.replace(/\//gi, '');
   phone = phone.replace(/ /g, '');
 
   if (!countryCode) {
@@ -72,8 +73,31 @@ const updatePhoneNumber = (phone) => {
 };
 
 const validatePhone = (phoneNumber) => {
-  var re = /^\+{0,2}([\-\. ])?(\(?\d{0,3}\))?([\-\. ])?\(?\d{0,3}\)?([\-\. ])?\d{3}([\-\. ])?\d{4}/;
-  return re.test(phoneNumber);
+  const re = /^\+{0,2}([\-\. ])?(\(?\d{0,3}\))?([\-\. ])?\(?\d{0,3}\)?([\-\. ])?\d{3}([\-\. ])?\d{4}/;
+  if(!re.test(phoneNumber)) {
+    return re.test(phoneNumber);
+  }
+  let invalid = false;
+  const countryCode = config.get("app:phone:countryCode");
+  const defaultLength = config.get("app:phone:defaultLength");
+  if (phoneNumber.startsWith(countryCode)) {
+    let phone = phoneNumber.replace(countryCode, '');
+    let lengthByMNO = config.get("app:phone:lengthByMNO");
+    let hasLengthByMNO = false;
+    for(let mno in lengthByMNO) {
+      let length = lengthByMNO[mno];
+      if(phone.startsWith(mno)) {
+        hasLengthByMNO = true;
+        if(phone.length != length) {
+          invalid = true;
+        }
+      }
+    }
+    if(!hasLengthByMNO && defaultLength && phone.length != defaultLength) {
+      invalid = true;
+    }
+  }
+  return !invalid;
 };
 
 module.exports = {

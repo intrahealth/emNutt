@@ -724,8 +724,8 @@ module.exports = function () {
               logger.error(JSON.stringify(respBody, 0, 2));
             } else {
               logger.info(JSON.stringify(respBody, 0, 2));
-              return callback(err, res, respBody);
             }
+            return callback(err, res, respBody);
           }
         });
       });
