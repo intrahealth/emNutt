@@ -709,7 +709,7 @@ module.exports = function () {
         json: body,
       };
       request.post(options, (err, res, respBody) => {
-        this.isThrottled(body, (wasThrottled) => {
+        this.isThrottled(respBody, (wasThrottled) => {
           if (wasThrottled) {
             this.addContact({contact, rpContacts}, (err, res, respBody) => {
               return callback(err, res, respBody);

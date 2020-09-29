@@ -61,6 +61,9 @@ const updatePhoneNumber = (phone) => {
     return phone;
   }
 
+  phone = phone.replace('++', '+');
+  phone = phone.replace('+++', '+');
+  phone = phone.replace('++++', '+');
   if (phone.startsWith(countryCode)) {
     return phone;
   }
