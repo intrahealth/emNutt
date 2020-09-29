@@ -4,7 +4,13 @@
     "installed": true,
     "baseURL": "http://localhost:3002/emNutt",
     "contactGroupsSource": "rapidpro",
-    "phoneCountryCode": ""
+    "phone": {
+      "countryCode": "+255",
+      "defaultLength": 9,
+      "lengthByMNO": {
+        "683": 9
+      }
+    }
   },
   "mediator": {
     "api": {
@@ -19,17 +25,17 @@
   },
   "rapidpro": {
     "baseURL": "https://app.rapidpro.io",
-    "token": "XXXXX-YYYYZZZ",
+    "token": "5971256e907868ede676838a8dedee7c0aa8b711",
     "syncAllContacts": true
   },
   "floip": {
     "baseURL": "https://go.votomobile.org",
-    "token": "XXXYYZZ"
+    "token": "XXX-YYYZZZ"
   },
   "macm": {
     "username": "hapi",
     "password": "hapi",
-    "baseURL": "http://localhost:8081/hapi/fhir"
+    "baseURL": "http://localhost:8081/hapi4/fhir"
   },
   "elastic": {
     "baseURL": "http://localhost:9200",
@@ -104,7 +110,7 @@
   ],
   "lastSync": {
     "syncWorkflows": {
-      "time": "1970-09-13T20:57:38",
+      "time": "1970-01-01T00:00:00",
       "cronTime": "*/15 * * * *"
     },
     "syncContacts": {
@@ -112,19 +118,19 @@
       "cronTime": "*/15 * * * *"
     },
     "syncContactsGroups": {
-      "time": "1970-05-18T10:57:07",
+      "time": "1970-01-01T00:00:00",
       "cronTime": "*/15 * * * *"
     },
     "syncWorkflowRunMessages": {
-      "time": "1970-03-09T17:32:44",
+      "time": "1970-01-01T00:00:00",
       "cronTime": "*/15 * * * *"
     },
     "syncFloipFlowResults": {
-      "time": "1970-08-05 22:36:03",
+      "time": "1970-01-01T00:00:00",
       "cronTime": "*/15 * * * *"
     },
     "checkCommunicationRequest": {
-      "time": "1970-02-27T14:14:39",
+      "time": "1970-01-01T00:00:00",
       "cronTime": "*/15 * * * *"
     }
   }

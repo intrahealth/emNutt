@@ -2,7 +2,7 @@
 /*global process, __dirname */
 const express = require('express');
 const bodyParser = require('body-parser');
-const async = require('async');
+const cronstrue = require('cronstrue');
 const medUtils = require('openhim-mediator-utils');
 const cors = require('cors');
 const fs = require('fs');
@@ -65,7 +65,8 @@ function appRoutes() {
       }
     }
     if(cronExpression) {
-      logger.info('Scheduling to send this message with cron expression ' + cronExpression);
+      let cronExpressionParsed = cronstrue.toString(cronExpression);
+      logger.info('Scheduling to send this message with cron expression ' + cronExpressionParsed);
       resource.id = uuid4();
       resource.status = 'on-hold';
       cron.schedule(cronExpression, () => {
@@ -78,6 +79,20 @@ function appRoutes() {
           }
         });
       });
+      for(let index in resource.extension) {
+        let ext = resource.extension[index];
+        if(ext.url === config.get("extensions:CommReqSchedule")) {
+          let isParsed = ext.extension.find((sched) => {
+            return sched.url === "cronExpressionParsed";
+          });
+          if(!isParsed) {
+            resource.extension[index].extension.push({
+              url: "cronExpressionParsed",
+              valueString: cronExpressionParsed
+            });
+          }
+        }
+      }
       let bundle = {
         resourceType: 'Bundle',
         type: 'batch',
@@ -111,6 +126,44 @@ function appRoutes() {
         res.status(200).send();
       });
     }
+  });
+
+  app.post('/emNutt/fhir/cancelMessageSchedule', (req, res) => {
+    let schedules = req.body.schedules;
+    let query;
+    for(let schedule of schedules) {
+      let schArr = schedule.split('/');
+      if(schArr.length === 2) {
+        schedule = schArr[1];
+      }
+      if(!query) {
+        query = `_id=${schedule}`;
+      } else {
+        query += `,${schedule}`;
+      }
+    }
+    macm.getResource({
+      resource: 'CommunicationRequest',
+      query
+    }, (err, schedulesRes) => {
+      for(let entryIndex in schedulesRes.entry) {
+        schedulesRes.entry[entryIndex].resource.status = 'completed';
+        delete schedulesRes.entry[entryIndex].search;
+        delete schedulesRes.entry[entryIndex].fullUrl;
+        schedulesRes.entry[entryIndex].request = {
+          method: 'PUT',
+          url: `${schedulesRes.entry[entryIndex].resource.resourceType}/${schedulesRes.entry[entryIndex].resource.id}`
+        };
+      }
+      schedulesRes.resourceType = 'Bundle';
+      schedulesRes.type = 'batch';
+      macm.saveResource(schedulesRes, (err) => {
+        if(err) {
+          return res.status(500).send();
+        }
+        return res.status(200).send();
+      });
+    });
   });
 
   app.post('/emNutt/fhir', (req, res) => {

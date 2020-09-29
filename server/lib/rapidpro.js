@@ -185,7 +185,7 @@ module.exports = function () {
       }, (err, rpContacts) => {
         let bundleModified = false;
         async.eachOfSeries(bundle.entry, (entry, index, nxtEntry) => {
-          logger.info(`Synchronizing ${index++} of ${bundle.entry.length}`);
+          logger.info(`Synchronizing ${++index} of ${bundle.entry.length}`);
           this.addContact({
             contact: entry.resource,
             rpContacts,
@@ -829,18 +829,8 @@ module.exports = function () {
             if (payload.contentString) {
               msg = payload.contentString;
             }
-            if (payload.contentAttachment && payload.contentAttachment.url) {
-              workflows.push(payload.contentAttachment.url);
-            }
-          }
-          if (!msg) {
-            for (const payload of commReq.resource.payload) {
-              if (
-                payload.contentAttachment &&
-                payload.contentAttachment.title
-              ) {
-                msg = payload.contentAttachment.title;
-              }
+            if (payload.contentReference && payload.contentReference.reference) {
+              workflows.push(payload.contentReference.reference);
             }
           }
 
@@ -1014,7 +1004,11 @@ module.exports = function () {
                 if (workflows.length > 0) {
                   let createNewReq = false;
                   let counter = 0;
-                  for (const workflow of workflows) {
+                  for (let workflow of workflows) {
+                    let workflowArr = workflow.split('/');
+                    if(workflowArr.length === 2) {
+                      workflow = workflowArr[1];
+                    }
                     logger.info('Starting workflow ' + workflow);
                     if (counter > 0) {
                       createNewReq = true;
