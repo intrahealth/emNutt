@@ -19,7 +19,7 @@ theme:
     accent: 'indigo'
   language: 'en'
   features:
-    - tabs
+    - navigation.tabs
   font:
     text: 'Roboto'
     code: 'Roboto Mono'
