@@ -18,6 +18,7 @@ const envVars = require('./envVars');
 const rapidpro = require('./rapidpro')();
 const eidsr = require('./routes/eidsr');
 const dataSync = require('./routes/dataSync');
+const dataSyncUtil = require('./dataSync');
 
 const macm = require('./macm')();
 const prerequisites = require('./prerequisites');
@@ -105,6 +106,7 @@ function appRoutes() {
         }],
       };
       macm.saveResource(bundle, (err) => {
+        dataSyncUtil.cacheFHIR2ES(() => {});
         if (err) {
           return res.status(500).send();
         }
@@ -146,6 +148,9 @@ function appRoutes() {
       resource: 'CommunicationRequest',
       query
     }, (err, schedulesRes) => {
+      if(err) {
+        return res.status(500).send();
+      }
       for(let entryIndex in schedulesRes.entry) {
         schedulesRes.entry[entryIndex].resource.status = 'completed';
         delete schedulesRes.entry[entryIndex].search;
@@ -158,6 +163,7 @@ function appRoutes() {
       schedulesRes.resourceType = 'Bundle';
       schedulesRes.type = 'batch';
       macm.saveResource(schedulesRes, (err) => {
+        dataSyncUtil.cacheFHIR2ES(() => {});
         if(err) {
           return res.status(500).send();
         }
@@ -172,6 +178,7 @@ function appRoutes() {
       return res.status(400).send();
     }
     macm.saveResource(resource, (err, response, body) => {
+      dataSyncUtil.cacheFHIR2ES(() => {});
       let statusCode;
       if (response.statusCode) {
         statusCode = response.statusCode;
@@ -190,9 +197,7 @@ function appRoutes() {
   });
 
   app.get('/emNutt/fhir/:resource?/:id?', (req, res) => {
-    logger.info(
-      'Received a request to get data for resource ' + req.params.resource
-    );
+    logger.info('Received a request to get data for resource ' + req.params.resource);
     const resource = req.params.resource;
     const id = req.params.id;
     let url = URI(config.get('macm:baseURL'));
@@ -234,9 +239,7 @@ function appRoutes() {
             .segment('fhir')
             .toString();
           if (!config.get('mediator:api:routerURL')) {
-            logger.error(
-              'Cant find openHIM router base URL, this may cause an issue querying data from emNutt'
-            );
+            logger.error('Cant find openHIM router base URL, this may cause an issue querying data from emNutt');
           }
         } else {
           routerBaseURL = URI(config.get('app:baseURL'))
