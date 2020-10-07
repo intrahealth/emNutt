@@ -178,14 +178,14 @@ module.exports = function () {
       });
     },
 
-    syncContacts(bundle, callback) {
+    syncContacts(bundle, modifiedBundle, callback) {
       let failed = false;
       this.getEndPointData({
         endPoint: 'contacts.json',
       }, (err, rpContacts) => {
         let bundleModified = false;
         async.eachOfSeries(bundle.entry, (entry, index, nxtEntry) => {
-          logger.info(`Synchronizing ${++index} of ${bundle.entry.length}`);
+          logger.info(`Synchronizing ${index+1} of ${bundle.entry.length}`);
           this.addContact({
             contact: entry.resource,
             rpContacts,
@@ -200,13 +200,11 @@ module.exports = function () {
               if (!bundle.entry[index].resource.identifier) {
                 bundle.entry[index].resource.identifier = [];
               }
-              let totalId =
-                bundle.entry[index].resource.identifier.length;
+              let totalId = bundle.entry[index].resource.identifier.length;
               let totalDeleted = 0;
               for (let idIndex = 0; idIndex < totalId; idIndex++) {
                 let modifiedIndex = idIndex - totalDeleted;
-                let identifier =
-                  bundle.entry[index].resource.identifier[modifiedIndex];
+                let identifier = bundle.entry[index].resource.identifier[modifiedIndex];
                 if (identifier.system === 'http://app.rapidpro.io/contact-uuid') {
                   bundle.entry[index].resource.identifier.splice(modifiedIndex, 1);
                   totalDeleted++;
@@ -220,6 +218,7 @@ module.exports = function () {
                 method: 'PUT',
                 url: `${bundle.entry[index].resource.resourceType}/${bundle.entry[index].resource.id}`,
               };
+              modifiedBundle.entry.push(bundle.entry[index]);
             }
             return nxtEntry();
           });

@@ -331,6 +331,7 @@ function start(callback) {
                   }
                 });
               }
+              dataSyncUtil.cacheFHIR2ES(() => {});
               const app = appRoutes();
               const server = app.listen(config.get('app:port'), () => {
                 const configEmitter = medUtils.activateHeartbeat(
@@ -370,6 +371,7 @@ function start(callback) {
             mixin.updateConfigFile(['app', 'installed'], true, () => {});
           });
         }
+        dataSyncUtil.cacheFHIR2ES(() => {});
         callback(server);
       });
     }

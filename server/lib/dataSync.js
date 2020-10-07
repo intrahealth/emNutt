@@ -51,6 +51,11 @@ function syncContacts(callback) {
     resourceType: 'Bundle',
     entry: []
   };
+  let modifiedBundle = {
+    type: 'batch',
+    resourceType: 'Bundle',
+    entry: []
+  };
   async.series({
     practitioners: (callback) => {
       let query = `_lastUpdated=ge${runsLastSync}`;
@@ -94,7 +99,7 @@ function syncContacts(callback) {
   }, () => {
     async.series({
       rapidpro: (callback) => {
-        rapidpro.syncContacts(bundle, (err, modified) => {
+        rapidpro.syncContacts(bundle, modifiedBundle, (err, modified) => {
           if (modified) {
             bundleModified = true;
           }
@@ -108,13 +113,51 @@ function syncContacts(callback) {
       if (!bundleModified) {
         return callback(processingError);
       }
-      macm.saveResource(bundle, (err) => {
-        if (err) {
-          processingError = err;
+      let tmpBundle = {
+        type: 'batch',
+        resourceType: 'Bundle',
+        entry: []
+      };
+      const promises = [];
+      for(let counter in modifiedBundle.entry) {
+        promises.push(new Promise((resolve) => {
+          let entry = bundle.entry[counter];
+          tmpBundle.entry.push(entry);
+          if(tmpBundle.entry.length > 2) {
+            const saveBundle = {
+              ...tmpBundle,
+            };
+            tmpBundle = {
+              resourceType: 'Bundle',
+              type: 'batch',
+              entry: [],
+            };
+            macm.saveResource(saveBundle, (err) => {
+              if (err) {
+                processingError = err;
+              }
+              return resolve();
+            });
+          } else {
+            return resolve();
+          }
+        }));
+      }
+      Promise.all(promises).then(() => {
+        if(tmpBundle.entry.length > 0) {
+          macm.saveResource(tmpBundle, (err) => {
+            if (err) {
+              processingError = err;
+            }
+            cacheFHIR2ES(() => {});
+            logger.info('Contacts Sync Done');
+            return callback(processingError);
+          });
+        } else {
+          cacheFHIR2ES(() => {});
+          logger.info('Contacts Sync Done');
+          return callback(processingError);
         }
-        cacheFHIR2ES(() => {});
-        logger.info('Contacts Sync Done');
-        return callback(processingError);
       });
     });
   });
