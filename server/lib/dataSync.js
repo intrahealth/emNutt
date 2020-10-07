@@ -13,6 +13,7 @@ const macm = require('./macm')();
 function syncWorkflows (callback) {
   let enabledChannels = config.get("enabledCommChannels");
   let processingError = false;
+  let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   async.parallel({
     rapidpro: (callback) => {
       if (!enabledChannels.includes('rapidpro')) {
@@ -28,10 +29,7 @@ function syncWorkflows (callback) {
     }
   }, () => {
     if (!processingError) {
-      let runsLastSync = moment()
-        .subtract('30', 'minutes')
-        .format('Y-MM-DDTHH:mm:ss');
-      mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], runsLastSync, () => {});
+      mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], newRunsLastSync, () => {});
     }
     cacheFHIR2ES(() => {});
     return callback(processingError);
@@ -40,6 +38,7 @@ function syncWorkflows (callback) {
 
 function syncContacts(callback) {
   let bundleModified = false;
+  let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   let runsLastSync = config.get('lastSync:syncContacts:time');
   const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
   if (!isValid) {
@@ -149,11 +148,13 @@ function syncContacts(callback) {
             if (err) {
               processingError = err;
             }
+            mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], newRunsLastSync, () => {});
             cacheFHIR2ES(() => {});
             logger.info('Contacts Sync Done');
             return callback(processingError);
           });
         } else {
+          mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], newRunsLastSync, () => {});
           cacheFHIR2ES(() => {});
           logger.info('Contacts Sync Done');
           return callback(processingError);
@@ -166,6 +167,7 @@ function syncContacts(callback) {
 function syncContactsGroups(callback) {
   let enabledChannels = config.get("enabledCommChannels");
   let processingError = false;
+  let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   async.parallel({
     rapidpro: (callback) => {
       if (!enabledChannels.includes('rapidpro')) {
@@ -191,10 +193,7 @@ function syncContactsGroups(callback) {
     }
   }, () => {
     if (!processingError) {
-      let runsLastSync = moment()
-        .subtract('30', 'minutes')
-        .format('Y-MM-DDTHH:mm:ss');
-      mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], runsLastSync, () => {});
+      mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], newRunsLastSync, () => {});
     }
     cacheFHIR2ES(() => {});
     return callback(processingError);
@@ -204,6 +203,7 @@ function syncContactsGroups(callback) {
 function syncWorkflowRunMessages(callback) {
   let enabledChannels = config.get("enabledCommChannels");
   let processingError = false;
+  let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   async.parallel({
     rapidpro: (callback) => {
       if (!enabledChannels.includes('rapidpro')) {
@@ -219,10 +219,7 @@ function syncWorkflowRunMessages(callback) {
     }
   }, () => {
     if (!processingError) {
-      let runsLastSync = moment()
-        .subtract('10', 'minutes')
-        .format('Y-MM-DDTHH:mm:ss');
-      mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], runsLastSync, () => {});
+      mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], newRunsLastSync, () => {});
     }
     cacheFHIR2ES(() => {});
     return callback(processingError);
@@ -230,13 +227,11 @@ function syncWorkflowRunMessages(callback) {
 }
 
 function syncFloipFlowResults(callback) {
+  let newRunsLastSync = moment().format('Y-MM-DD HH:mm:ss');
   floip.flowResultsToQuestionnaire((err) => {
     logger.info("Done Synchronizing flow results from FLOIP server");
     if(!err) {
-      let runsLastSync = moment()
-        .subtract('10', 'minutes')
-        .format('Y-MM-DD HH:mm:ss');
-      mixin.updateConfigFile(['lastSync', 'syncFloipFlowResults', 'time'], runsLastSync, () => {});
+      mixin.updateConfigFile(['lastSync', 'syncFloipFlowResults', 'time'], newRunsLastSync, () => {});
     }
     cacheFHIR2ES(() => {});
     return callback(err);
