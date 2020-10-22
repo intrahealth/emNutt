@@ -99,7 +99,7 @@ module.exports = function () {
           Promise.all([promise1, promise2]).then((responses) => {
             const runs = responses[0];
             const definitions = responses[1];
-            async.each(runs, (run, nxtRun) => {
+            async.eachSeries(runs, (run, nxtRun) => {
               let globalid;
               let entityType;
               let query = `identifier=http://app.rapidpro.io/contact-uuid|${run.contact.uuid}`;

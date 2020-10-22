@@ -317,6 +317,8 @@ module.exports = function () {
     },
 
     createCommunicationsFromRPRuns(run, definition, callback) {
+      run.contact.globalid = 'a4369435-4a8c-3b9e-82bb-fc5dc6927178'
+      run.contact.mheroentitytype = 'Practitioner'
       let processingError = false;
       const query = `rpflowstarts=${run.start.uuid}`;
       this.getResource({
@@ -341,7 +343,7 @@ module.exports = function () {
 
         const bundle = {};
         bundle.entry = [];
-        bundle.type = 'batch';
+        bundle.type = 'transaction';
         bundle.resourceType = 'Bundle';
         // create flowRun resource first
         const extension = [{
@@ -352,7 +354,7 @@ module.exports = function () {
         }, {
           url: 'flow',
           valueReference: {
-            reference: `Basic/${resourceData.entry[0].resource.payload[0].contentAttachment.url}`
+            reference: `Basic/${resourceData.entry[0].resource.payload[0].contentReference.reference}`
           }
         }, {
           url: 'recipient',
@@ -400,7 +402,6 @@ module.exports = function () {
           if (err) {
             processingError = true;
           }
-          let resourceParentId;
           bundle.entry = [];
           for (const path of run.path) {
             const values = Object.keys(run.values);
@@ -409,39 +410,49 @@ module.exports = function () {
             for (const valueKey of values) {
               if (run.values[valueKey].node === path.node) {
                 // const id = uuid4();
+                //get question ID
+                let inResponseTo
+                for(let flowDef of definition.flows) {
+                  for (const node of flowDef.nodes) {
+                    for(const exit of node.exits) {
+                      if(exit.destination_uuid === path.node) {
+                        for (const action of node.actions) {
+                          if (action.type === 'send_msg') {
+                            inResponseTo = uuid5(action.uuid, run.uuid);
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
                 const id = uuid5(path.node, run.uuid);
                 texts.push({
                   id,
-                  parent: resourceParentId,
                   nodeUUID: path.node,
                   type: 'reply',
+                  inResponseTo,
                   time: run.values[valueKey].time,
                   msg: run.values[valueKey].input
                 });
-                resourceParentId = id;
               }
             }
             if (texts.length === 0) {
               // these are sent to user from the system
               const flowDef = definition.flows[0];
-              for (const actionSet of flowDef.action_sets) {
-                if (actionSet.uuid === path.node) {
+              for (const node of flowDef.nodes) {
+                if (node.uuid === path.node) {
                   let id;
-                  for (const action of actionSet.actions) {
-                    if (action.type === 'reply') {
+                  for (const action of node.actions) {
+                    if (action.type === 'send_msg') {
                       id = uuid5(action.uuid, run.uuid);
                       texts.push({
                         id,
-                        parent: resourceParentId,
                         nodeUUID: action.uuid,
                         type: 'sent',
                         time: path.time,
-                        msg: action.msg.eng
+                        msg: action.text
                       });
                     }
-                  }
-                  if (id) {
-                    resourceParentId = id;
                   }
                 }
               }
@@ -453,9 +464,6 @@ module.exports = function () {
               commResource.meta.profile.push(config.get("profiles:Communication"));
               commResource.resourceType = 'Communication';
               commResource.id = text.id;
-              if (text.parent) {
-                commResource.inResponseTo = 'Communication/' + text.parent;
-              }
               commResource.payload = [{
                 contentString: text.msg
               }];
@@ -463,13 +471,18 @@ module.exports = function () {
                 commResource.sent = text.time;
                 commResource.received = text.time;
                 commResource.recipient = [{
-                  reference: `${run.contact.mheroEntityType}/${run.contact.globalid}`
+                  reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
                 }];
               } else if (text.type === 'reply') {
+                if(text.inResponseTo) {
+                  commResource.inResponseTo = [{
+                    reference: 'Communication/' + text.inResponseTo
+                  }]
+                }
                 commResource.received = text.time;
                 commResource.sent = text.time;
                 commResource.sender = {
-                  reference: `${run.contact.mheroEntityType}/${run.contact.globalid}`
+                  reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
                 };
               }
 
@@ -493,10 +506,11 @@ module.exports = function () {
             }
           }
           this.saveResource(bundle, (err) => {
-            if (err || processingError) {
-              return callback(true);
+            bundle.entry = [];
+            if (err) {
+              processingError = err
             }
-            return callback();
+            return callback(processingError);
           });
         });
       });

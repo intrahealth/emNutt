@@ -15,8 +15,8 @@
   "code": "rpflowstarts",
   "base": ["CommunicationRequest"],
   "type": "string",
-  "expression": "CommunicationRequest.extension('http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts').extension('uuid')",
-  "xpath": "f:CommunicationRequest/f:extension[@url='http://mhero.org/fhir/StructureDefinition/mHeroFlowStarts']/f:extension[@url='uuid']",
+  "expression": "CommunicationRequest.extension('http://mhero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts').extension('flow_starts_uuid')",
+  "xpath": "f:CommunicationRequest/f:extension[@url='http://mhero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts']/f:extension[@url='flow_starts_uuid']",
   "xpathUsage": "normal",
   "target": ["CommunicationRequest"]
 }

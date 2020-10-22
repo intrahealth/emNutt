@@ -218,9 +218,9 @@ function syncWorkflowRunMessages(callback) {
       });
     }
   }, () => {
-    if (!processingError) {
-      mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], newRunsLastSync, () => {});
-    }
+    // if (!processingError) {
+    //   mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], newRunsLastSync, () => {});
+    // }
     cacheFHIR2ES(() => {});
     return callback(processingError);
   });
