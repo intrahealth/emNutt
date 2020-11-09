@@ -35,10 +35,11 @@
     "password": ""
   },
   "elastic": {
-    "baseURL": "http://elasticsearch:9200",
+    "baseURL": "http://localhost:9200",
     "username": "",
     "password": "",
-    "max_compilations_rate": "10000/1m"
+    "max_compilations_rate": "60000/1m",
+    "max_scroll_context": "60000/1m"
   },
   "kibana": {
     "baseURL": "http://kibana:5601",

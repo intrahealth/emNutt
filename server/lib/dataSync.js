@@ -218,9 +218,9 @@ function syncWorkflowRunMessages(callback) {
       });
     }
   }, () => {
-    // if (!processingError) {
-    //   mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], newRunsLastSync, () => {});
-    // }
+    if (!processingError) {
+      mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], newRunsLastSync, () => {});
+    }
     cacheFHIR2ES(() => {});
     return callback(processingError);
   });
@@ -265,6 +265,7 @@ function cacheFHIR2ES(callback) {
     ESUsername: config.get('elastic:username'),
     ESPassword: config.get('elastic:password'),
     ESMaxCompilationRate: config.get('elastic:max_compilations_rate'),
+    ESMaxScrollContext: config.get('elastic:max_scroll_context'),
     FHIRBaseURL: config.get('macm:baseURL'),
     FHIRUsername: config.get('macm:username'),
     FHIRPassword: config.get('macm:password'),
