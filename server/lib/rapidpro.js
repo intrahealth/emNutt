@@ -47,8 +47,9 @@ module.exports = function () {
       let flowRuns = []
       let flowDefinition = {}
       let flowDefinitions = []
-      async.parallel({
-        getRuns: (callback) => {
+      let nextRunURL = false
+      async.doWhilst(
+        (callback) => {
           runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
           const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
           if (!isValid) {
@@ -57,114 +58,123 @@ module.exports = function () {
           const queries = [{
             name: 'after',
             value: runsLastSync,
+            getAll: false
           }];
           this.getEndPointData({
             endPoint: 'runs.json',
             queries,
-          }, (err, runs) => {
+          }, (err, runs, url) => {
+            nextRunURL = url
+            if(!nextRunURL) {
+              nextRunURL = false
+            }
             if (err) {
               processingError = true;
             }
             flowRuns = runs
-            return callback(null)
-          });
-        }
-      }, () => {
-        async.eachSeries(flowRuns, (run, nxtRun) => {
-          let globalid;
-          let entityType;
-          let query = `identifier=http://app.rapidpro.io/contact-uuid|${run.contact.uuid}`;
-          async.parallel({
-            definition: (callback) => {
-              flowDefinition = flowDefinitions.find((flowDef) => {
-                return flowDef.flows[0].uuid === run.flow.uuid
-              })
-              if(!flowDefinition) {
-                const flowQuery = [{
-                  name: 'flow',
-                  value: run.flow.uuid,
-                }];
-                this.getEndPointData({
-                  endPoint: 'definitions.json',
-                  queries: flowQuery,
-                  hasResultsKey: false,
-                }, (err, definitions) => {
-                  if (err) {
-                    processingError = true;
+            async.eachSeries(flowRuns, (run, nxtRun) => {
+              let globalid;
+              let entityType;
+              let query = `identifier=http://app.rapidpro.io/contact-uuid|${run.contact.uuid}`;
+              async.parallel({
+                definition: (callback) => {
+                  flowDefinition = flowDefinitions.find((flowDef) => {
+                    return flowDef.flows[0].uuid === run.flow.uuid
+                  })
+                  if(!flowDefinition) {
+                    const flowQuery = [{
+                      name: 'flow',
+                      value: run.flow.uuid,
+                    }];
+                    this.getEndPointData({
+                      endPoint: 'definitions.json',
+                      queries: flowQuery,
+                      hasResultsKey: false,
+                    }, (err, definitions) => {
+                      if (err) {
+                        processingError = true;
+                      }
+                      flowDefinition = definitions[0]
+                      flowDefinitions.push(flowDefinition)
+                      return callback(null)
+                    });
+                  } else {
+                    return callback(null)
                   }
-                  flowDefinition = definitions[0]
-                  flowDefinitions.push(flowDefinition)
-                  return callback(null)
-                });
-              } else {
-                return callback(null)
-              }
-            },
-            practitioner: (callback) => {
-              macm.getResource({
-                resource: 'Practitioner',
-                query,
-              }, (err, practs) => {
-                if (err) {
-                  processingError = true;
+                },
+                practitioner: (callback) => {
+                  macm.getResource({
+                    resource: 'Practitioner',
+                    query,
+                  }, (err, practs) => {
+                    if (err) {
+                      processingError = true;
+                    }
+                    if (practs.entry.length > 0) {
+                      globalid = practs.entry[0].resource.id;
+                      entityType = practs.entry[0].resource.resourceType;
+                    }
+                    return callback(null);
+                  });
+                },
+                patient: (callback) => {
+                  macm.getResource({
+                    resource: 'Patient',
+                    query,
+                  }, (err, pat) => {
+                    if (err) {
+                      processingError = true;
+                    }
+                    if (pat.entry.length > 0) {
+                      globalid = pat.entry[0].resource.id;
+                      entityType = pat.entry[0].resource.resourceType;
+                    }
+                    return callback(null);
+                  });
+                },
+                person: (callback) => {
+                  macm.getResource({
+                    resource: 'Person',
+                    query,
+                  }, (err, pers) => {
+                    if (err) {
+                      processingError = true;
+                    }
+                    if (pers.entry.length > 0) {
+                      globalid = pers.entry[0].resource.id;
+                      entityType = pers.entry[0].resource.resourceType;
+                    }
+                    return callback(null);
+                  });
                 }
-                if (practs.entry.length > 0) {
-                  globalid = practs.entry[0].resource.id;
-                  entityType = practs.entry[0].resource.resourceType;
+              }, () => {
+                if (globalid) {
+                  run.contact.globalid = globalid;
+                  run.contact.mheroentitytype = entityType;
+                  logger.info('Creating communication resources from flow runs');
+                  macm.createCommunicationsFromRPRuns(run, flowDefinition, (err) => {
+                    logger.info('Done creating communication resources from flow runs');
+                    if (err) {
+                      processingError = true;
+                    }
+                    return nxtRun();
+                  });
+                } else {
+                  return nxtRun();
                 }
-                return callback(null);
               });
-            },
-            patient: (callback) => {
-              macm.getResource({
-                resource: 'Patient',
-                query,
-              }, (err, pat) => {
-                if (err) {
-                  processingError = true;
-                }
-                if (pat.entry.length > 0) {
-                  globalid = pat.entry[0].resource.id;
-                  entityType = pat.entry[0].resource.resourceType;
-                }
-                return callback(null);
-              });
-            },
-            person: (callback) => {
-              macm.getResource({
-                resource: 'Person',
-                query,
-              }, (err, pers) => {
-                if (err) {
-                  processingError = true;
-                }
-                if (pers.entry.length > 0) {
-                  globalid = pers.entry[0].resource.id;
-                  entityType = pers.entry[0].resource.resourceType;
-                }
-                return callback(null);
-              });
-            }
-          }, () => {
-            if (globalid) {
-              run.contact.globalid = globalid;
-              run.contact.mheroentitytype = entityType;
-              logger.info('Creating communication resources from flow runs');
-              macm.createCommunicationsFromRPRuns(run, flowDefinition, (err) => {
-                logger.info('Done creating communication resources from flow runs');
-                if (err) {
-                  processingError = true;
-                }
-                return nxtRun();
-              });
-            } else {
-              return nxtRun();
-            }
+            }, () => {
+              return callback(null);
+            })
           });
-        }, () => {
-          return callback(processingError);
-        })
-      })
+        },
+        (callback) => {
+          return callback(null, nextRunURL !== false)
+        },
+        () => {
+          return callback(processingError)
+        }
+      )
     },
 
     syncContacts(bundle, modifiedBundle, callback) {
@@ -1370,10 +1380,12 @@ module.exports = function () {
         queries,
         url,
         endPoint,
-        hasResultsKey = true
+        hasResultsKey = true,
+        getAll = true
       },
       callback
     ) {
+      let nextURL
       if (!url) {
         url = URI(config.get('rapidpro:baseURL'))
           .segment('api')
@@ -1394,11 +1406,7 @@ module.exports = function () {
         url = url.toString();
       }
       // need to make this variable independent of this function so that to handle throttled
-      logger.info(
-        `Getting data for end point ${endPoint} from server ${config.get(
-          'rapidpro:baseURL'
-        )}`
-      );
+      logger.info(`Getting data for end point ${endPoint} from server ${config.get('rapidpro:baseURL')}`);
       var endPointData = [];
       async.whilst(
         (callback) => {
@@ -1423,8 +1431,12 @@ module.exports = function () {
                     queries,
                     url,
                     endPoint,
+                    hasResultsKey,
+                    getAll
                   },
-                  (err, data) => {
+                  (err, data, nxtURL) => {
+                    url = false
+                    nextURL = nxtURL
                     if (Array.isArray(data)) {
                       endPointData = endPointData.concat(data);
                     }
@@ -1441,15 +1453,17 @@ module.exports = function () {
                   !Object.prototype.hasOwnProperty.call(body, 'results')
                 ) {
                   logger.error(JSON.stringify(body));
-                  logger.error(
-                    `An error occured while fetching end point data ${endPoint} from rapidpro`
-                  );
+                  logger.error(`An error occured while fetching end point data ${endPoint} from rapidpro`);
                   return callback(true);
                 }
                 if (body.next) {
                   url = body.next;
                 } else {
                   url = false;
+                }
+                if(!getAll) {
+                  nextURL = url
+                  url = false
                 }
                 if (hasResultsKey) {
                   endPointData = endPointData.concat(body.results);
@@ -1461,12 +1475,9 @@ module.exports = function () {
             });
           });
         }, (err) => {
-          logger.info(
-            `Done Getting data for end point ${endPoint} from server ${config.get(
-              'rapidpro:baseURL'
-            )}`
+          logger.info(`Done Getting data for end point ${endPoint} from server ${config.get('rapidpro:baseURL')}`
           );
-          return callback(err, endPointData);
+          return callback(err, endPointData, nextURL);
         }
       );
     },

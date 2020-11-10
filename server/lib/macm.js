@@ -331,17 +331,12 @@ module.exports = function () {
           return callback(true);
         }
         if (!resourceData.entry) {
-          logger.error('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);
-          return callback(true);
-        }
-        if (resourceData.entry.length === 0) {
-          logger.error('No communication request found for flow run ' + run.start.uuid);
-          return callback();
-        }
-        if (resourceData.entry.length > 1) {
-          logger.error(`Multiple CommunicationRequest resources found with flow start ${run.start.uuid}`);
-        }
-        if(resourceData.entry.length === 1) {
+          logger.warn('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);
+        } else  if (resourceData.entry.length === 0) {
+          logger.warn('No communication request found for flow run ' + run.start.uuid);
+        } else if (resourceData.entry.length > 1) {
+          logger.warn(`Multiple CommunicationRequest resources found with flow start ${run.start.uuid}`);
+        } else {
           commReqId = resourceData.entry[0].resource.id;
         }
 
@@ -353,7 +348,7 @@ module.exports = function () {
         const extension = [{
           url: 'flow',
           valueReference: {
-            reference: `Basic/${resourceData.entry[0].resource.payload[0].contentReference.reference}`
+            reference: `Basic/${run.flow.uuid}`
           }
         }, {
           url: 'recipient',
