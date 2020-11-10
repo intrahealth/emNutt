@@ -57,13 +57,13 @@ module.exports = function () {
           }
           const queries = [{
             name: 'after',
-            value: runsLastSync,
-            getAll: false
+            value: runsLastSync
           }];
           this.getEndPointData({
             endPoint: 'runs.json',
             queries,
-            url: nextRunURL
+            url: nextRunURL,
+            getAll: false
           }, (err, runs, url) => {
             nextRunURL = url
             if(!nextRunURL) {
