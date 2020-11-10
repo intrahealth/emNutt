@@ -326,6 +326,7 @@ module.exports = function () {
         resource: 'CommunicationRequest',
         query
       }, (err, resourceData) => {
+        let commReqId
         if (err) {
           return callback(true);
         }
@@ -340,7 +341,9 @@ module.exports = function () {
         if (resourceData.entry.length > 1) {
           logger.error(`Multiple CommunicationRequest resources found with flow start ${run.start.uuid}`);
         }
-        const commReqId = resourceData.entry[0].resource.id;
+        if(resourceData.entry.length === 1) {
+          commReqId = resourceData.entry[0].resource.id;
+        }
 
         const bundle = {};
         bundle.entry = [];
@@ -348,11 +351,6 @@ module.exports = function () {
         bundle.resourceType = 'Bundle';
         // create flowRun resource first
         const extension = [{
-          url: 'CommunicationRequest',
-          valueReference: {
-            reference: `${resourceData.entry[0].resource.resourceType}/${commReqId}`
-          }
-        }, {
           url: 'flow',
           valueReference: {
             reference: `Basic/${resourceData.entry[0].resource.payload[0].contentReference.reference}`
@@ -360,7 +358,7 @@ module.exports = function () {
         }, {
           url: 'recipient',
           valueReference: {
-            reference: `${run.contact.mheroEntityType}/${run.contact.globalid}`
+            reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
           }
         }, {
           url: 'responded',
@@ -372,6 +370,14 @@ module.exports = function () {
           url: 'modified_on',
           valueDateTime: run.modified_on
         }];
+        if(commReqId) {
+          extension.push({
+            url: 'CommunicationRequest',
+            valueReference: {
+              reference: `${resourceData.entry[0].resource.resourceType}/${commReqId}`
+            }
+          })
+        }
         if (run.exit_type) {
           extension.push({
             url: 'exit_type',
