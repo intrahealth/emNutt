@@ -63,6 +63,7 @@ module.exports = function () {
           this.getEndPointData({
             endPoint: 'runs.json',
             queries,
+            url: nextRunURL
           }, (err, runs, url) => {
             nextRunURL = url
             if(!nextRunURL) {
