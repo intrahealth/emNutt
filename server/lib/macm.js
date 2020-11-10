@@ -317,8 +317,9 @@ module.exports = function () {
     },
 
     createCommunicationsFromRPRuns(run, definition, callback) {
-      run.contact.globalid = 'a4369435-4a8c-3b9e-82bb-fc5dc6927178'
-      run.contact.mheroentitytype = 'Practitioner'
+      if(!run.start) {
+        return callback()
+      }
       let processingError = false;
       const query = `rpflowstarts=${run.start.uuid}`;
       this.getResource({

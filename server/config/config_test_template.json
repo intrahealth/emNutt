@@ -41,8 +41,8 @@
     "baseURL": "http://localhost:9200",
     "username": "",
     "password": "",
-    "max_compilations_rate": "60000/1m",
-    "max_scroll_context": "60000/1m"
+    "max_compilations_rate": "100000/1m",
+    "max_scroll_context": "100000"
   },
   "kibana": {
     "baseURL": "http://localhost:5601",
