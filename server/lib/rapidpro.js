@@ -22,10 +22,7 @@ module.exports = function () {
       if (!isValid) {
         runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
       }
-      const queries = [{
-        name: 'after',
-        value: runsLastSync,
-      }, ];
+      const queries = [];
       this.getEndPointData({
           endPoint: 'flows.json',
           queries,
