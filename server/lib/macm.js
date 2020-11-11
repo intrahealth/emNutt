@@ -317,8 +317,12 @@ module.exports = function () {
     },
 
     createCommunicationsFromRPRuns(run, definition, callback) {
+      const bundle = {};
+      bundle.entry = [];
+      bundle.type = 'transaction';
+      bundle.resourceType = 'Bundle';
       if(!run.start) {
-        return callback()
+        return callback(false, bundle)
       }
       let processingError = false;
       const query = `rpflowstarts=${run.start.uuid}`;
@@ -328,7 +332,7 @@ module.exports = function () {
       }, (err, resourceData) => {
         let commReqId
         if (err) {
-          return callback(true);
+          return callback(true, bundle);
         }
         if (!resourceData.entry) {
           logger.warn('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);
@@ -339,11 +343,6 @@ module.exports = function () {
         } else {
           commReqId = resourceData.entry[0].resource.id;
         }
-
-        const bundle = {};
-        bundle.entry = [];
-        bundle.type = 'transaction';
-        bundle.resourceType = 'Bundle';
         // create flowRun resource first
         const extension = [{
           url: 'flow',
@@ -400,121 +399,109 @@ module.exports = function () {
             url: `Basic/${run.uuid}`
           }
         });
-        this.saveResource(bundle, (err) => {
-          if (err) {
-            processingError = true;
-          }
-          bundle.entry = [];
-          for (const path of run.path) {
-            const values = Object.keys(run.values);
-            const texts = [];
-            // these are user replies
-            for (const valueKey of values) {
-              if (run.values[valueKey].node === path.node) {
-                // const id = uuid4();
-                //get question ID
-                let inResponseTo
-                for(let flowDef of definition.flows) {
-                  for (const node of flowDef.nodes) {
-                    for(const exit of node.exits) {
-                      if(exit.destination_uuid === path.node) {
-                        for (const action of node.actions) {
-                          if (action.type === 'send_msg') {
-                            inResponseTo = uuid5(action.uuid, run.uuid);
-                          }
+        for (const path of run.path) {
+          const values = Object.keys(run.values);
+          const texts = [];
+          // these are user replies
+          for (const valueKey of values) {
+            if (run.values[valueKey].node === path.node) {
+              // const id = uuid4();
+              //get question ID
+              let inResponseTo
+              for(let flowDef of definition.flows) {
+                for (const node of flowDef.nodes) {
+                  for(const exit of node.exits) {
+                    if(exit.destination_uuid === path.node && node.actions) {
+                      for (const action of node.actions) {
+                        if (action.type === 'send_msg') {
+                          inResponseTo = uuid5(action.uuid, run.uuid);
                         }
                       }
                     }
                   }
                 }
-                const id = uuid5(path.node, run.uuid);
-                texts.push({
-                  id,
-                  nodeUUID: path.node,
-                  type: 'reply',
-                  inResponseTo,
-                  time: run.values[valueKey].time,
-                  msg: run.values[valueKey].input
-                });
               }
+              const id = uuid5(path.node, run.uuid);
+              texts.push({
+                id,
+                nodeUUID: path.node,
+                type: 'reply',
+                inResponseTo,
+                time: run.values[valueKey].time,
+                msg: run.values[valueKey].input
+              });
             }
-            if (texts.length === 0) {
-              // these are sent to user from the system
-              const flowDef = definition.flows[0];
-              for (const node of flowDef.nodes) {
-                if (node.uuid === path.node) {
-                  let id;
-                  for (const action of node.actions) {
-                    if (action.type === 'send_msg') {
-                      id = uuid5(action.uuid, run.uuid);
-                      texts.push({
-                        id,
-                        nodeUUID: action.uuid,
-                        type: 'sent',
-                        time: path.time,
-                        msg: action.text
-                      });
-                    }
+          }
+          if (texts.length === 0) {
+            // these are sent to user from the system
+            const flowDef = definition.flows[0];
+            for (const node of flowDef.nodes) {
+              if (node.uuid === path.node) {
+                let id;
+                for (const action of node.actions) {
+                  if (action.type === 'send_msg') {
+                    id = uuid5(action.uuid, run.uuid);
+                    texts.push({
+                      id,
+                      nodeUUID: action.uuid,
+                      type: 'sent',
+                      time: path.time,
+                      msg: action.text
+                    });
                   }
                 }
               }
             }
-            for (const text of texts) {
-              const commResource = {};
-              commResource.meta = {};
-              commResource.meta.profile = [];
-              commResource.meta.profile.push(config.get("profiles:Communication"));
-              commResource.resourceType = 'Communication';
-              commResource.id = text.id;
-              commResource.payload = [{
-                contentString: text.msg
-              }];
-              if (text.type === 'sent') {
-                commResource.sent = text.time;
-                commResource.received = text.time;
-                commResource.recipient = [{
-                  reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
-                }];
-              } else if (text.type === 'reply') {
-                if(text.inResponseTo) {
-                  commResource.inResponseTo = [{
-                    reference: 'Communication/' + text.inResponseTo
-                  }]
-                }
-                commResource.received = text.time;
-                commResource.sent = text.time;
-                commResource.sender = {
-                  reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
-                };
-              }
-
-              commResource.basedOn = `CommunicationRequest/${commReqId}`;
-              if (!commResource.extension) {
-                commResource.extension = [];
-              }
-              commResource.extension.push({
-                url: config.get("extensions:CommunicationFlowRun"),
-                valueReference: {
-                  reference: `Basic/${run.uuid}`
-                }
-              });
-              bundle.entry.push({
-                resource: commResource,
-                request: {
-                  method: 'PUT',
-                  url: `${commResource.resourceType}/${commResource.id}`
-                }
-              });
-            }
           }
-          this.saveResource(bundle, (err) => {
-            bundle.entry = [];
-            if (err) {
-              processingError = err
+          for (const text of texts) {
+            const commResource = {};
+            commResource.meta = {};
+            commResource.meta.profile = [];
+            commResource.meta.profile.push(config.get("profiles:Communication"));
+            commResource.resourceType = 'Communication';
+            commResource.id = text.id;
+            commResource.payload = [{
+              contentString: text.msg
+            }];
+            if (text.type === 'sent') {
+              commResource.sent = text.time;
+              commResource.received = text.time;
+              commResource.recipient = [{
+                reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
+              }];
+            } else if (text.type === 'reply') {
+              if(text.inResponseTo) {
+                commResource.inResponseTo = [{
+                  reference: 'Communication/' + text.inResponseTo
+                }]
+              }
+              commResource.received = text.time;
+              commResource.sent = text.time;
+              commResource.sender = {
+                reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
+              };
             }
-            return callback(processingError);
-          });
-        });
+
+            commResource.basedOn = `CommunicationRequest/${commReqId}`;
+            if (!commResource.extension) {
+              commResource.extension = [];
+            }
+            commResource.extension.push({
+              url: config.get("extensions:CommunicationFlowRun"),
+              valueReference: {
+                reference: `Basic/${run.uuid}`
+              }
+            });
+            bundle.entry.push({
+              resource: commResource,
+              request: {
+                method: 'PUT',
+                url: `${commResource.resourceType}/${commResource.id}`
+              }
+            });
+          }
+        }
+        return callback(processingError, bundle);
       });
     }
   };

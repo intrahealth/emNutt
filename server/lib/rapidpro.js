@@ -44,6 +44,10 @@ module.exports = function () {
     syncWorkflowRunMessages(callback) {
       let runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
       let processingError = false;
+      let runBundle = {};
+      runBundle.type = 'transaction';
+      runBundle.resourceType = 'Bundle';
+      runBundle.entry = [];
       let flowRuns = []
       let flowDefinition = {}
       let flowDefinitions = []
@@ -153,12 +157,22 @@ module.exports = function () {
                   run.contact.globalid = globalid;
                   run.contact.mheroentitytype = entityType;
                   logger.info('Creating communication resources from flow runs');
-                  macm.createCommunicationsFromRPRuns(run, flowDefinition, (err) => {
-                    logger.info('Done creating communication resources from flow runs');
+                  macm.createCommunicationsFromRPRuns(run, flowDefinition, (err, bundle) => {
                     if (err) {
                       processingError = true;
                     }
-                    return nxtRun();
+                    runBundle.entry = runBundle.entry.concat(bundle.entry)
+                    if(runBundle.entry.length >= 250) {
+                      macm.saveResource(runBundle, (err) => {
+                        runBundle.entry = []
+                        if (err) {
+                          processingError = true;
+                        }
+                        return nxtRun();
+                      })
+                    } else {
+                      return nxtRun();
+                    }
                   });
                 } else {
                   return nxtRun();
