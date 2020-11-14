@@ -44,7 +44,14 @@ function appRoutes() {
   });
 
   app.use(cors());
-  app.use(bodyParser.json());
+  app.use(bodyParser.json({
+    limit: '100mb'
+  }));
+  app.use(bodyParser.urlencoded({
+    limit: '100mb',
+    parameterLimit: 100000,
+    extended: true
+  }));
   app.use('/eidsr', eidsr);
   app.use('/sync', dataSync);
 
