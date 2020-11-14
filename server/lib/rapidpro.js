@@ -187,7 +187,17 @@ module.exports = function () {
           return callback(null, nextRunURL !== false)
         },
         () => {
-          return callback(processingError)
+          if(runBundle.entry.length > 0) {
+            macm.saveResource(runBundle, (err) => {
+              runBundle.entry = []
+              if (err) {
+                processingError = true;
+              }
+              return callback(processingError)
+            })
+          } else {
+            return callback(processingError)
+          }
         }
       )
     },

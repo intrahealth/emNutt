@@ -411,7 +411,7 @@ module.exports = function () {
               for(let flowDef of definition.flows) {
                 for (const node of flowDef.nodes) {
                   for(const exit of node.exits) {
-                    if(exit.destination_uuid === path.node && node.actions) {
+                    if(exit.destination_uuid === path.node && node.actions && Array.isArray(node.actions)) {
                       for (const action of node.actions) {
                         if (action.type === 'send_msg') {
                           inResponseTo = uuid5(action.uuid, run.uuid);
@@ -436,7 +436,7 @@ module.exports = function () {
             // these are sent to user from the system
             const flowDef = definition.flows[0];
             for (const node of flowDef.nodes) {
-              if (node.uuid === path.node) {
+              if (node.uuid === path.node && node.actions && Array.isArray(node.actions)) {
                 let id;
                 for (const action of node.actions) {
                   if (action.type === 'send_msg') {
