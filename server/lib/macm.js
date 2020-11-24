@@ -217,7 +217,7 @@ module.exports = function () {
         }
         if (count && !isNaN(count)) {
           url.addQuery('_count', count);
-        } else {
+        } else if(!id) {
           count = 0;
           url.addQuery('_count', 500);
         }
