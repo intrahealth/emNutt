@@ -209,18 +209,8 @@ module.exports = function () {
         resourceType: 'Bundle',
         entry: []
       };
-      let runsLastSync = config.get('lastSync:syncContacts:time');
-      const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
-      if (!isValid) {
-        runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
-      }
-      const queries = [{
-        name: 'after',
-        value: runsLastSync
-      }];
       this.getEndPointData({
-        endPoint: 'contacts.json',
-        queries
+        endPoint: 'contacts.json'
       }, (err, rpContacts) => {
         async.eachOfSeries(bundle.entry, (entry, index, nxtEntry) => {
           logger.info(`Synchronizing ${index+1} of ${bundle.entry.length}`);
