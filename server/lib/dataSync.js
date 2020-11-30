@@ -37,7 +37,6 @@ function syncWorkflows (callback) {
 }
 
 function syncContacts(callback) {
-  let bundleModified = false;
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   let runsLastSync = config.get('lastSync:syncContacts:time');
   const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
@@ -46,11 +45,6 @@ function syncContacts(callback) {
   }
   let processingError = false;
   let bundle = {
-    type: 'batch',
-    resourceType: 'Bundle',
-    entry: []
-  };
-  let modifiedBundle = {
     type: 'batch',
     resourceType: 'Bundle',
     entry: []
@@ -98,10 +92,7 @@ function syncContacts(callback) {
   }, () => {
     async.series({
       rapidpro: (callback) => {
-        rapidpro.syncContacts(bundle, modifiedBundle, (err, modified) => {
-          if (modified) {
-            bundleModified = true;
-          }
+        rapidpro.syncContacts(bundle, (err) => {
           if (err) {
             processingError = err;
           }
@@ -109,57 +100,14 @@ function syncContacts(callback) {
         });
       }
     }, () => {
-      if (!bundleModified) {
-        return callback(processingError);
+      if(!processingError) {
+        mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], newRunsLastSync, () => {});
+        cacheFHIR2ES(() => {});
+        logger.info('Contacts Sync Done');
+        return callback()
+      } else {
+        return callback(processingError)
       }
-      let tmpBundle = {
-        type: 'batch',
-        resourceType: 'Bundle',
-        entry: []
-      };
-      const promises = [];
-      for(let counter in modifiedBundle.entry) {
-        promises.push(new Promise((resolve) => {
-          let entry = bundle.entry[counter];
-          tmpBundle.entry.push(entry);
-          if(tmpBundle.entry.length > 2) {
-            const saveBundle = {
-              ...tmpBundle,
-            };
-            tmpBundle = {
-              resourceType: 'Bundle',
-              type: 'batch',
-              entry: [],
-            };
-            macm.saveResource(saveBundle, (err) => {
-              if (err) {
-                processingError = err;
-              }
-              return resolve();
-            });
-          } else {
-            return resolve();
-          }
-        }));
-      }
-      Promise.all(promises).then(() => {
-        if(tmpBundle.entry.length > 0) {
-          macm.saveResource(tmpBundle, (err) => {
-            if (err) {
-              processingError = err;
-            }
-            mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], newRunsLastSync, () => {});
-            cacheFHIR2ES(() => {});
-            logger.info('Contacts Sync Done');
-            return callback(processingError);
-          });
-        } else {
-          mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], newRunsLastSync, () => {});
-          cacheFHIR2ES(() => {});
-          logger.info('Contacts Sync Done');
-          return callback(processingError);
-        }
-      });
     });
   });
 }

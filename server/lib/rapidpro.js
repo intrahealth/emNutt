@@ -202,25 +202,30 @@ module.exports = function () {
       )
     },
 
-    syncContacts(bundle, modifiedBundle, callback) {
-      let failed = false;
+    syncContacts(bundle, callback) {
+      let processingError = false
+      let modifiedBundle = {
+        type: 'batch',
+        resourceType: 'Bundle',
+        entry: []
+      };
       this.getEndPointData({
         endPoint: 'contacts.json',
       }, (err, rpContacts) => {
-        let bundleModified = false;
         async.eachOfSeries(bundle.entry, (entry, index, nxtEntry) => {
           logger.info(`Synchronizing ${index+1} of ${bundle.entry.length}`);
           this.addContact({
             contact: entry.resource,
             rpContacts,
           }, (err, response, body) => {
-            if (err) {
-              failed = true;
+            if(err && err === 'noTelephone') {
+              return nxtEntry();
+            } else if (err) {
+              processingError = true;
               return nxtEntry();
             }
             const rpUUID = body.uuid;
             if (rpUUID) {
-              bundleModified = true;
               if (!bundle.entry[index].resource.identifier) {
                 bundle.entry[index].resource.identifier = [];
               }
@@ -244,10 +249,35 @@ module.exports = function () {
               };
               modifiedBundle.entry.push(bundle.entry[index]);
             }
-            return nxtEntry();
+            if(modifiedBundle.entry.length > 200) {
+              const tmpBundle = {
+                ...modifiedBundle,
+              }
+              modifiedBundle.entry = []
+              macm.saveResource(tmpBundle, (err) => {
+                if (err) {
+                  processingError = err;
+                }
+                return nxtEntry();
+              });
+            } else {
+              return nxtEntry();
+            }
           });
         }, () => {
-          return callback(failed, bundleModified);
+          logger.error(modifiedBundle.entry.length);
+          if(modifiedBundle.entry.length > 0) {
+            macm.saveResource(modifiedBundle, (err) => {
+              if (err) {
+                processingError = err;
+              } else {
+                modifiedBundle.entry = []
+              }
+              return callback(processingError);
+            });
+          } else {
+            return callback(processingError);
+          }
         });
       });
     },
@@ -714,7 +744,7 @@ module.exports = function () {
         }
       }
       if (body.urns.length === 0) {
-        return callback(true);
+        return callback('noTelephone');
       }
       let url = URI(config.get('rapidpro:baseURL'))
         .segment('api')
