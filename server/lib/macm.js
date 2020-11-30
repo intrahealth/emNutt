@@ -219,7 +219,7 @@ module.exports = function () {
           url.addQuery('_count', count);
         } else if(!id) {
           count = 0;
-          url.addQuery('_count', 500);
+          url.addQuery('_count', 200);
         }
         if (query) {
           const queries = query.split('&');
