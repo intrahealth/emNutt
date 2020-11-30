@@ -4,35 +4,39 @@
     "installed": true,
     "baseURL": "http://localhost:3002/emNutt",
     "contactGroupsSource": "rapidpro",
-    "phoneCountryCode": ""
+    "acceptContactsFromOtherSources": false,
+    "phone": {
+      "countryCode": "+255",
+      "defaultLength": 9,
+      "lengthByMNO": {
+        "683": 9
+      }
+    }
   },
   "mediator": {
     "api": {
       "username": "root@openhim.org",
       "password": "openhim-password",
-      "apiURL": "https://openhim-core:8080",
+      "apiURL": "https://localhost:8080",
       "routerURL": "http://localhost:5001",
       "trustSelfSigned": true,
       "urn": ""
     },
     "register": false
   },
-  "origins": [
-    "http://localhost:8080"
-  ],
-  "floip": {
-    "baseURL": "https://go.votomobile.org",
-    "token": "6b61527f0c81de0e9fd665f0e"
-  },
   "rapidpro": {
-    "baseURL": "http://rapidpro:8000",
-    "token": "",
+    "baseURL": "https://app.rapidpro.io",
+    "token": "5971256e907868ede676838a8dedjj7c0aa8b711",
     "syncAllContacts": true
   },
+  "floip": {
+    "baseURL": "https://go.votomobile.org",
+    "token": "8c78hg4f0c81deww9fd665f0e"
+  },
   "macm": {
-    "baseURL": "http://hapi-fhir:8080/hapi-fhir-jpaserver/fhir",
-    "username": "",
-    "password": ""
+    "username": "hapi",
+    "password": "hapi",
+    "baseURL": "http://localhost:8081/hapi/fhir"
   },
   "elastic": {
     "baseURL": "http://localhost:9200",
@@ -42,7 +46,7 @@
     "max_scroll_context": "100000"
   },
   "kibana": {
-    "baseURL": "http://kibana:5601",
+    "baseURL": "http://localhost:5601",
     "username": "",
     "password": ""
   },
@@ -61,6 +65,9 @@
     "WorkflowsDetails": "http://mhero.org/fhir/StructureDefinition/mhero-workflows-details",
     "WorkflowsRunSummary": "http://mhero.org/fhir/StructureDefinition/mhero-run-summary",
     "CommReqSchedule": "http://mhero.org/fhir/StructureDefinition/sms-cron-expression-schedule"
+  },
+  "namespaces": {
+    "broadcastID": "f786a975-32b3-46cb-a4e6-91186aad9cf5"
   },
   "eidsr": {
     "orderedFields": [
@@ -105,22 +112,28 @@
   ],
   "lastSync": {
     "syncWorkflows": {
-      "time": "1970-01-01T00:00:00"
-    },
-    "syncWorkflowRunMessages": {
-      "time": "1970-01-01T00:00:00"
-    },
-    "syncFloipFlowResults": {
-      "time": "2020-08-05 22:36:03"
-    },
-    "checkCommunicationRequest": {
-      "time": "1970-01-01T00:00:00"
+      "time": "1970-11-30T10:00:00",
+      "cronTime": "*/15 * * * *"
     },
     "syncContacts": {
-      "time": "1970-01-01T00:00:00"
+      "time": "1970-11-30T10:00:00",
+      "cronTime": "*/15 * * * *"
     },
     "syncContactsGroups": {
-      "time": "1970-01-01T00:00:00"
+      "time": "1970-11-30T10:00:00",
+      "cronTime": "*/15 * * * *"
+    },
+    "syncWorkflowRunMessages": {
+      "time": "1970-11-30T10:00:00",
+      "cronTime": "*/15 * * * *"
+    },
+    "syncFloipFlowResults": {
+      "time": "1970-11-30 10:00:00",
+      "cronTime": "*/15 * * * *"
+    },
+    "checkCommunicationRequest": {
+      "time": "1970-02-27T14:14:39",
+      "cronTime": "*/15 * * * *"
     }
   }
 }

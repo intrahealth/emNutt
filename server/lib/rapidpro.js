@@ -209,8 +209,18 @@ module.exports = function () {
         resourceType: 'Bundle',
         entry: []
       };
+      let runsLastSync = config.get('lastSync:syncContacts:time');
+      const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
+      if (!isValid) {
+        runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+      }
+      const queries = [{
+        name: 'after',
+        value: runsLastSync
+      }];
       this.getEndPointData({
         endPoint: 'contacts.json',
+        queries
       }, (err, rpContacts) => {
         async.eachOfSeries(bundle.entry, (entry, index, nxtEntry) => {
           logger.info(`Synchronizing ${index+1} of ${bundle.entry.length}`);
@@ -265,7 +275,6 @@ module.exports = function () {
             }
           });
         }, () => {
-          logger.error(modifiedBundle.entry.length);
           if(modifiedBundle.entry.length > 0) {
             macm.saveResource(modifiedBundle, (err) => {
               if (err) {
@@ -273,13 +282,126 @@ module.exports = function () {
               } else {
                 modifiedBundle.entry = []
               }
-              return callback(processingError);
+              if(config.get("app:acceptContactsFromOtherSources")) {
+                addRapidproContact(rpContacts, this, () => {
+                  return callback(processingError);
+                })
+              } else {
+                return callback(processingError);
+              }
             });
           } else {
-            return callback(processingError);
+            if(config.get("app:acceptContactsFromOtherSources")) {
+              addRapidproContact(rpContacts, this, () => {
+                return callback(processingError);
+              })
+            } else {
+              return callback(processingError);
+            }
           }
         });
       });
+
+      function addRapidproContact(rpContacts, me, callback) {
+        logger.info('Check and add contacts that are in rapidpro and missing in FHIR server')
+        let rpBundle = {
+          type: 'batch',
+          resourceType: 'Bundle',
+          entry: []
+        }
+        async.eachSeries(rpContacts, (contact, nxt) => {
+          if(!contact.name || contact.urns.length === 0 || contact.fields.globalid) {
+            return nxt()
+          }
+          let resource = {
+            resourceType: "Practitioner",
+            id: contact.uuid,
+            name: [{
+              use: 'official',
+              text: contact.name
+            }],
+            identifier: [{
+              system: "http://app.rapidpro.io/contact-uuid",
+              value: contact.uuid
+            }],
+            telecom: []
+          }
+          for(let urn of contact.urns) {
+            resource.telecom.push({
+              system: 'phone',
+              value: urn.replace('tel:', '')
+            })
+          }
+          rpBundle.entry.push({
+            resource,
+            request: {
+              method: 'PUT',
+              url: `Practitioner/${resource.id}`,
+            }
+          })
+          //add also to the original bundle
+          bundle.entry.push({
+            resource,
+            request: {
+              method: 'PUT',
+              url: `Practitioner/${resource.id}`,
+            }
+          })
+          if(rpBundle.entry.length > 200) {
+            const tmpBundle = {
+              ...rpBundle,
+            }
+            rpBundle.entry = []
+            macm.saveResource(tmpBundle, (err) => {
+              if (err) {
+                processingError = err;
+              }
+              return nxt();
+            });
+          } else {
+            return nxt();
+          }
+        }, () => {
+          let saveFHIR = new Promise((resolve) => {
+            if(rpBundle.entry.length > 0) {
+              macm.saveResource(rpBundle, (err) => {
+                if (err) {
+                  processingError = err;
+                } else {
+                  rpBundle.entry = []
+                }
+                return resolve();
+              });
+            } else {
+              return resolve();
+            }
+          })
+          let updateRapidpro = new Promise((resolve) => {
+            //for every rapidpro contact that was missing in FHIR server, update it to include the globalid
+            async.eachOfSeries(rpBundle.entry, (entry, index, nxtEntry) => {
+              logger.info(`Synchronizing ${index+1} of ${rpBundle.entry.length}`);
+              me.addContact({
+                contact: entry.resource,
+                rpContacts,
+              }, (err, response, body) => {
+                if(err && err === 'noTelephone') {
+                  return nxtEntry();
+                } else if (err) {
+                  processingError = true;
+                  return nxtEntry();
+                }
+              })
+            }, () => {
+              return resolve()
+            })
+          })
+          Promise.all([saveFHIR, updateRapidpro]).then(() => {
+            return callback()
+          }).catch((err) => {
+            logger.error(err);
+          })
+        })
+      }
     },
 
     POSContactGroupsSync(callback) {
@@ -735,12 +857,20 @@ module.exports = function () {
         urns = [...urnsSet];
         // end of ensuring urns are unique
         body.urns = urns;
-        if (rpContactWithoutGlobalid && !rpContactWithGlobalid) {
-          body.fields.globalid = contact.id;
-          body.fields.mheroentitytype = contact.resourceType;
-        }
-        if(!body.fields.mheroentitytype) {
-          body.fields.mheroentitytype = contact.resourceType;
+        // if (rpContactWithoutGlobalid && !rpContactWithGlobalid) {
+        //   body.fields.globalid = contact.id;
+        //   body.fields.mheroentitytype = contact.resourceType;
+        // }
+        body.fields.globalid = contact.id;
+        body.fields.mheroentitytype = contact.resourceType;
+        // if(!body.fields.mheroentitytype) {
+        //   body.fields.mheroentitytype = contact.resourceType;
+        // }
+        for(let index in rpContacts) {
+          if(rpContacts[index].uuid === body.uuid) {
+            rpContacts[index].fields.globalid = body.fields.globalid
+            rpContacts[index].fields.mheroentitytype = body.fields.mheroentitytype
+          }
         }
       }
       if (body.urns.length === 0) {

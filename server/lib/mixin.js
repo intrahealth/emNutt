@@ -70,6 +70,8 @@ const updatePhoneNumber = (phone) => {
   if (phone.startsWith('0')) {
     phone = phone.replace('0', countryCode);
     return phone;
+  } else if(phone.startsWith('+')) {
+    return phone
   } else {
     return countryCode + phone;
   }
