@@ -380,6 +380,7 @@ module.exports = function () {
                   processingError = true;
                   return nxtEntry();
                 }
+                return nxtEntry();
               })
             }, () => {
               return resolve()
@@ -547,12 +548,38 @@ module.exports = function () {
             });
           });
         }, () => {
-          macm.saveResource(modifiedGroups, (err) => {
-            if (err) {
-              failed = true;
+          async.eachSeries(modifiedGroups.entry, (group, nxt) => {
+            let groupsBundle = {
+              resourceType: 'Bundle',
+              type: 'batch',
+              entry: [],
+            };
+            groupsBundle.push(group)
+            if(groupsBundle.entry.length > 200) {
+              const tmpBundle = {
+                ...groupsBundle,
+              }
+              groupsBundle.entry = []
+              macm.saveResource(tmpBundle, (err) => {
+                if (err) {
+                  failed = err;
+                }
+                return nxt();
+              });
             }
-            return callback(failed);
-          });
+          }, () => {
+            if(groupsBundle.entry.length > 0) {
+              macm.saveResource(groupsBundle, (err) => {
+                groupsBundle.entry = []
+                if (err) {
+                  failed = err;
+                }
+                return callback(failed);
+              });
+            } else {
+              return callback(failed);
+            }
+          })
         });
       });
     },
@@ -724,13 +751,38 @@ module.exports = function () {
             return nxt();
           });
         }, () => {
-          if (bundle.entry.length > 0) {
-            macm.saveResource(bundle, () => {
+          async.eachSeries(bundle.entry, (group, nxt) => {
+            let groupsBundle = {
+              resourceType: 'Bundle',
+              type: 'batch',
+              entry: [],
+            };
+            groupsBundle.push(group)
+            if(groupsBundle.entry.length > 200) {
+              const tmpBundle = {
+                ...groupsBundle,
+              }
+              groupsBundle.entry = []
+              macm.saveResource(tmpBundle, (err) => {
+                if (err) {
+                  failed = err;
+                }
+                return nxt();
+              });
+            }
+          }, () => {
+            if(groupsBundle.entry.length > 0) {
+              macm.saveResource(groupsBundle, (err) => {
+                groupsBundle.entry = []
+                if (err) {
+                  failed = err;
+                }
+                return callback(failed);
+              });
+            } else {
               return callback(failed);
-            });
-          } else {
-            return callback(failed);
-          }
+            }
+          })
         });
       });
     },
