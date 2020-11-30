@@ -548,12 +548,12 @@ module.exports = function () {
             });
           });
         }, () => {
+          let groupsBundle = {
+            resourceType: 'Bundle',
+            type: 'batch',
+            entry: [],
+          };
           async.eachSeries(modifiedGroups.entry, (group, nxt) => {
-            let groupsBundle = {
-              resourceType: 'Bundle',
-              type: 'batch',
-              entry: [],
-            };
             groupsBundle.push(group)
             if(groupsBundle.entry.length > 200) {
               const tmpBundle = {
@@ -751,12 +751,12 @@ module.exports = function () {
             return nxt();
           });
         }, () => {
+          let groupsBundle = {
+            resourceType: 'Bundle',
+            type: 'batch',
+            entry: [],
+          };
           async.eachSeries(bundle.entry, (group, nxt) => {
-            let groupsBundle = {
-              resourceType: 'Bundle',
-              type: 'batch',
-              entry: [],
-            };
             groupsBundle.push(group)
             if(groupsBundle.entry.length > 200) {
               const tmpBundle = {
