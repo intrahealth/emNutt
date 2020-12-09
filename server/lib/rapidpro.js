@@ -757,7 +757,7 @@ module.exports = function () {
             entry: [],
           };
           async.eachSeries(bundle.entry, (group, nxt) => {
-            groupsBundle.push(group)
+            groupsBundle.entry.push(group)
             if(groupsBundle.entry.length > 200) {
               const tmpBundle = {
                 ...groupsBundle,
@@ -769,6 +769,8 @@ module.exports = function () {
                 }
                 return nxt();
               });
+            } else {
+              return nxt();
             }
           }, () => {
             if(groupsBundle.entry.length > 0) {
