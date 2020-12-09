@@ -56,6 +56,7 @@ function scheduleDataSync() {
   let cronContactGroupsSync = config.get("lastSync:syncContactsGroups:cronTime");
   let cronRunMsgsSync = config.get("lastSync:syncWorkflowRunMessages:cronTime");
   let cronFloipFlowResSync = config.get("lastSync:syncFloipFlowResults:cronTime");
+  let cronFHIR2ESSync = config.get("lastSync:fhir2esSync:cronTime");
 
   cron.schedule(cronWorkflowsSync, () => {
     logger.info('Running cron job for workflows synchronization');
@@ -89,6 +90,13 @@ function scheduleDataSync() {
     logger.info('Running cron job for FLOIP flow results synchronization');
     dataSync.syncFloipFlowResults(() => {
       logger.info('Done running cron job for FLOIP flow results synchronization');
+    });
+  });
+
+  cron.schedule(cronFHIR2ESSync, () => {
+    logger.info('Running cron job for FHIR2ES synchronization');
+    dataSync.cacheFHIR2ES(() => {
+      logger.info('Done running cron job for FHIR2ES synchronization');
     });
   });
 }

@@ -319,7 +319,7 @@ module.exports = function () {
     createCommunicationsFromRPRuns(run, definition, callback) {
       const bundle = {};
       bundle.entry = [];
-      bundle.type = 'transaction';
+      bundle.type = 'batch';
       bundle.resourceType = 'Bundle';
       if(!run.start) {
         return callback(false, bundle)

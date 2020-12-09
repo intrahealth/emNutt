@@ -31,7 +31,6 @@ function syncWorkflows (callback) {
     if (!processingError) {
       mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], newRunsLastSync, () => {});
     }
-    cacheFHIR2ES(() => {});
     return callback(processingError);
   });
 }
@@ -143,7 +142,6 @@ function syncContactsGroups(callback) {
     if (!processingError) {
       mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], newRunsLastSync, () => {});
     }
-    cacheFHIR2ES(() => {});
     return callback(processingError);
   });
 }
@@ -169,7 +167,6 @@ function syncWorkflowRunMessages(callback) {
     if (!processingError) {
       mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], newRunsLastSync, () => {});
     }
-    cacheFHIR2ES(() => {});
     return callback(processingError);
   });
 }
@@ -181,7 +178,6 @@ function syncFloipFlowResults(callback) {
     if(!err) {
       mixin.updateConfigFile(['lastSync', 'syncFloipFlowResults', 'time'], newRunsLastSync, () => {});
     }
-    cacheFHIR2ES(() => {});
     return callback(err);
   });
 }
@@ -201,7 +197,6 @@ function checkCommunicationRequest(callback) {
         processingError = true;
       }
       logger.info('Done checking communication requests');
-      cacheFHIR2ES(() => {});
       return callback(processingError);
     });
   });

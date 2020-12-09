@@ -134,6 +134,10 @@
     "checkCommunicationRequest": {
       "time": "1970-02-27T14:14:39",
       "cronTime": "*/15 * * * *"
+    },
+    "fhir2esSync": {
+      "time": "1970-02-27T14:14:39",
+      "cronTime": "*/20 * * * *"
     }
   }
 }
