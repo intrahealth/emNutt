@@ -4,6 +4,7 @@ const request = require('request');
 const async = require('async');
 const moment = require('moment');
 const uuid5 = require('uuid/v5');
+const lodash = require('lodash');
 const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
@@ -163,8 +164,9 @@ module.exports = function () {
                     }
                     runBundle.entry = runBundle.entry.concat(bundle.entry)
                     if(runBundle.entry.length >= 250) {
-                      macm.saveResource(runBundle, (err) => {
-                        runBundle.entry = []
+                      const tmpBundle = lodash.cloneDeep(runBundle)
+                      runBundle.entry = []
+                      macm.saveResource(tmpBundle, (err) => {
                         if (err) {
                           processingError = true;
                         }
@@ -250,9 +252,7 @@ module.exports = function () {
               modifiedBundle.entry.push(bundle.entry[index]);
             }
             if(modifiedBundle.entry.length > 200) {
-              const tmpBundle = {
-                ...modifiedBundle,
-              }
+              const tmpBundle = lodash.cloneDeep(modifiedBundle)
               modifiedBundle.entry = []
               macm.saveResource(tmpBundle, (err) => {
                 if (err) {
@@ -338,9 +338,7 @@ module.exports = function () {
             }
           })
           if(rpBundle.entry.length > 200) {
-            const tmpBundle = {
-              ...rpBundle,
-            }
+            const tmpBundle = lodash.cloneDeep(rpBundle)
             rpBundle.entry = []
             macm.saveResource(tmpBundle, (err) => {
               if (err) {
@@ -556,9 +554,7 @@ module.exports = function () {
           async.eachSeries(modifiedGroups.entry, (group, nxt) => {
             groupsBundle.push(group)
             if(groupsBundle.entry.length > 200) {
-              const tmpBundle = {
-                ...groupsBundle,
-              }
+              const tmpBundle = lodash.cloneDeep(groupsBundle)
               groupsBundle.entry = []
               macm.saveResource(tmpBundle, (err) => {
                 if (err) {
@@ -759,9 +755,7 @@ module.exports = function () {
           async.eachSeries(bundle.entry, (group, nxt) => {
             groupsBundle.entry.push(group)
             if(groupsBundle.entry.length > 200) {
-              const tmpBundle = {
-                ...groupsBundle,
-              }
+              const tmpBundle = lodash.cloneDeep(groupsBundle)
               groupsBundle.entry = []
               macm.saveResource(tmpBundle, (err) => {
                 if (err) {
@@ -1257,9 +1251,7 @@ module.exports = function () {
                           }
                           ids.push(recipient.id);
                           if (flowBody.urns.length + flowBody.contacts.length > 90) {
-                            const tmpFlowBody = {
-                              ...flowBody,
-                            };
+                            const tmpFlowBody = lodash.cloneDeep(flowBody);
                             const tmpIds = [...ids];
                             ids = [];
                             flowBody.urns = [];
@@ -1353,9 +1345,7 @@ module.exports = function () {
                     }
                     ids.push(recipient.id);
                     if (smsBody.urns.length + smsBody.contacts.length > 90) {
-                      const tmpSmsBody = {
-                        ...smsBody,
-                      };
+                      const tmpSmsBody = lodash.cloneDeep(smsBody)
                       const tmpIds = [...ids];
                       ids = [];
                       smsBody.urns = [];
