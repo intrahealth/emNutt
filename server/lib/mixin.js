@@ -50,6 +50,9 @@ const updateopenHIMConfig = (urn, updatedConfig, callback) => {
 };
 
 const updatePhoneNumber = (phone) => {
+  if(!phone) {
+    return
+  }
   let countryCode = config.get("app:phone:countryCode");
   phone = phone.toString();
   phone = phone.trim();
@@ -105,9 +108,31 @@ const validatePhone = (phoneNumber) => {
   return !invalid;
 };
 
+const getNameFromResource = (resource) => {
+  let name = '';
+  if(resource && resource.name && Array.isArray(resource.name) && resource.name.length > 0) {
+    if(resource.name[0].text) {
+      name = resource.name[0].text;
+    } else {
+      if(resource.name[0].given && resource.name[0].given.length > 0) {
+        name = resource.name[0].given.join(" ");
+      }
+      if(resource.name[0].family) {
+        if(name) {
+          name += ", " + resource.name[0].family;
+        } else {
+          name = resource.name[0].family;
+        }
+      }
+    }
+  }
+  return name
+}
+
 module.exports = {
   updateConfigFile,
   updateopenHIMConfig,
   updatePhoneNumber,
-  validatePhone
+  validatePhone,
+  getNameFromResource
 };

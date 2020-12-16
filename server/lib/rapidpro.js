@@ -1016,12 +1016,7 @@ module.exports = function () {
     },
     processCommunications(commReqs, callback) {
       let processingError = false;
-      let sendFailed = false;
-      let status = {
-        failed: 0,
-        success: 0,
-        descriptions: {}
-      };
+      let status = {};
       logger.info(`Processing ${commReqs.entry.length} communication requests`);
       const promise = new Promise((resolve, reject) => {
         if (!config.get('rapidpro:syncAllContacts')) {
@@ -1044,6 +1039,7 @@ module.exports = function () {
 
       promise.then((rpContacts) => {
         async.each(commReqs.entry, (commReq, nxtComm) => {
+          status[commReq.resource.id] = {}
           let msg;
           const workflows = [];
           for (const payload of commReq.resource.payload) {
@@ -1056,169 +1052,230 @@ module.exports = function () {
           }
 
           if (!msg && workflows.length === 0) {
+            status[commReq.resource.id] = {
+              failed: 0,
+              success: 0,
+              descriptions: {}
+            }
+            status[commReq.resource.id].failed = commReq.resource.recipient.length
+            status[commReq.resource.id].descriptions['All Recipients'] = 'No workflow or message specified';
             logger.warn(`No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`);
             return nxtComm();
           }
+          if(msg) {
+            status[commReq.resource.id][msg] = {
+              failed: 0,
+              success: 0,
+              descriptions: {}
+            }
+          }
+          if(workflows.length > 0) {
+            status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')] = {
+              failed: 0,
+              success: 0,
+              descriptions: {}
+            }
+          }
           const recipients = [];
-          const recPromises = [];
+          let recipientsFHIR = []
+          let ids = {}
           for (const recipient of commReq.resource.recipient) {
-            let isContained = false;
-            recPromises.push(new Promise((resolve) => {
+            if (!recipient.reference.startsWith('#')) {
+              let recArr = recipient.reference.split('/');
+              const [resourceName, resID] = recArr;
+              if(!ids[resourceName]) {
+                ids[resourceName] = []
+              }
+              ids[resourceName].push(resID)
+            }
+          }
+          //we can simply do ids[resourceType].join(',') and send request to fhir but we need to control the number of ids we are sending to FHIR as HAPI throws an error when requesting for many IDs
+          let recPromises = []
+          for(let resourceType in ids) {
+            let combinedIDs = ''
+            for(let id of ids[resourceType]) {
+              if(combinedIDs.split(',').length === 500) {
+                combinedIDs += `,${id}`
+                let tmpIds = combinedIDs
+                combinedIDs = ''
+                recPromises.push(new Promise((resolve) => {
+                  macm.getResource({
+                    resource: resourceType,
+                    query: `_id=${tmpIds}`
+                  }, (err, resourceData) => {
+                    if(err) {
+                      processingError = true;
+                    }
+                    if(resourceData.entry) {
+                      recipientsFHIR = recipientsFHIR.concat(resourceData.entry)
+                    }
+                    resolve()
+                  })
+                }))
+              } else {
+                if(!combinedIDs) {
+                  combinedIDs = id
+                } else {
+                  combinedIDs += `,${id}`
+                }
+              }
+            }
+            if(combinedIDs) {
+              recPromises.push(new Promise((resolve) => {
+                macm.getResource({
+                  resource: resourceType,
+                  query: `_id=${combinedIDs}`
+                }, (err, resourceData) => {
+                  if(err) {
+                    processingError = true;
+                  }
+                  if(resourceData.entry) {
+                    recipientsFHIR = recipientsFHIR.concat(resourceData.entry)
+                  }
+                  resolve()
+                })
+              }))
+            }
+          }
+          Promise.all(recPromises).then(() => {
+            for (const recipient of commReq.resource.recipient) {
+              let isContained = false;
               if (recipient.reference) {
                 let resource;
-                const promise1 = new Promise((resolve1) => {
-                  if (recipient.reference.startsWith('#')) {
-                    if (commReq.resource.contained) {
-                      isContained = true;
-                      const contained = commReq.resource.contained.find((contained) => {
-                        return (contained.id === recipient.reference.substring(1));
-                      });
-                      if (contained) {
-                        resource = {
-                          resource: contained,
-                        };
-                      } else {
-                        logger.error(`Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`);
-                      }
-                    } else {
-                      logger.error(`Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`);
-                    }
-                    resolve1();
-                  } else {
-                    let recArr = recipient.reference.split('/');
-                    const [resourceName, resID] = recArr;
-                    macm.getResource({
-                      resource: resourceName,
-                      id: resID,
-                    }, (err, recResource) => {
-                      if (recResource.resourceType && recResource.resourceType !== 'OperationOutcome') {
-                        resource = recResource;
-                      } else if (Object.keys(recResource).length === 0) {
-                        logger.error(
-                          `Reference ${recipient.reference} was not found on the server`
-                        );
-                        processingError = true;
-                      } else if (err) {
-                        logger.error(err);
-                        logger.error(
-                          'An error has occured while getting resource ' +
-                          recipient.reference
-                        );
-                        processingError = true;
-                      }
-                      resolve1();
+                if (recipient.reference.startsWith('#')) {
+                  if (commReq.resource.contained) {
+                    isContained = true;
+                    const contained = commReq.resource.contained.find((contained) => {
+                      return (contained.id === recipient.reference.substring(1));
                     });
-                  }
-                });
-                promise1.then(() => {
-                  if (resource) {
-                    if (
-                      resource.telecom &&
-                      Array.isArray(resource.telecom) &&
-                      resource.telecom.length > 0
-                    ) {
-                      let rpuuid = resource.identifier.find((ident) => {
-                        return ident.system === 'http://app.rapidpro.io/contact-uuid';
-                      });
-                      if(rpuuid) {
-                        recipients.push({
-                          contact: rpuuid.value,
-                          id: resource.id,
-                        });
-                      } else if(isContained) {
-                        for (const telecom of resource.telecom) {
-                          if (
-                            telecom.system &&
-                            telecom.system === 'phone'
-                          ) {
-                            telecom.value = mixin.updatePhoneNumber(telecom.value);
-                            if (!mixin.validatePhone(telecom.value)) {
-                              logger.error('Phone number ' + telecom.value + ' is not valid');
-                              continue;
-                            }
-                            recipients.push({
-                              urns: 'tel:' + telecom.value,
-                              id: resource.id,
-                            });
-                          }
-                        }
-                      } else {
-                        status.failed = status.failed + 1;
-                        if(resource.name.length > 0) {
-                          let name = '';
-                          if(resource.name[0].text) {
-                            name = resource.name[0].text;
-                          } else {
-                            if(resource.name[0].given && resource.name[0].given.length > 0) {
-                              name = resource.name[0].given.join(" ");
-                            }
-                            if(resource.name[0].family) {
-                              if(name) {
-                                name += ", " + resource.name[0].family;
-                              } else {
-                                name = resource.name[0].family;
-                              }
-                            }
-                          }
-                          status.descriptions[name] = 'Not found in rapidpro';
-                        }
-                      }
+                    if (contained) {
+                      resource = {
+                        resource: contained,
+                      };
                     } else {
-                      logger.warn('No contact found for resource id ' + resource.resourceType + '/' + resource.id + ' Workflow wont be started for this');
+                      logger.error(`Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`);
                     }
+                  } else {
+                    logger.error(`Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`);
                   }
-                  if (
-                    resource &&
-                    !config.get('rapidpro:syncAllContacts')
-                  ) {
-                    this.addContact({
-                      contact: resource,
-                      rpContacts,
-                    }, (err, res, body) => {
-                      if (!err) {
-                        const rpUUID = body.uuid;
-                        if (rpUUID) {
-                          if (!resource.identifier) {
-                            resource.identifier = [];
+                } else {
+                  let recArr = recipient.reference.split('/');
+                  const [resourceName, resID] = recArr;
+                  let recRes = recipientsFHIR.find((entry) => {
+                    return entry.resource.id === resID
+                  })
+                  if(recRes) {
+                    resource = recRes.resource
+                  }
+                  if(!resource) {
+                    processingError = true;
+                    logger.error(`Reference ${recipient.reference} was not found on the server`);
+                  }
+                }
+                if (resource) {
+                  if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
+                    let rpuuid = resource.identifier.find((ident) => {
+                      return ident.system === 'http://app.rapidpro.io/contact-uuid';
+                    });
+                    if(rpuuid) {
+                      recipients.push({
+                        contact: rpuuid.value,
+                        id: resource.id,
+                      });
+                    } else if(isContained) {
+                      for (const telecom of resource.telecom) {
+                        if (telecom.system && telecom.system === 'phone' && telecom.value) {
+                          telecom.value = mixin.updatePhoneNumber(telecom.value);
+                          if (!mixin.validatePhone(telecom.value)) {
+                            logger.error('Phone number ' + telecom.value + ' is not valid');
+                            continue;
                           }
-                          let exist = resource.identifier.find((ident) => {
-                            return ident.system === 'http://app.rapidpro.io/contact-uuid';
+                          recipients.push({
+                            urns: 'tel:' + telecom.value,
+                            id: resource.id,
                           });
-                          if(!exist) {
-                            resource.identifier.push({
-                              system: 'http://app.rapidpro.io/contact-uuid',
-                              value: rpUUID,
-                            });
-                          }
-                          const bundle = {};
-                          bundle.type = 'batch';
-                          bundle.resourceType = 'Bundle';
-                          bundle.entry = [{
-                            resource: resource,
-                            request: {
-                              method: 'PUT',
-                              url: `${resource.resourceType}/${resource.id}`,
-                            },
-                          }, ];
-                          macm.saveResource(bundle, () => {});
                         }
                       }
-                      resolve();
-                    });
+                    } else {
+                      let name = mixin.getNameFromResource(resource);
+                      if(workflows.length > 0) {
+                        status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                        if(name) {
+                          status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
+                        }
+                      } else {
+                        status[commReq.resource.id][msg].failed++
+                        if(name) {
+                          status[commReq.resource.id][msg].descriptions[name] = 'Not found in rapidpro';
+                        }
+                      }
+                    }
                   } else {
-                    resolve();
+                    let name = mixin.getNameFromResource(resource);
+                    if(workflows.length > 0) {
+                      status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                      if(name) {
+                        status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
+                      }
+                    } else {
+                      status[commReq.resource.id][msg].failed++
+                      if(name) {
+                        status[commReq.resource.id][msg].descriptions[name] = 'No Phone number';
+                      }
+                    }
+                    logger.warn('No contact found for resource id ' + resource.resourceType + '/' + resource.id + ' message wont be sent for this recipient');
                   }
-                }).catch((err) => {
-                  processingError = true;
-                  logger.error(err);
-                  resolve();
-                  throw err;
-                });
+                }
+                if (resource && !config.get('rapidpro:syncAllContacts')) {
+                  this.addContact({
+                    contact: resource,
+                    rpContacts,
+                  }, (err, res, body) => {
+                    if (!err) {
+                      const rpUUID = body.uuid;
+                      if (rpUUID) {
+                        if (!resource.identifier) {
+                          resource.identifier = [];
+                        }
+                        let exist = false;
+                        for(let index in resource.identifier) {
+                          let ident = resource.identifier[index]
+                          if(ident.system === 'http://app.rapidpro.io/contact-uuid') {
+                            resource.identifier[index].value = rpUUID
+                            exist = true
+                          }
+                        }
+                        if(!exist) {
+                          resource.identifier.push({
+                            system: 'http://app.rapidpro.io/contact-uuid',
+                            value: rpUUID,
+                          });
+                        }
+                        const bundle = {};
+                        bundle.type = 'batch';
+                        bundle.resourceType = 'Bundle';
+                        bundle.entry = [{
+                          resource: resource,
+                          request: {
+                            method: 'PUT',
+                            url: `${resource.resourceType}/${resource.id}`,
+                          },
+                        }, ];
+                        macm.saveResource(bundle, () => {});
+                      }
+                    }
+                  });
+                }
               } else {
+                if(workflows.length > 0) {
+                  status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                } else {
+                  status[commReq.resource.id][msg].failed++
+                }
                 resolve();
               }
-            }));
-          }
+            }
+          })
           Promise.all(recPromises).then(() => {
             async.parallel({
               startFlow: (callback) => {
@@ -1229,6 +1286,13 @@ module.exports = function () {
                     let workflowArr = workflow.split('/');
                     if(workflowArr.length === 2) {
                       workflow = workflowArr[1];
+                    }
+                    if(!status[commReq.resource.id][workflow]) {
+                      status[commReq.resource.id][workflow] = {
+                        failed: 0,
+                        success: 0,
+                        descriptions: {}
+                      }
                     }
                     logger.info('Starting workflow ' + workflow);
                     if (counter > 0) {
@@ -1256,6 +1320,7 @@ module.exports = function () {
                             ids = [];
                             flowBody.urns = [];
                             flowBody.contacts = [];
+                            let sendFailed = false
                             this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
                               if (err) {
                                 logger.error('An error has occured while starting a workflow');
@@ -1263,22 +1328,18 @@ module.exports = function () {
                                 sendFailed = true;
                                 processingError = true;
                               }
-                              if (
-                                res.statusCode &&
-                                (res.statusCode < 200 ||
-                                  res.statusCode > 299)
-                              ) {
+                              if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                                 sendFailed = true;
                                 processingError = true;
                                 logger.error('Send Message Err Code ' + res.statusCode);
                               }
                               if (!sendFailed) {
-                                status.success = status.success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
                                 this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (err, res, body) => {
                                   resolve();
                                 });
                               } else {
-                                status.failed = status.failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
                                 resolve();
                               }
                             });
@@ -1290,27 +1351,24 @@ module.exports = function () {
                     }
                     Promise.all(promises).then(() => {
                       if (flowBody.urns.length + flowBody.contacts.length > 0) {
+                        let sendFailed = false
                         this.sendMessage(flowBody, 'workflow', (err, res, body) => {
                           if (err) {
                             logger.error(err);
                             sendFailed = true;
                             processingError = true;
                           }
-                          if (
-                            res.statusCode &&
-                            (res.statusCode < 200 ||
-                              res.statusCode > 299)
-                          ) {
+                          if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                             sendFailed = true;
                             processingError = true;
                           }
                           if (!sendFailed) {
-                            status.success = status.success + flowBody.urns.length + flowBody.contacts.length;
+                            status[commReq.resource.id][workflow].success += flowBody.urns.length + flowBody.contacts.length;
                             this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (err, res, body) => {
                               return callback(null);
                             });
                           } else {
-                            status.failed = status.failed + flowBody.urns.length + flowBody.contacts.length;
+                            status[commReq.resource.id][workflow].failed += flowBody.urns.length + flowBody.contacts.length;
                             return callback(null);
                           }
                         });
@@ -1350,26 +1408,24 @@ module.exports = function () {
                       ids = [];
                       smsBody.urns = [];
                       smsBody.contacts = [];
+                      let sendFailed = false
                       this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
                         if (err) {
                           logger.error(err);
                           sendFailed = true;
                           processingError = true;
                         }
-                        if (
-                          (res.statusCode && res.statusCode < 200) ||
-                          res.statusCode > 299
-                        ) {
+                        if ((res.statusCode && res.statusCode < 200) || res.statusCode > 299) {
                           sendFailed = true;
                           processingError = true;
                         }
                         if (!sendFailed) {
-                          status.success = status.success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                          status[commReq.resource.id][tmpSmsBody.text].success = status[commReq.resource.id][tmpSmsBody.text].success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
                           this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (err, res, body) => {
                             resolve();
                           });
                         } else {
-                          status.failed = status.failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                          status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
                           resolve();
                         }
                       });
@@ -1380,6 +1436,7 @@ module.exports = function () {
                 }
                 Promise.all(promises).then(() => {
                   if (smsBody.urns.length + smsBody.contacts.length > 0) {
+                    let sendFailed = false
                     this.sendMessage(smsBody, 'sms', (err, res, body) => {
                       if (err) {
                         logger.error(err);
@@ -1394,12 +1451,12 @@ module.exports = function () {
                         processingError = true;
                       }
                       if (!sendFailed) {
-                        status.success = status.success + smsBody.urns.length + smsBody.contacts.length;
+                        status[commReq.resource.id][smsBody.text].success = status[commReq.resource.id][smsBody.text].success + smsBody.urns.length + smsBody.contacts.length;
                         this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (err, res, body) => {
                           return callback(null);
                         });
                       } else {
-                        status.failed = status.failed + smsBody.urns.length + smsBody.contacts.length;
+                        status[commReq.resource.id][smsBody.text].failed = status[commReq.resource.id][smsBody.text].failed + smsBody.urns.length + smsBody.contacts.length;
                         return callback(null);
                       }
                     });
@@ -1424,7 +1481,6 @@ module.exports = function () {
         });
       });
     },
-
     sendMessage(flowBody, type, callback) {
       let endPoint;
       if (type === 'sms') {
@@ -1643,6 +1699,13 @@ module.exports = function () {
               logger.error(err);
               return callback(err);
             }
+            try {
+              JSON.parse(body)
+            } catch (error) {
+              logger.error(err)
+              url = false
+              return callback(null, url)
+            }
             this.isThrottled(JSON.parse(body), (wasThrottled) => {
               if (wasThrottled) {
                 // reprocess this contact
@@ -1711,7 +1774,7 @@ function generateURNS(resource) {
     resource.telecom.length > 0
   ) {
     for (const telecom of resource.telecom) {
-      if (telecom.system && telecom.system === 'phone') {
+      if (telecom.system && telecom.system === 'phone' && telecom.value) {
         telecom.value = mixin.updatePhoneNumber(telecom.value);
         if (!telecom.value.startsWith('+')) {
           logger.error(
