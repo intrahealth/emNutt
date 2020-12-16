@@ -1039,7 +1039,7 @@ module.exports = function () {
 
       promise.then((rpContacts) => {
         async.each(commReqs.entry, (commReq, nxtComm) => {
-          status[commReq.resource.id] = {}
+          //status[commReq.resource.id] = {}
           let msg;
           const workflows = [];
           for (const payload of commReq.resource.payload) {
@@ -1052,30 +1052,30 @@ module.exports = function () {
           }
 
           if (!msg && workflows.length === 0) {
-            status[commReq.resource.id] = {
-              failed: 0,
-              success: 0,
-              descriptions: {}
-            }
-            status[commReq.resource.id].failed = commReq.resource.recipient.length
-            status[commReq.resource.id].descriptions['All Recipients'] = 'No workflow or message specified';
+            // status[commReq.resource.id] = {
+            //   failed: 0,
+            //   success: 0,
+            //   descriptions: {}
+            // }
+            //status[commReq.resource.id].failed = commReq.resource.recipient.length
+            //status[commReq.resource.id].descriptions['All Recipients'] = 'No workflow or message specified';
             logger.warn(`No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`);
             return nxtComm();
           }
-          if(msg) {
-            status[commReq.resource.id][msg] = {
-              failed: 0,
-              success: 0,
-              descriptions: {}
-            }
-          }
-          if(workflows.length > 0) {
-            status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')] = {
-              failed: 0,
-              success: 0,
-              descriptions: {}
-            }
-          }
+          // if(msg) {
+          //   status[commReq.resource.id][msg] = {
+          //     failed: 0,
+          //     success: 0,
+          //     descriptions: {}
+          //   }
+          // }
+          // if(workflows.length > 0) {
+          //   status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')] = {
+          //     failed: 0,
+          //     success: 0,
+          //     descriptions: {}
+          //   }
+          // }
           const recipients = [];
           let recipientsFHIR = []
           let ids = {}
@@ -1090,18 +1090,39 @@ module.exports = function () {
             }
           }
           //we can simply do ids[resourceType].join(',') and send request to fhir but we need to control the number of ids we are sending to FHIR as HAPI throws an error when requesting for many IDs
-          let recPromises = []
           for(let resourceType in ids) {
             let combinedIDs = ''
-            for(let id of ids[resourceType]) {
+            async.eachSeries(ids[resourceType], (id, nxtId) => {
               if(combinedIDs.split(',').length === 500) {
                 combinedIDs += `,${id}`
                 let tmpIds = combinedIDs
                 combinedIDs = ''
-                recPromises.push(new Promise((resolve) => {
+                macm.getResource({
+                  resource: resourceType,
+                  query: `_id=${tmpIds}`
+                }, (err, resourceData) => {
+                  if(err) {
+                    processingError = true;
+                  }
+                  if(resourceData.entry) {
+                    recipientsFHIR = recipientsFHIR.concat(resourceData.entry)
+                  }
+                  return nxtId()
+                })
+              } else {
+                if(!combinedIDs) {
+                  combinedIDs = id
+                } else {
+                  combinedIDs += `,${id}`
+                }
+                return nxtId()
+              }
+            }, () => {
+              let checkPendingIds = new Promise((resolve) => {
+                if(combinedIDs) {
                   macm.getResource({
                     resource: resourceType,
-                    query: `_id=${tmpIds}`
+                    query: `_id=${combinedIDs}`
                   }, (err, resourceData) => {
                     if(err) {
                       processingError = true;
@@ -1111,219 +1132,227 @@ module.exports = function () {
                     }
                     resolve()
                   })
-                }))
-              } else {
-                if(!combinedIDs) {
-                  combinedIDs = id
                 } else {
-                  combinedIDs += `,${id}`
-                }
-              }
-            }
-            if(combinedIDs) {
-              recPromises.push(new Promise((resolve) => {
-                macm.getResource({
-                  resource: resourceType,
-                  query: `_id=${combinedIDs}`
-                }, (err, resourceData) => {
-                  if(err) {
-                    processingError = true;
-                  }
-                  if(resourceData.entry) {
-                    recipientsFHIR = recipientsFHIR.concat(resourceData.entry)
-                  }
                   resolve()
-                })
-              }))
-            }
-          }
-          Promise.all(recPromises).then(() => {
-            for (const recipient of commReq.resource.recipient) {
-              let isContained = false;
-              if (recipient.reference) {
-                let resource;
-                if (recipient.reference.startsWith('#')) {
-                  if (commReq.resource.contained) {
-                    isContained = true;
-                    const contained = commReq.resource.contained.find((contained) => {
-                      return (contained.id === recipient.reference.substring(1));
-                    });
-                    if (contained) {
-                      resource = {
-                        resource: contained,
-                      };
-                    } else {
-                      logger.error(`Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`);
-                    }
-                  } else {
-                    logger.error(`Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`);
-                  }
-                } else {
-                  let recArr = recipient.reference.split('/');
-                  const [resourceName, resID] = recArr;
-                  let recRes = recipientsFHIR.find((entry) => {
-                    return entry.resource.id === resID
-                  })
-                  if(recRes) {
-                    resource = recRes.resource
-                  }
-                  if(!resource) {
-                    processingError = true;
-                    logger.error(`Reference ${recipient.reference} was not found on the server`);
-                  }
                 }
-                if (resource) {
-                  if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
-                    let rpuuid = resource.identifier.find((ident) => {
-                      return ident.system === 'http://app.rapidpro.io/contact-uuid';
-                    });
-                    if(rpuuid) {
-                      recipients.push({
-                        contact: rpuuid.value,
-                        id: resource.id,
-                      });
-                    } else if(isContained) {
-                      for (const telecom of resource.telecom) {
-                        if (telecom.system && telecom.system === 'phone' && telecom.value) {
-                          telecom.value = mixin.updatePhoneNumber(telecom.value);
-                          if (!mixin.validatePhone(telecom.value)) {
-                            logger.error('Phone number ' + telecom.value + ' is not valid');
-                            continue;
-                          }
-                          recipients.push({
-                            urns: 'tel:' + telecom.value,
-                            id: resource.id,
-                          });
-                        }
-                      }
-                    } else {
-                      let name = mixin.getNameFromResource(resource);
-                      if(workflows.length > 0) {
-                        status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
-                        if(name) {
-                          status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
+              })
+
+              checkPendingIds.then(() => {
+                for (const recipient of commReq.resource.recipient) {
+                  let isContained = false;
+                  if (recipient.reference) {
+                    let resource;
+                    if (recipient.reference.startsWith('#')) {
+                      if (commReq.resource.contained) {
+                        isContained = true;
+                        const contained = commReq.resource.contained.find((contained) => {
+                          return (contained.id === recipient.reference.substring(1));
+                        });
+                        if (contained) {
+                          resource = {
+                            resource: contained,
+                          };
+                        } else {
+                          logger.error(`Recipient refers to a # (${recipient.reference}) but was not found on the contained element for a resource ${commReq.resource.resourceType}/${commReq.resource.id}`);
                         }
                       } else {
-                        status[commReq.resource.id][msg].failed++
-                        if(name) {
-                          status[commReq.resource.id][msg].descriptions[name] = 'Not found in rapidpro';
-                        }
-                      }
-                    }
-                  } else {
-                    let name = mixin.getNameFromResource(resource);
-                    if(workflows.length > 0) {
-                      status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
-                      if(name) {
-                        status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
+                        logger.error(`Recipient refers to a # but resource has no contained element ${commReq.resource.resourceType}/${commReq.resource.id}`);
                       }
                     } else {
-                      status[commReq.resource.id][msg].failed++
-                      if(name) {
-                        status[commReq.resource.id][msg].descriptions[name] = 'No Phone number';
+                      let recArr = recipient.reference.split('/');
+                      const [resourceName, resID] = recArr;
+                      let recRes = recipientsFHIR.find((entry) => {
+                        return entry.resource.id === resID
+                      })
+                      if(recRes) {
+                        resource = recRes.resource
+                      }
+                      if(!resource) {
+                        processingError = true;
+                        logger.error(`Reference ${recipient.reference} was not found on the server`);
                       }
                     }
-                    logger.warn('No contact found for resource id ' + resource.resourceType + '/' + resource.id + ' message wont be sent for this recipient');
+                    if (resource) {
+                      if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
+                        let rpuuid = resource.identifier && resource.identifier.find((ident) => {
+                          return ident.system === 'http://app.rapidpro.io/contact-uuid';
+                        });
+                        if(rpuuid) {
+                          recipients.push({
+                            contact: rpuuid.value,
+                            id: resource.id,
+                          });
+                        } else if(isContained) {
+                          for (const telecom of resource.telecom) {
+                            if (telecom.system && telecom.system === 'phone' && telecom.value) {
+                              telecom.value = mixin.updatePhoneNumber(telecom.value);
+                              if (!mixin.validatePhone(telecom.value)) {
+                                logger.error('Phone number ' + telecom.value + ' is not valid');
+                                continue;
+                              }
+                              recipients.push({
+                                urns: 'tel:' + telecom.value,
+                                id: resource.id,
+                              });
+                            }
+                          }
+                        } else {
+                          // let name = mixin.getNameFromResource(resource);
+                          // if(workflows.length > 0) {
+                          //   status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                          //   if(name) {
+                          //     status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
+                          //   }
+                          // } else {
+                          //   status[commReq.resource.id][msg].failed++
+                          //   if(name) {
+                          //     status[commReq.resource.id][msg].descriptions[name] = 'Not found in rapidpro';
+                          //   }
+                          // }
+                        }
+                      } else {
+                        // let name = mixin.getNameFromResource(resource);
+                        // if(workflows.length > 0) {
+                        //   status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                        //   if(name) {
+                        //     status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
+                        //   }
+                        // } else {
+                        //   status[commReq.resource.id][msg].failed++
+                        //   if(name) {
+                        //     status[commReq.resource.id][msg].descriptions[name] = 'No Phone number';
+                        //   }
+                        // }
+                        logger.warn('No contact found for resource id ' + resource.resourceType + '/' + resource.id + ' message wont be sent for this recipient');
+                      }
+                    }
+                    if (resource && !config.get('rapidpro:syncAllContacts')) {
+                      this.addContact({
+                        contact: resource,
+                        rpContacts,
+                      }, (err, res, body) => {
+                        if (!err) {
+                          const rpUUID = body.uuid;
+                          if (rpUUID) {
+                            if (!resource.identifier) {
+                              resource.identifier = [];
+                            }
+                            let exist = false;
+                            for(let index in resource.identifier) {
+                              let ident = resource.identifier[index]
+                              if(ident.system === 'http://app.rapidpro.io/contact-uuid') {
+                                resource.identifier[index].value = rpUUID
+                                exist = true
+                              }
+                            }
+                            if(!exist) {
+                              resource.identifier.push({
+                                system: 'http://app.rapidpro.io/contact-uuid',
+                                value: rpUUID,
+                              });
+                            }
+                            const bundle = {};
+                            bundle.type = 'batch';
+                            bundle.resourceType = 'Bundle';
+                            bundle.entry = [{
+                              resource: resource,
+                              request: {
+                                method: 'PUT',
+                                url: `${resource.resourceType}/${resource.id}`,
+                              },
+                            }, ];
+                            macm.saveResource(bundle, () => {});
+                          }
+                        }
+                      });
+                    }
+                  } else {
+                    // if(workflows.length > 0) {
+                    //   status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                    // } else {
+                    //   status[commReq.resource.id][msg].failed++
+                    // }
                   }
                 }
-                if (resource && !config.get('rapidpro:syncAllContacts')) {
-                  this.addContact({
-                    contact: resource,
-                    rpContacts,
-                  }, (err, res, body) => {
-                    if (!err) {
-                      const rpUUID = body.uuid;
-                      if (rpUUID) {
-                        if (!resource.identifier) {
-                          resource.identifier = [];
+
+                async.parallel({
+                  startFlow: (callback) => {
+                    if (workflows.length > 0) {
+                      let createNewReq = false;
+                      let counter = 0;
+                      for (let workflow of workflows) {
+                        let workflowArr = workflow.split('/');
+                        if(workflowArr.length === 2) {
+                          workflow = workflowArr[1];
                         }
-                        let exist = false;
-                        for(let index in resource.identifier) {
-                          let ident = resource.identifier[index]
-                          if(ident.system === 'http://app.rapidpro.io/contact-uuid') {
-                            resource.identifier[index].value = rpUUID
-                            exist = true
-                          }
+                        // if(!status[commReq.resource.id][workflow]) {
+                        //   status[commReq.resource.id][workflow] = {
+                        //     failed: 0,
+                        //     success: 0,
+                        //     descriptions: {}
+                        //   }
+                        // }
+                        logger.info('Starting workflow ' + workflow);
+                        if (counter > 0) {
+                          createNewReq = true;
                         }
-                        if(!exist) {
-                          resource.identifier.push({
-                            system: 'http://app.rapidpro.io/contact-uuid',
-                            value: rpUUID,
-                          });
+                        counter += 1;
+                        const flowBody = {};
+                        flowBody.flow = workflow;
+                        flowBody.urns = [];
+                        flowBody.contacts = [];
+                        let ids = [];
+                        const promises = [];
+                        for (const recipient of recipients) {
+                          promises.push(
+                            new Promise((resolve) => {
+                              if(recipient.contact) {
+                                flowBody.contacts.push(recipient.contact);
+                              } else if(recipient.urns) {
+                                flowBody.urns.push(recipient.urns);
+                              }
+                              ids.push(recipient.id);
+                              if (flowBody.urns.length + flowBody.contacts.length > 90) {
+                                const tmpFlowBody = lodash.cloneDeep(flowBody);
+                                const tmpIds = [...ids];
+                                ids = [];
+                                flowBody.urns = [];
+                                flowBody.contacts = [];
+                                let sendFailed = false
+                                this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
+                                  if (err) {
+                                    logger.error('An error has occured while starting a workflow');
+                                    logger.error(err);
+                                    sendFailed = true;
+                                    processingError = true;
+                                  }
+                                  if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
+                                    sendFailed = true;
+                                    processingError = true;
+                                    logger.error('Send Message Err Code ' + res.statusCode);
+                                  }
+                                  if (!sendFailed) {
+                                    //status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                    this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (err, res, body) => {
+
+                                    });
+                                    resolve();
+                                  } else {
+                                    //status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                    resolve();
+                                  }
+                                });
+                                createNewReq = true;
+                              }
+                              resolve();
+                            })
+                          );
                         }
-                        const bundle = {};
-                        bundle.type = 'batch';
-                        bundle.resourceType = 'Bundle';
-                        bundle.entry = [{
-                          resource: resource,
-                          request: {
-                            method: 'PUT',
-                            url: `${resource.resourceType}/${resource.id}`,
-                          },
-                        }, ];
-                        macm.saveResource(bundle, () => {});
-                      }
-                    }
-                  });
-                }
-              } else {
-                if(workflows.length > 0) {
-                  status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
-                } else {
-                  status[commReq.resource.id][msg].failed++
-                }
-                resolve();
-              }
-            }
-          })
-          Promise.all(recPromises).then(() => {
-            async.parallel({
-              startFlow: (callback) => {
-                if (workflows.length > 0) {
-                  let createNewReq = false;
-                  let counter = 0;
-                  for (let workflow of workflows) {
-                    let workflowArr = workflow.split('/');
-                    if(workflowArr.length === 2) {
-                      workflow = workflowArr[1];
-                    }
-                    if(!status[commReq.resource.id][workflow]) {
-                      status[commReq.resource.id][workflow] = {
-                        failed: 0,
-                        success: 0,
-                        descriptions: {}
-                      }
-                    }
-                    logger.info('Starting workflow ' + workflow);
-                    if (counter > 0) {
-                      createNewReq = true;
-                    }
-                    counter += 1;
-                    const flowBody = {};
-                    flowBody.flow = workflow;
-                    flowBody.urns = [];
-                    flowBody.contacts = [];
-                    let ids = [];
-                    const promises = [];
-                    for (const recipient of recipients) {
-                      promises.push(
-                        new Promise((resolve) => {
-                          if(recipient.contact) {
-                            flowBody.contacts.push(recipient.contact);
-                          } else if(recipient.urns) {
-                            flowBody.urns.push(recipient.urns);
-                          }
-                          ids.push(recipient.id);
-                          if (flowBody.urns.length + flowBody.contacts.length > 90) {
-                            const tmpFlowBody = lodash.cloneDeep(flowBody);
-                            const tmpIds = [...ids];
-                            ids = [];
-                            flowBody.urns = [];
-                            flowBody.contacts = [];
+                        Promise.all(promises).then(() => {
+                          if (flowBody.urns.length + flowBody.contacts.length > 0) {
                             let sendFailed = false
-                            this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
+                            this.sendMessage(flowBody, 'workflow', (err, res, body) => {
                               if (err) {
-                                logger.error('An error has occured while starting a workflow');
                                 logger.error(err);
                                 sendFailed = true;
                                 processingError = true;
@@ -1331,44 +1360,105 @@ module.exports = function () {
                               if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
                                 sendFailed = true;
                                 processingError = true;
-                                logger.error('Send Message Err Code ' + res.statusCode);
                               }
                               if (!sendFailed) {
-                                status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
-                                this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (err, res, body) => {
-                                  resolve();
+                                //status[commReq.resource.id][workflow].success += flowBody.urns.length + flowBody.contacts.length;
+                                this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (err, res, body) => {
+
                                 });
+                                return callback(null);
                               } else {
-                                status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
-                                resolve();
+                                //status[commReq.resource.id][workflow].failed += flowBody.urns.length + flowBody.contacts.length;
+                                return callback(null);
                               }
                             });
-                            createNewReq = true;
+                          } else {
+                            return callback(null);
                           }
-                          resolve();
-                        })
-                      );
+                        }).catch((err) => {
+                          throw err;
+                        });
+                      }
+                    } else {
+                      return callback(null);
+                    }
+                  },
+                  sendSMS: (callback) => {
+                    if (!msg) {
+                      return callback(null);
+                    }
+                    const smsBody = {};
+                    smsBody.text = msg;
+                    smsBody.urns = [];
+                    smsBody.contacts = [];
+                    let ids = [];
+                    const promises = [];
+                    let createNewReq = false;
+                    for (const recipient of recipients) {
+                      promises.push(new Promise((resolve) => {
+                        if(recipient.contact) {
+                          smsBody.contacts.push(recipient.contact);
+                        } else if(recipient.urns) {
+                          smsBody.urns.push(recipient.urns);
+                        }
+                        ids.push(recipient.id);
+                        if (smsBody.urns.length + smsBody.contacts.length > 90) {
+                          const tmpSmsBody = lodash.cloneDeep(smsBody)
+                          const tmpIds = [...ids];
+                          ids = [];
+                          smsBody.urns = [];
+                          smsBody.contacts = [];
+                          let sendFailed = false
+                          this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
+                            if (err) {
+                              logger.error(err);
+                              sendFailed = true;
+                              processingError = true;
+                            }
+                            if ((res.statusCode && res.statusCode < 200) || res.statusCode > 299) {
+                              sendFailed = true;
+                              processingError = true;
+                            }
+                            if (!sendFailed) {
+                              //status[commReq.resource.id][tmpSmsBody.text].success = status[commReq.resource.id][tmpSmsBody.text].success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                              this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (err, res, body) => {
+
+                              });
+                              resolve();
+                            } else {
+                              //status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                              resolve();
+                            }
+                          });
+                          createNewReq = true;
+                        }
+                        resolve();
+                      }));
                     }
                     Promise.all(promises).then(() => {
-                      if (flowBody.urns.length + flowBody.contacts.length > 0) {
+                      if (smsBody.urns.length + smsBody.contacts.length > 0) {
                         let sendFailed = false
-                        this.sendMessage(flowBody, 'workflow', (err, res, body) => {
+                        this.sendMessage(smsBody, 'sms', (err, res, body) => {
                           if (err) {
                             logger.error(err);
                             sendFailed = true;
                             processingError = true;
                           }
-                          if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
+                          if (
+                            res.statusCode &&
+                            (res.statusCode < 200 || res.statusCode > 299)
+                          ) {
                             sendFailed = true;
                             processingError = true;
                           }
                           if (!sendFailed) {
-                            status[commReq.resource.id][workflow].success += flowBody.urns.length + flowBody.contacts.length;
-                            this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (err, res, body) => {
-                              return callback(null);
+                            //status[commReq.resource.id][smsBody.text].success = status[commReq.resource.id][smsBody.text].success + smsBody.urns.length + smsBody.contacts.length;
+                            this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (err, res, body) => {
+
                             });
+                            return callback(null);
                           } else {
-                            status[commReq.resource.id][workflow].failed += flowBody.urns.length + flowBody.contacts.length;
+                            //status[commReq.resource.id][smsBody.text].failed = status[commReq.resource.id][smsBody.text].failed + smsBody.urns.length + smsBody.contacts.length;
                             return callback(null);
                           }
                         });
@@ -1376,108 +1466,18 @@ module.exports = function () {
                         return callback(null);
                       }
                     }).catch((err) => {
+                      processingError = true;
                       throw err;
                     });
-                  }
-                } else {
-                  return callback(null);
-                }
-              },
-              sendSMS: (callback) => {
-                if (!msg) {
-                  return callback(null);
-                }
-                const smsBody = {};
-                smsBody.text = msg;
-                smsBody.urns = [];
-                smsBody.contacts = [];
-                let ids = [];
-                const promises = [];
-                let createNewReq = false;
-                for (const recipient of recipients) {
-                  promises.push(new Promise((resolve) => {
-                    if(recipient.contact) {
-                      smsBody.contacts.push(recipient.contact);
-                    } else if(recipient.urns) {
-                      smsBody.urns.push(recipient.urns);
-                    }
-                    ids.push(recipient.id);
-                    if (smsBody.urns.length + smsBody.contacts.length > 90) {
-                      const tmpSmsBody = lodash.cloneDeep(smsBody)
-                      const tmpIds = [...ids];
-                      ids = [];
-                      smsBody.urns = [];
-                      smsBody.contacts = [];
-                      let sendFailed = false
-                      this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
-                        if (err) {
-                          logger.error(err);
-                          sendFailed = true;
-                          processingError = true;
-                        }
-                        if ((res.statusCode && res.statusCode < 200) || res.statusCode > 299) {
-                          sendFailed = true;
-                          processingError = true;
-                        }
-                        if (!sendFailed) {
-                          status[commReq.resource.id][tmpSmsBody.text].success = status[commReq.resource.id][tmpSmsBody.text].success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
-                          this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (err, res, body) => {
-                            resolve();
-                          });
-                        } else {
-                          status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
-                          resolve();
-                        }
-                      });
-                      createNewReq = true;
-                    }
-                    resolve();
-                  }));
-                }
-                Promise.all(promises).then(() => {
-                  if (smsBody.urns.length + smsBody.contacts.length > 0) {
-                    let sendFailed = false
-                    this.sendMessage(smsBody, 'sms', (err, res, body) => {
-                      if (err) {
-                        logger.error(err);
-                        sendFailed = true;
-                        processingError = true;
-                      }
-                      if (
-                        res.statusCode &&
-                        (res.statusCode < 200 || res.statusCode > 299)
-                      ) {
-                        sendFailed = true;
-                        processingError = true;
-                      }
-                      if (!sendFailed) {
-                        status[commReq.resource.id][smsBody.text].success = status[commReq.resource.id][smsBody.text].success + smsBody.urns.length + smsBody.contacts.length;
-                        this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (err, res, body) => {
-                          return callback(null);
-                        });
-                      } else {
-                        status[commReq.resource.id][smsBody.text].failed = status[commReq.resource.id][smsBody.text].failed + smsBody.urns.length + smsBody.contacts.length;
-                        return callback(null);
-                      }
-                    });
-                  } else {
-                    return callback(null);
-                  }
-                }).catch((err) => {
-                  processingError = true;
-                  throw err;
+                  },
+                }, () => {
+                  return nxtComm();
                 });
-              },
-            }, () => {
-              return nxtComm();
-            });
-          }).catch((err) => {
-            processingError = true;
-            logger.error(err);
-            throw err;
-          });
+              })
+            })
+          }
         }, () => {
-          return callback(processingError, status);
+          return callback(processingError, {});
         });
       });
     },
