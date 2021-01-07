@@ -1015,6 +1015,7 @@ module.exports = function () {
       });
     },
     processCommunications(commReqs, callback) {
+      const commReqBundles = [];
       let processingError = false;
       let status = {};
       logger.info(`Processing ${commReqs.entry.length} communication requests`);
@@ -1025,9 +1026,7 @@ module.exports = function () {
           }, (err, rpContacts) => {
             if (err) {
               processingError = true;
-              logger.error(
-                'An error has occured while getting rapidpro contacts, checking communication requests has been stopped'
-              );
+              logger.error('An error has occured while getting rapidpro contacts, checking communication requests has been stopped');
               return resolve([]);
             }
             resolve(rpContacts);
@@ -1092,8 +1091,8 @@ module.exports = function () {
           //we can simply do ids[resourceType].join(',') and send request to fhir but we need to control the number of ids we are sending to FHIR as HAPI throws an error when requesting for many IDs
           for(let resourceType in ids) {
             let combinedIDs = ''
-            async.eachSeries(ids[resourceType], (id, nxtId) => {
-              if(combinedIDs.split(',').length === 500) {
+            async.each(ids[resourceType], (id, nxtId) => {
+              if(combinedIDs.split(',').length === 100) {
                 combinedIDs += `,${id}`
                 let tmpIds = combinedIDs
                 combinedIDs = ''
@@ -1181,6 +1180,7 @@ module.exports = function () {
                           recipients.push({
                             contact: rpuuid.value,
                             id: resource.id,
+                            entityType: resource.resourceType
                           });
                         } else if(isContained) {
                           for (const telecom of resource.telecom) {
@@ -1193,6 +1193,7 @@ module.exports = function () {
                               recipients.push({
                                 urns: 'tel:' + telecom.value,
                                 id: resource.id,
+                                entityType: resource.resourceType
                               });
                             }
                           }
@@ -1302,53 +1303,48 @@ module.exports = function () {
                         flowBody.urns = [];
                         flowBody.contacts = [];
                         let ids = [];
-                        const promises = [];
-                        for (const recipient of recipients) {
-                          promises.push(
-                            new Promise((resolve) => {
-                              if(recipient.contact) {
-                                flowBody.contacts.push(recipient.contact);
-                              } else if(recipient.urns) {
-                                flowBody.urns.push(recipient.urns);
+                        async.eachSeries(recipients, (recipient, nxtRec) => {
+                          if(recipient.contact) {
+                            flowBody.contacts.push(recipient.contact);
+                          } else if(recipient.urns) {
+                            flowBody.urns.push(recipient.urns);
+                          }
+                          ids.push(recipient.entityType + '/' + recipient.id);
+                          if (flowBody.urns.length + flowBody.contacts.length > 90) {
+                            const tmpFlowBody = lodash.cloneDeep(flowBody);
+                            const tmpIds = [...ids];
+                            ids = [];
+                            flowBody.urns = [];
+                            flowBody.contacts = [];
+                            let sendFailed = false
+                            this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
+                              if (err) {
+                                logger.error('An error has occured while starting a workflow');
+                                logger.error(err);
+                                sendFailed = true;
+                                processingError = true;
                               }
-                              ids.push(recipient.id);
-                              if (flowBody.urns.length + flowBody.contacts.length > 90) {
-                                const tmpFlowBody = lodash.cloneDeep(flowBody);
-                                const tmpIds = [...ids];
-                                ids = [];
-                                flowBody.urns = [];
-                                flowBody.contacts = [];
-                                let sendFailed = false
-                                this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
-                                  if (err) {
-                                    logger.error('An error has occured while starting a workflow');
-                                    logger.error(err);
-                                    sendFailed = true;
-                                    processingError = true;
-                                  }
-                                  if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
-                                    sendFailed = true;
-                                    processingError = true;
-                                    logger.error('Send Message Err Code ' + res.statusCode);
-                                  }
-                                  if (!sendFailed) {
-                                    //status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
-                                    this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (err, res, body) => {
-
-                                    });
-                                    resolve();
-                                  } else {
-                                    //status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
-                                    resolve();
-                                  }
+                              if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
+                                sendFailed = true;
+                                processingError = true;
+                                logger.error('Send Message Err Code ' + res.statusCode);
+                              }
+                              if (!sendFailed) {
+                                //status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (updCommReqBundle) => {
+                                  commReqBundles.push(updCommReqBundle)
+                                  return nxtRec()
                                 });
-                                createNewReq = true;
+                              } else {
+                                //status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                return nxtRec()
                               }
-                              resolve();
-                            })
-                          );
-                        }
-                        Promise.all(promises).then(() => {
+                            });
+                            createNewReq = true;
+                          } else {
+                            return nxtRec()
+                          }
+                        }, () => {
                           if (flowBody.urns.length + flowBody.contacts.length > 0) {
                             let sendFailed = false
                             this.sendMessage(flowBody, 'workflow', (err, res, body) => {
@@ -1363,10 +1359,10 @@ module.exports = function () {
                               }
                               if (!sendFailed) {
                                 //status[commReq.resource.id][workflow].success += flowBody.urns.length + flowBody.contacts.length;
-                                this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (err, res, body) => {
-
+                                this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (updCommReqBundle) => {
+                                  commReqBundles.push(updCommReqBundle)
+                                  return callback(null);
                                 });
-                                return callback(null);
                               } else {
                                 //status[commReq.resource.id][workflow].failed += flowBody.urns.length + flowBody.contacts.length;
                                 return callback(null);
@@ -1375,9 +1371,7 @@ module.exports = function () {
                           } else {
                             return callback(null);
                           }
-                        }).catch((err) => {
-                          throw err;
-                        });
+                        })
                       }
                     } else {
                       return callback(null);
@@ -1392,50 +1386,47 @@ module.exports = function () {
                     smsBody.urns = [];
                     smsBody.contacts = [];
                     let ids = [];
-                    const promises = [];
                     let createNewReq = false;
-                    for (const recipient of recipients) {
-                      promises.push(new Promise((resolve) => {
-                        if(recipient.contact) {
-                          smsBody.contacts.push(recipient.contact);
-                        } else if(recipient.urns) {
-                          smsBody.urns.push(recipient.urns);
-                        }
-                        ids.push(recipient.id);
-                        if (smsBody.urns.length + smsBody.contacts.length > 90) {
-                          const tmpSmsBody = lodash.cloneDeep(smsBody)
-                          const tmpIds = [...ids];
-                          ids = [];
-                          smsBody.urns = [];
-                          smsBody.contacts = [];
-                          let sendFailed = false
-                          this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
-                            if (err) {
-                              logger.error(err);
-                              sendFailed = true;
-                              processingError = true;
-                            }
-                            if ((res.statusCode && res.statusCode < 200) || res.statusCode > 299) {
-                              sendFailed = true;
-                              processingError = true;
-                            }
-                            if (!sendFailed) {
-                              //status[commReq.resource.id][tmpSmsBody.text].success = status[commReq.resource.id][tmpSmsBody.text].success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
-                              this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (err, res, body) => {
-
-                              });
-                              resolve();
-                            } else {
-                              //status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
-                              resolve();
-                            }
-                          });
-                          createNewReq = true;
-                        }
-                        resolve();
-                      }));
-                    }
-                    Promise.all(promises).then(() => {
+                    async.eachSeries(recipients, (recipient, nxtRec) => {
+                      if(recipient.contact) {
+                        smsBody.contacts.push(recipient.contact);
+                      } else if(recipient.urns) {
+                        smsBody.urns.push(recipient.urns);
+                      }
+                      ids.push(recipient.entityType + '/' + recipient.id);
+                      if (smsBody.urns.length + smsBody.contacts.length > 90) {
+                        const tmpSmsBody = lodash.cloneDeep(smsBody)
+                        const tmpIds = [...ids];
+                        ids = [];
+                        smsBody.urns = [];
+                        smsBody.contacts = [];
+                        let sendFailed = false
+                        this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
+                          if (err) {
+                            logger.error(err);
+                            sendFailed = true;
+                            processingError = true;
+                          }
+                          if ((res.statusCode && res.statusCode < 200) || res.statusCode > 299) {
+                            sendFailed = true;
+                            processingError = true;
+                          }
+                          if (!sendFailed) {
+                            //status[commReq.resource.id][tmpSmsBody.text].success = status[commReq.resource.id][tmpSmsBody.text].success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                            this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (updCommReqBundle) => {
+                              commReqBundles.push(updCommReqBundle)
+                              return nxtRec()
+                            });
+                          } else {
+                            //status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                            return nxtRec()
+                          }
+                        });
+                        createNewReq = true;
+                      } else {
+                        return nxtRec()
+                      }
+                    }, () => {
                       if (smsBody.urns.length + smsBody.contacts.length > 0) {
                         let sendFailed = false
                         this.sendMessage(smsBody, 'sms', (err, res, body) => {
@@ -1453,10 +1444,10 @@ module.exports = function () {
                           }
                           if (!sendFailed) {
                             //status[commReq.resource.id][smsBody.text].success = status[commReq.resource.id][smsBody.text].success + smsBody.urns.length + smsBody.contacts.length;
-                            this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (err, res, body) => {
-
+                            this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (updCommReqBundle) => {
+                              commReqBundles.push(updCommReqBundle)
+                              return callback(null);
                             });
-                            return callback(null);
                           } else {
                             //status[commReq.resource.id][smsBody.text].failed = status[commReq.resource.id][smsBody.text].failed + smsBody.urns.length + smsBody.contacts.length;
                             return callback(null);
@@ -1465,10 +1456,7 @@ module.exports = function () {
                       } else {
                         return callback(null);
                       }
-                    }).catch((err) => {
-                      processingError = true;
-                      throw err;
-                    });
+                    })
                   },
                 }, () => {
                   return nxtComm();
@@ -1477,11 +1465,18 @@ module.exports = function () {
             })
           }
         }, () => {
-          return callback(processingError, {});
+          async.eachSeries(commReqBundles, (bundle, nxtBundle) => {
+            macm.saveResource(bundle, () => {
+              return nxtBundle()
+            })
+          }, () => {
+            return callback(processingError, {});
+          })
         });
       });
     },
     sendMessage(flowBody, type, callback) {
+      logger.info('Sending message');
       let endPoint;
       if (type === 'sms') {
         endPoint = 'broadcasts.json';
@@ -1504,28 +1499,33 @@ module.exports = function () {
         json: flowBody,
       };
       request.post(options, (err, res, body) => {
-        if (err) {
-          logger.error(err);
-          return callback(err);
-        }
-        this.isThrottled(body, (wasThrottled) => {
-          if (wasThrottled) {
-            this.sendMessage(flowBody, type, (err, res, body) => {
-              return callback(err, res, body);
-            });
-          } else {
-            logger.info(JSON.stringify(body, 0, 2));
+        if(res.statusCode == 500) {
+          logger.warn('Internal server error occured in rapidpro, resending message')
+          this.sendMessage(flowBody, type, (err, res, body) => {
             return callback(err, res, body);
+          });
+        } else {
+          if (err) {
+            logger.error(err);
+            return callback(err);
           }
-        });
+          this.isThrottled(body, (wasThrottled) => {
+            if (wasThrottled) {
+              this.sendMessage(flowBody, type, (err, res, body) => {
+                return callback(err, res, body);
+              });
+            } else {
+              logger.info('Message Sending responded with status code: ' + res.statusCode)
+              return callback(err, res, body);
+            }
+          });
+        }
       });
     },
 
     isThrottled(results, callback) {
       if (results === undefined || results === null || results === '') {
-        logger.error(
-          'An error has occured while checking throttling,empty rapidpro results were submitted'
-        );
+        logger.error('An error has occured while checking throttling,empty rapidpro results were submitted');
         return callback(true);
       }
       if (Object.prototype.hasOwnProperty.call(results, 'detail')) {
@@ -1555,13 +1555,15 @@ module.exports = function () {
     },
 
     updateCommunicationRequest(
-      commReq,
+      communReq,
       rpRunStatus,
       type,
       ids,
       createNewReq,
       callback
     ) {
+      let commReq = lodash.cloneDeep(communReq)
+      commReq.resource.reference = []
       logger.info('Updating communication request to completed');
       let extUrl;
       if (type === 'sms') {
@@ -1625,12 +1627,14 @@ module.exports = function () {
         });
       }
       for (const id of ids) {
-        commReq.resource.extension[extIndex].extension.push({
-          url: 'contact_globalid',
-          valueString: id
-        });
+        commReq.resource.reference.push({
+          reference: id
+        })
+        // commReq.resource.extension[extIndex].extension.push({
+        //   url: 'contact_globalid',
+        //   valueString: id
+        // });
       }
-
       const bundle = {};
       bundle.type = 'batch';
       bundle.resourceType = 'Bundle';
@@ -1641,9 +1645,7 @@ module.exports = function () {
           url: `CommunicationRequest/${commReq.resource.id}`,
         },
       }];
-      macm.saveResource(bundle, (err, res, body) => {
-        return callback(err, res, body);
-      });
+      return callback(bundle)
     },
 
     /**
@@ -1696,13 +1698,15 @@ module.exports = function () {
           };
           request.get(options, (err, res, body) => {
             if (err) {
-              logger.error(err);
+              logger.error('Error occured ' + err);
+              logger.error(res.statusCode);
               return callback(err);
             }
             try {
               JSON.parse(body)
             } catch (error) {
-              logger.error(err)
+              logger.error(url);
+              logger.error(error)
               url = false
               return callback(null, url)
             }
@@ -1730,10 +1734,7 @@ module.exports = function () {
                 );
               } else {
                 body = JSON.parse(body);
-                if (
-                  hasResultsKey &&
-                  !Object.prototype.hasOwnProperty.call(body, 'results')
-                ) {
+                if (hasResultsKey && !Object.prototype.hasOwnProperty.call(body, 'results')) {
                   logger.error(JSON.stringify(body));
                   logger.error(`An error occured while fetching end point data ${endPoint} from rapidpro`);
                   return callback(true);
@@ -1757,8 +1758,7 @@ module.exports = function () {
             });
           });
         }, (err) => {
-          logger.info(`Done Getting data for end point ${endPoint} from server ${config.get('rapidpro:baseURL')}`
-          );
+          logger.info(`Done Getting data for end point ${endPoint} from server ${config.get('rapidpro:baseURL')}`);
           return callback(err, endPointData, nextURL);
         }
       );
@@ -1777,9 +1777,7 @@ function generateURNS(resource) {
       if (telecom.system && telecom.system === 'phone' && telecom.value) {
         telecom.value = mixin.updatePhoneNumber(telecom.value);
         if (!telecom.value.startsWith('+')) {
-          logger.error(
-            'Phone number ' + telecom.value + ' has no country code'
-          );
+          logger.error('Phone number ' + telecom.value + ' has no country code');
           continue;
         }
         if (!mixin.validatePhone(telecom.value)) {
