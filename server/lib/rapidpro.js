@@ -1563,7 +1563,7 @@ module.exports = function () {
       callback
     ) {
       let commReq = lodash.cloneDeep(communReq)
-      commReq.resource.reference = []
+      commReq.resource.recipient = []
       logger.info('Updating communication request to completed');
       let extUrl;
       if (type === 'sms') {
@@ -1627,7 +1627,7 @@ module.exports = function () {
         });
       }
       for (const id of ids) {
-        commReq.resource.reference.push({
+        commReq.resource.recipient.push({
           reference: id
         })
         // commReq.resource.extension[extIndex].extension.push({
