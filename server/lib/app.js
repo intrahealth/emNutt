@@ -76,7 +76,7 @@ function appRoutes() {
       logger.info('Scheduling to send this message with cron expression ' + cronExpressionParsed);
       resource.id = uuid4();
       resource.status = 'on-hold';
-      cron.schedule(cronExpression, () => {
+      let schedTask = cron.schedule(cronExpression, () => {
         logger.info('Processing scheduled communication request with id ' + resource.id);
         rapidpro.processSchedCommReq(resource.id, (err) => {
           if(err) {
@@ -86,6 +86,7 @@ function appRoutes() {
           }
         });
       });
+      cronjobs.scheduledCommReqs[resource.id] = schedTask;
       for(let index in resource.extension) {
         let ext = resource.extension[index];
         if(ext.url === config.get("extensions:CommReqSchedule")) {
