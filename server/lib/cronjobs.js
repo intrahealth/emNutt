@@ -5,6 +5,7 @@ const dataSync = require('./dataSync');
 const config = require('./config');
 const logger = require('./winston');
 
+const scheduledCommReqs = []
 function scheduleCommunicationRequests() {
   logger.info('Checking Scheduled Communication Requests');
   macm.getResource({
@@ -33,7 +34,7 @@ function scheduleCommunicationRequests() {
       if(!cronExpression) {
         continue;
       }
-      cron.schedule(cronExpression, () => {
+      let task = cron.schedule(cronExpression, () => {
         logger.info(`Processing scheduled communication request with id ${commReq.resource.id}`);
         rapidpro.processSchedCommReq(commReq.resource.id, (err) => {
           if(err) {
@@ -43,6 +44,7 @@ function scheduleCommunicationRequests() {
           }
         });
       });
+      scheduledCommReqs[commReq.resource.id] = task
     }
   });
 }
@@ -103,3 +105,7 @@ function scheduleDataSync() {
 
 scheduleCommunicationRequests();
 scheduleDataSync();
+
+module.exports = {
+  scheduledCommReqs
+}

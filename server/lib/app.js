@@ -11,7 +11,7 @@ const cron = require('node-cron');
 const uuid4 = require('uuid/v4');
 const isJSON = require('is-json');
 const URI = require('urijs');
-require('./cronjobs');
+const cronjobs = require('./cronjobs');
 const logger = require('./winston');
 const config = require('./config');
 const envVars = require('./envVars');
@@ -29,7 +29,6 @@ const mediatorConfig = require(`${__dirname}/../config/mediator_${env}`);
 if (config.get('mediator:register')) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 }
-
 envVars.set();
 /**
  * @returns {express.app}
@@ -167,6 +166,7 @@ function appRoutes() {
           method: 'PUT',
           url: `${schedulesRes.entry[entryIndex].resource.resourceType}/${schedulesRes.entry[entryIndex].resource.id}`
         };
+        cronjobs.scheduledCommReqs[schedulesRes.entry[entryIndex].resource.id].stop()
       }
       schedulesRes.resourceType = 'Bundle';
       schedulesRes.type = 'batch';
