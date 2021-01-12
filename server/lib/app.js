@@ -11,6 +11,11 @@ const cron = require('node-cron');
 const uuid4 = require('uuid/v4');
 const isJSON = require('is-json');
 const URI = require('urijs');
+const async = require('async');
+const redis = require('redis');
+const redisClient = redis.createClient({
+  host: process.env.REDIS_HOST || '127.0.0.1',
+});
 const cronjobs = require('./cronjobs');
 const logger = require('./winston');
 const config = require('./config');
@@ -54,11 +59,61 @@ function appRoutes() {
   app.use('/eidsr', eidsr);
   app.use('/sync', dataSync);
 
+  app.get('/emNutt/fhir/getProgress', (req, res) => {
+    const clientIDs = JSON.parse(req.query.clientIDs);
+    let progress = []
+    async.each(clientIDs, (clientId, nxt) => {
+      redisClient.get(clientId, (error, results) => {
+        if (error) {
+          logger.error(error);
+          logger.error(`An error has occured while getting progress for clientID ${clientId}`);
+        }
+        results = JSON.parse(results);
+        progress.push(results)
+        return nxt()
+      });
+    }, () => {
+      res.status(200).json(progress);
+    })
+  });
+
+  app.get('/emNutt/fhir/clearProgress', (req, res) => {
+    const clientIDs = JSON.parse(req.query.clientIDs);
+    let errorOccured = false
+    async.each(clientIDs, (clientId, nxt) => {
+      logger.info(`Clearing progress data for clientID ${clientId}`);
+      const data = JSON.stringify({
+        status: null,
+        error: null,
+        percent: null,
+        responseData: null,
+      });
+      redisClient.set(clientId, data, (err, reply) => {
+        if (err) {
+          errorOccured = true
+          logger.error(err);
+          logger.error(`An error has occured while clearing progress data for clientID ${clientId}`);
+        }
+        return nxt()
+      });
+    }, () => {
+      if(errorOccured) {
+        return res.status(500).send();
+      }
+      res.status(200).send();
+    })
+  });
+
   app.post('/emNutt/fhir/CommunicationRequest', (req, res) => {
     let resource = req.body;
+    resource.id = uuid4();
     if (!resource) {
       return res.status(400).send();
     }
+    res.status(200).json({
+      status: 'Processing',
+      reqID: resource.id
+    })
     let schedule = resource.extension && resource.extension.find((ext) => {
       return ext.url === config.get("extensions:CommReqSchedule");
     });
@@ -74,7 +129,6 @@ function appRoutes() {
     if(cronExpression) {
       let cronExpressionParsed = cronstrue.toString(cronExpression);
       logger.info('Scheduling to send this message with cron expression ' + cronExpressionParsed);
-      resource.id = uuid4();
       resource.status = 'on-hold';
       let schedTask = cron.schedule(cronExpression, () => {
         logger.info('Processing scheduled communication request with id ' + resource.id);
@@ -112,7 +166,19 @@ function appRoutes() {
           },
         }],
       };
+      statusResData = JSON.stringify({
+        status: '1/1 Scheduling Message/Workflow',
+        error: null,
+        percent: null,
+      });
+      redisClient.set(resource.id, statusResData);
       macm.saveResource(bundle, (err) => {
+        statusResData = JSON.stringify({
+          status: 'done',
+          error: null,
+          percent: null,
+        });
+        redisClient.set(resource.id, statusResData);
         dataSyncUtil.cacheFHIR2ES(() => {});
         if (err) {
           return res.status(500).send();
@@ -129,11 +195,11 @@ function appRoutes() {
       };
       rapidpro.processCommunications(commBundle, (err, status) => {
         if (err) {
-          return res.status(500).json(status);
+          // return res.status(500).json(status);
         }
         logger.info('Done processing communication requests');
         dataSyncUtil.cacheFHIR2ES(() => {});
-        res.status(200).json(status);
+        // res.status(200).json(status);
       });
     }
   });

@@ -5,6 +5,10 @@ const async = require('async');
 const moment = require('moment');
 const uuid5 = require('uuid/v5');
 const lodash = require('lodash');
+const redis = require('redis');
+const redisClient = redis.createClient({
+  host: process.env.REDIS_HOST || '127.0.0.1',
+});
 const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
@@ -1015,6 +1019,9 @@ module.exports = function () {
       });
     },
     processCommunications(commReqs, callback) {
+      let reqID = ''
+      let totalRecords = 0
+      let processedRecords = 0
       const commReqBundles = [];
       let processingError = false;
       let status = {};
@@ -1038,6 +1045,18 @@ module.exports = function () {
 
       promise.then((rpContacts) => {
         async.each(commReqs.entry, (commReq, nxtComm) => {
+          reqID = commReq.resource.id
+          totalRecords = commReq.resource.recipient.length
+          let statusResData = JSON.stringify({
+            id: reqID,
+            totalRecords,
+            processedRecords,
+            step: 1,
+            totalSteps: 2,
+            status: 'Preparing Data',
+            error: null
+          });
+          redisClient.set(commReq.resource.id, statusResData);
           //status[commReq.resource.id] = {}
           let msg;
           const workflows = [];
@@ -1059,6 +1078,16 @@ module.exports = function () {
             //status[commReq.resource.id].failed = commReq.resource.recipient.length
             //status[commReq.resource.id].descriptions['All Recipients'] = 'No workflow or message specified';
             logger.warn(`No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`);
+            let statusResData = JSON.stringify({
+              id: reqID,
+              totalRecords,
+              processedRecords,
+              step: 1,
+              totalSteps: 2,
+              status: 'done',
+              error: 'No message/workflow found for communication request'
+            });
+            redisClient.set(commReq.resource.id, statusResData);
             return nxtComm();
           }
           // if(msg) {
@@ -1275,6 +1304,7 @@ module.exports = function () {
                     // }
                   }
                 }
+                totalRecords = recipients.length
 
                 async.parallel({
                   startFlow: (callback) => {
@@ -1311,6 +1341,7 @@ module.exports = function () {
                           }
                           ids.push(recipient.entityType + '/' + recipient.id);
                           if (flowBody.urns.length + flowBody.contacts.length > 90) {
+                            processedRecords += flowBody.urns.length + flowBody.contacts.length
                             const tmpFlowBody = lodash.cloneDeep(flowBody);
                             const tmpIds = [...ids];
                             ids = [];
@@ -1318,6 +1349,16 @@ module.exports = function () {
                             flowBody.contacts = [];
                             let sendFailed = false
                             this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
+                              let statusResData = JSON.stringify({
+                                id: reqID,
+                                totalRecords,
+                                processedRecords,
+                                step: 2,
+                                totalSteps: 2,
+                                status: 'Starting workflow',
+                                error: null
+                              });
+                              redisClient.set(commReq.resource.id, statusResData);
                               if (err) {
                                 logger.error('An error has occured while starting a workflow');
                                 logger.error(err);
@@ -1348,6 +1389,17 @@ module.exports = function () {
                           if (flowBody.urns.length + flowBody.contacts.length > 0) {
                             let sendFailed = false
                             this.sendMessage(flowBody, 'workflow', (err, res, body) => {
+                              processedRecords += flowBody.urns.length + flowBody.contacts.length
+                              let statusResData = JSON.stringify({
+                                id: reqID,
+                                totalRecords,
+                                processedRecords,
+                                step: 2,
+                                totalSteps: 2,
+                                status: 'Starting workflow',
+                                error: null
+                              });
+                              redisClient.set(commReq.resource.id, statusResData);
                               if (err) {
                                 logger.error(err);
                                 sendFailed = true;
@@ -1395,6 +1447,7 @@ module.exports = function () {
                       }
                       ids.push(recipient.entityType + '/' + recipient.id);
                       if (smsBody.urns.length + smsBody.contacts.length > 90) {
+                        processedRecords += smsBody.urns.length + smsBody.contacts.length
                         const tmpSmsBody = lodash.cloneDeep(smsBody)
                         const tmpIds = [...ids];
                         ids = [];
@@ -1402,6 +1455,16 @@ module.exports = function () {
                         smsBody.contacts = [];
                         let sendFailed = false
                         this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
+                          let statusResData = JSON.stringify({
+                            id: reqID,
+                            totalRecords,
+                            processedRecords,
+                            step: 2,
+                            totalSteps: 2,
+                            status: 'Starting workflow',
+                            error: null
+                          });
+                          redisClient.set(commReq.resource.id, statusResData);
                           if (err) {
                             logger.error(err);
                             sendFailed = true;
@@ -1430,6 +1493,17 @@ module.exports = function () {
                       if (smsBody.urns.length + smsBody.contacts.length > 0) {
                         let sendFailed = false
                         this.sendMessage(smsBody, 'sms', (err, res, body) => {
+                          processedRecords += smsBody.urns.length + smsBody.contacts.length
+                          let statusResData = JSON.stringify({
+                            id: reqID,
+                            totalRecords,
+                            processedRecords,
+                            step: 2,
+                            totalSteps: 2,
+                            status: 'Starting workflow',
+                            error: null
+                          });
+                          redisClient.set(commReq.resource.id, statusResData);
                           if (err) {
                             logger.error(err);
                             sendFailed = true;
@@ -1465,6 +1539,29 @@ module.exports = function () {
             })
           }
         }, () => {
+          let statusResData
+          if(processingError) {
+            statusResData = JSON.stringify({
+              id: reqID,
+              totalRecords,
+              processedRecords,
+              step: 2,
+              totalSteps: 2,
+              status: 'done',
+              error: 'Some errors occured'
+            });
+          } else {
+            statusResData = JSON.stringify({
+              id: reqID,
+              totalRecords,
+              processedRecords,
+              step: 2,
+              totalSteps: 2,
+              status: 'done',
+              error: null
+            });
+          }
+          redisClient.set(reqID, statusResData);
           async.eachSeries(commReqBundles, (bundle, nxtBundle) => {
             macm.saveResource(bundle, () => {
               return nxtBundle()
