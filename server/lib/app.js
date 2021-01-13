@@ -166,14 +166,26 @@ function appRoutes() {
           },
         }],
       };
-      statusResData = JSON.stringify({
-        status: '1/1 Scheduling Message/Workflow',
+      let commType
+      if(resource.payload.contentReference && resource.payload.contentReference.reference) {
+        commType = 'Workflow'
+      } else {
+        commType = 'Message'
+      }
+      let statusResData = JSON.stringify({
+        id: resource.id,
+        step: 1,
+        totalSteps: 1,
+        status: `Saving Scheduled ${commType} To Run ${cronExpressionParsed}`,
         error: null,
         percent: null,
       });
       redisClient.set(resource.id, statusResData);
       macm.saveResource(bundle, (err) => {
-        statusResData = JSON.stringify({
+        let statusResData = JSON.stringify({
+          id: resource.id,
+          step: 1,
+          totalSteps: 1,
           status: 'done',
           error: null,
           percent: null,
@@ -194,12 +206,8 @@ function appRoutes() {
         }]
       };
       rapidpro.processCommunications(commBundle, (err, status) => {
-        if (err) {
-          // return res.status(500).json(status);
-        }
         logger.info('Done processing communication requests');
         dataSyncUtil.cacheFHIR2ES(() => {});
-        // res.status(200).json(status);
       });
     }
   });

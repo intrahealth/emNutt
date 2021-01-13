@@ -1047,6 +1047,7 @@ module.exports = function () {
         async.each(commReqs.entry, (commReq, nxtComm) => {
           reqID = commReq.resource.id
           totalRecords = commReq.resource.recipient.length
+          status[commReq.resource.id] = {}
           let statusResData = JSON.stringify({
             id: reqID,
             totalRecords,
@@ -1054,10 +1055,10 @@ module.exports = function () {
             step: 1,
             totalSteps: 2,
             status: 'Preparing Data',
-            error: null
+            error: null,
+            sendStatus: status
           });
           redisClient.set(commReq.resource.id, statusResData);
-          //status[commReq.resource.id] = {}
           let msg;
           const workflows = [];
           for (const payload of commReq.resource.payload) {
@@ -1070,13 +1071,13 @@ module.exports = function () {
           }
 
           if (!msg && workflows.length === 0) {
-            // status[commReq.resource.id] = {
-            //   failed: 0,
-            //   success: 0,
-            //   descriptions: {}
-            // }
-            //status[commReq.resource.id].failed = commReq.resource.recipient.length
-            //status[commReq.resource.id].descriptions['All Recipients'] = 'No workflow or message specified';
+            status[commReq.resource.id] = {
+              failed: 0,
+              success: 0,
+              descriptions: {}
+            }
+            status[commReq.resource.id].failed = commReq.resource.recipient.length
+            status[commReq.resource.id].descriptions['All Recipients'] = 'No workflow or message specified';
             logger.warn(`No message/workflow found for communication request ${commReq.resource.resourceType}/${commReq.resource.id}`);
             let statusResData = JSON.stringify({
               id: reqID,
@@ -1085,25 +1086,26 @@ module.exports = function () {
               step: 1,
               totalSteps: 2,
               status: 'done',
-              error: 'No message/workflow found for communication request'
+              error: 'No message/workflow found for communication request',
+              sendStatus: status
             });
             redisClient.set(commReq.resource.id, statusResData);
             return nxtComm();
           }
-          // if(msg) {
-          //   status[commReq.resource.id][msg] = {
-          //     failed: 0,
-          //     success: 0,
-          //     descriptions: {}
-          //   }
-          // }
-          // if(workflows.length > 0) {
-          //   status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')] = {
-          //     failed: 0,
-          //     success: 0,
-          //     descriptions: {}
-          //   }
-          // }
+          if(msg) {
+            status[commReq.resource.id][msg] = {
+              failed: 0,
+              success: 0,
+              descriptions: {}
+            }
+          }
+          if(workflows.length > 0) {
+            status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')] = {
+              failed: 0,
+              success: 0,
+              descriptions: {}
+            }
+          }
           const recipients = [];
           let recipientsFHIR = []
           let ids = {}
@@ -1227,32 +1229,32 @@ module.exports = function () {
                             }
                           }
                         } else {
-                          // let name = mixin.getNameFromResource(resource);
-                          // if(workflows.length > 0) {
-                          //   status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
-                          //   if(name) {
-                          //     status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
-                          //   }
-                          // } else {
-                          //   status[commReq.resource.id][msg].failed++
-                          //   if(name) {
-                          //     status[commReq.resource.id][msg].descriptions[name] = 'Not found in rapidpro';
-                          //   }
-                          // }
+                          let name = mixin.getNameFromResource(resource);
+                          if(workflows.length > 0) {
+                            status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                            if(name) {
+                              status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
+                            }
+                          } else {
+                            status[commReq.resource.id][msg].failed++
+                            if(name) {
+                              status[commReq.resource.id][msg].descriptions[name] = 'Not found in rapidpro';
+                            }
+                          }
                         }
                       } else {
-                        // let name = mixin.getNameFromResource(resource);
-                        // if(workflows.length > 0) {
-                        //   status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
-                        //   if(name) {
-                        //     status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
-                        //   }
-                        // } else {
-                        //   status[commReq.resource.id][msg].failed++
-                        //   if(name) {
-                        //     status[commReq.resource.id][msg].descriptions[name] = 'No Phone number';
-                        //   }
-                        // }
+                        let name = mixin.getNameFromResource(resource);
+                        if(workflows.length > 0) {
+                          status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                          if(name) {
+                            status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].descriptions[name] = 'No Phone number';
+                          }
+                        } else {
+                          status[commReq.resource.id][msg].failed++
+                          if(name) {
+                            status[commReq.resource.id][msg].descriptions[name] = 'No Phone number';
+                          }
+                        }
                         logger.warn('No contact found for resource id ' + resource.resourceType + '/' + resource.id + ' message wont be sent for this recipient');
                       }
                     }
@@ -1297,11 +1299,11 @@ module.exports = function () {
                       });
                     }
                   } else {
-                    // if(workflows.length > 0) {
-                    //   status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
-                    // } else {
-                    //   status[commReq.resource.id][msg].failed++
-                    // }
+                    if(workflows.length > 0) {
+                      status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                    } else {
+                      status[commReq.resource.id][msg].failed++
+                    }
                   }
                 }
                 totalRecords = recipients.length
@@ -1316,13 +1318,13 @@ module.exports = function () {
                         if(workflowArr.length === 2) {
                           workflow = workflowArr[1];
                         }
-                        // if(!status[commReq.resource.id][workflow]) {
-                        //   status[commReq.resource.id][workflow] = {
-                        //     failed: 0,
-                        //     success: 0,
-                        //     descriptions: {}
-                        //   }
-                        // }
+                        if(!status[commReq.resource.id][workflow]) {
+                          status[commReq.resource.id][workflow] = {
+                            failed: 0,
+                            success: 0,
+                            descriptions: {}
+                          }
+                        }
                         logger.info('Starting workflow ' + workflow);
                         if (counter > 0) {
                           createNewReq = true;
@@ -1356,7 +1358,8 @@ module.exports = function () {
                                 step: 2,
                                 totalSteps: 2,
                                 status: 'Starting workflow',
-                                error: null
+                                error: null,
+                                sendStatus: status
                               });
                               redisClient.set(commReq.resource.id, statusResData);
                               if (err) {
@@ -1371,13 +1374,13 @@ module.exports = function () {
                                 logger.error('Send Message Err Code ' + res.statusCode);
                               }
                               if (!sendFailed) {
-                                //status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
                                 this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (updCommReqBundle) => {
                                   commReqBundles.push(updCommReqBundle)
                                   return nxtRec()
                                 });
                               } else {
-                                //status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
                                 return nxtRec()
                               }
                             });
@@ -1397,7 +1400,8 @@ module.exports = function () {
                                 step: 2,
                                 totalSteps: 2,
                                 status: 'Starting workflow',
-                                error: null
+                                error: null,
+                                sendStatus: status
                               });
                               redisClient.set(commReq.resource.id, statusResData);
                               if (err) {
@@ -1410,13 +1414,13 @@ module.exports = function () {
                                 processingError = true;
                               }
                               if (!sendFailed) {
-                                //status[commReq.resource.id][workflow].success += flowBody.urns.length + flowBody.contacts.length;
+                                status[commReq.resource.id][workflow].success += flowBody.urns.length + flowBody.contacts.length;
                                 this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (updCommReqBundle) => {
                                   commReqBundles.push(updCommReqBundle)
                                   return callback(null);
                                 });
                               } else {
-                                //status[commReq.resource.id][workflow].failed += flowBody.urns.length + flowBody.contacts.length;
+                                status[commReq.resource.id][workflow].failed += flowBody.urns.length + flowBody.contacts.length;
                                 return callback(null);
                               }
                             });
@@ -1462,7 +1466,8 @@ module.exports = function () {
                             step: 2,
                             totalSteps: 2,
                             status: 'Starting workflow',
-                            error: null
+                            error: null,
+                            sendStatus: status
                           });
                           redisClient.set(commReq.resource.id, statusResData);
                           if (err) {
@@ -1475,13 +1480,13 @@ module.exports = function () {
                             processingError = true;
                           }
                           if (!sendFailed) {
-                            //status[commReq.resource.id][tmpSmsBody.text].success = status[commReq.resource.id][tmpSmsBody.text].success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                            status[commReq.resource.id][tmpSmsBody.text].success = status[commReq.resource.id][tmpSmsBody.text].success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
                             this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (updCommReqBundle) => {
                               commReqBundles.push(updCommReqBundle)
                               return nxtRec()
                             });
                           } else {
-                            //status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                            status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
                             return nxtRec()
                           }
                         });
@@ -1501,7 +1506,8 @@ module.exports = function () {
                             step: 2,
                             totalSteps: 2,
                             status: 'Starting workflow',
-                            error: null
+                            error: null,
+                            sendStatus: status
                           });
                           redisClient.set(commReq.resource.id, statusResData);
                           if (err) {
@@ -1517,13 +1523,13 @@ module.exports = function () {
                             processingError = true;
                           }
                           if (!sendFailed) {
-                            //status[commReq.resource.id][smsBody.text].success = status[commReq.resource.id][smsBody.text].success + smsBody.urns.length + smsBody.contacts.length;
+                            status[commReq.resource.id][smsBody.text].success = status[commReq.resource.id][smsBody.text].success + smsBody.urns.length + smsBody.contacts.length;
                             this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (updCommReqBundle) => {
                               commReqBundles.push(updCommReqBundle)
                               return callback(null);
                             });
                           } else {
-                            //status[commReq.resource.id][smsBody.text].failed = status[commReq.resource.id][smsBody.text].failed + smsBody.urns.length + smsBody.contacts.length;
+                            status[commReq.resource.id][smsBody.text].failed = status[commReq.resource.id][smsBody.text].failed + smsBody.urns.length + smsBody.contacts.length;
                             return callback(null);
                           }
                         });
@@ -1548,7 +1554,8 @@ module.exports = function () {
               step: 2,
               totalSteps: 2,
               status: 'done',
-              error: 'Some errors occured'
+              error: 'Some errors occured',
+              sendStatus: status
             });
           } else {
             statusResData = JSON.stringify({
@@ -1558,7 +1565,8 @@ module.exports = function () {
               step: 2,
               totalSteps: 2,
               status: 'done',
-              error: null
+              error: null,
+              sendStatus: status
             });
           }
           redisClient.set(reqID, statusResData);

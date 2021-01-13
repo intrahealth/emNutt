@@ -103,8 +103,8 @@ function scheduleDataSync() {
   });
 }
 
-scheduleCommunicationRequests();
-scheduleDataSync();
+// scheduleCommunicationRequests();
+// scheduleDataSync();
 
 module.exports = {
   scheduledCommReqs
