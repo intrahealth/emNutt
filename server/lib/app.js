@@ -28,6 +28,7 @@ const dataSyncUtil = require('./dataSync');
 const macm = require('./macm')();
 const prerequisites = require('./prerequisites');
 const mixin = require('./mixin');
+const winston = require('winston');
 
 const env = process.env.NODE_ENV || 'development';
 const mediatorConfig = require(`${__dirname}/../config/mediator_${env}`);
@@ -213,9 +214,11 @@ function appRoutes() {
   });
 
   app.post('/emNutt/fhir/cancelMessageSchedule', (req, res) => {
+    logger.info("Received a request to cancel schedule")
     let schedules = req.body.schedules;
     let query;
-    for(let schedule of schedules) {
+    let errOccured = false
+    async.each(schedules, (schedule, nxt) => {
       let schArr = schedule.split('/');
       if(schArr.length === 2) {
         schedule = schArr[1];
@@ -225,34 +228,44 @@ function appRoutes() {
       } else {
         query += `,${schedule}`;
       }
-    }
-    macm.getResource({
-      resource: 'CommunicationRequest',
-      query
-    }, (err, schedulesRes) => {
-      if(err) {
+      let patchReq = [{
+        op: "replace",
+        path: "/status",
+        value: "completed"
+      }]
+      let url = URI(config.get('macm:baseURL'))
+        .segment("CommunicationRequest")
+        .segment(schedule)
+        .toString()
+      const options = {
+        url,
+        withCredentials: true,
+        auth: {
+          username: config.get('macm:username'),
+          password: config.get('macm:password'),
+        },
+        headers: {
+          'Content-Type': 'application/json-patch+json',
+        },
+        json: patchReq
+      };
+      request.patch(options, (err, res, body) => {
+        if(err || !res.statusCode || res.statusCode < 200 || res.statusCode > 399) {
+          errOccured = true
+        } else {
+          if(cronjobs.scheduledCommReqs[schedule]) {
+            cronjobs.scheduledCommReqs[schedule].stop()
+          }
+        }
+        return nxt()
+      })
+    }, () => {
+      dataSyncUtil.cacheFHIR2ES(() => {});
+      if(errOccured) {
         return res.status(500).send();
       }
-      for(let entryIndex in schedulesRes.entry) {
-        schedulesRes.entry[entryIndex].resource.status = 'completed';
-        delete schedulesRes.entry[entryIndex].search;
-        delete schedulesRes.entry[entryIndex].fullUrl;
-        schedulesRes.entry[entryIndex].request = {
-          method: 'PUT',
-          url: `${schedulesRes.entry[entryIndex].resource.resourceType}/${schedulesRes.entry[entryIndex].resource.id}`
-        };
-        cronjobs.scheduledCommReqs[schedulesRes.entry[entryIndex].resource.id].stop()
-      }
-      schedulesRes.resourceType = 'Bundle';
-      schedulesRes.type = 'batch';
-      macm.saveResource(schedulesRes, (err) => {
-        dataSyncUtil.cacheFHIR2ES(() => {});
-        if(err) {
-          return res.status(500).send();
-        }
-        return res.status(200).send();
-      });
-    });
+      return res.status(200).send();
+    })
   });
 
   app.post('/emNutt/fhir', (req, res) => {

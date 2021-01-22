@@ -1,6 +1,6 @@
 const express = require('express');
-const formidable = require('formidable');
 const async = require('async');
+const lodash = require('lodash')
 const router = express.Router();
 const logger = require('../winston');
 const config = require('../config');
@@ -8,68 +8,60 @@ const macm = require('../macm')();
 
 router.post('/addDisease', (req, res) => {
   logger.info('Received a request to add diseases');
-  const form = new formidable.IncomingForm();
-  form.parse(req, (err, fields) => {
-    let diseases = fields.diseases;
-    try {
-      diseases = JSON.parse(diseases);
-    } catch (error) {
-      logger.error(error);
+  let diseases = req.body;
+  macm.getResource({
+    resource: 'CodeSystem',
+    id: "eidsrDiseases"
+  }, (err, codeSystem) => {
+    if (err && err !== 404) {
+      return res.status(500).send();
     }
-    macm.getResource({
-      resource: 'CodeSystem',
-      id: "eidsrDiseases"
-    }, (err, codeSystem) => {
-      if (err && err !== 404) {
-        return res.status(500).send();
-      }
-      if (codeSystem.resourceType !== 'CodeSystem') {
-        codeSystem = {
-          resourceType: 'CodeSystem',
-          id: 'eidsrDiseases',
-          url: 'http://eidsr.emNutt.org/fhir/CodeSystem/eidsrDiseases',
-          version: '1.1.0',
-          description: 'List of diseases used for eIDSR suspected cases reporting',
-          status: 'active',
-          experimental: false,
-          caseSensitive: true,
-          content: "complete",
-          concept: []
-        };
-      }
-      for (let disease of diseases) {
-        let found = false;
-        for (let index in codeSystem.concept) {
-          if (codeSystem.concept[index].code === disease.code) {
-            found = true;
-            if (disease.name) {
-              codeSystem.concept[index].display = disease.name;
-            }
+    if (codeSystem.resourceType !== 'CodeSystem') {
+      codeSystem = {
+        resourceType: 'CodeSystem',
+        id: 'mHeroEidsrDiseases',
+        url: 'http://mhero.org/fhir/CodeSystem/mHeroEidsrDiseases',
+        version: '1.1.0',
+        description: 'List of diseases used for eIDSR suspected cases reporting',
+        status: 'active',
+        experimental: false,
+        caseSensitive: true,
+        content: "complete",
+        concept: []
+      };
+    }
+    for (let disease of diseases) {
+      let found = false;
+      for (let index in codeSystem.concept) {
+        if (codeSystem.concept[index].code === disease.code) {
+          found = true;
+          if (disease.name) {
+            codeSystem.concept[index].display = disease.name;
           }
         }
-        if (!found) {
-          codeSystem.concept.push({
-            code: disease.code,
-            display: disease.name
-          });
-        }
       }
-      const bundle = {};
-      bundle.type = 'batch';
-      bundle.resourceType = 'Bundle';
-      bundle.entry = [{
-        resource: codeSystem,
-        request: {
-          method: 'PUT',
-          url: 'CodeSystem/eidsrDiseases'
-        }
-      }];
-      macm.saveResource(bundle, (err) => {
-        if (err) {
-          return res.status(500).send();
-        }
-        return res.status(200).send();
-      });
+      if (!found) {
+        codeSystem.concept.push({
+          code: disease.code,
+          display: disease.name
+        });
+      }
+    }
+    const bundle = {};
+    bundle.type = 'batch';
+    bundle.resourceType = 'Bundle';
+    bundle.entry = [{
+      resource: codeSystem,
+      request: {
+        method: 'PUT',
+        url: 'CodeSystem/eidsrDiseases'
+      }
+    }];
+    macm.saveResource(bundle, (err) => {
+      if (err) {
+        return res.status(500).send();
+      }
+      return res.status(200).send();
     });
   });
 });
@@ -81,6 +73,13 @@ router.post('/suspectedCase', (req, res) => {
     return res.status(500).send('No ordered fields configured');
   }
   let caseReport = req.query.report;
+  let globalid = req.query.globalid
+  let mheroentitytype = req.query.mheroentitytype
+
+  if(!globalid || !mheroentitytype) {
+    return res.status(400).send('Sender ID is missing')
+  }
+
   caseReport = caseReport.replace("alert.", "");
   let caseData = caseReport.split(".");
   if (caseData.length === 0) {
@@ -110,6 +109,12 @@ router.post('/suspectedCase', (req, res) => {
         extension: []
       }]
     };
+    resource.extension[0].extension.push({
+      url: 'reporterID',
+      valueReference: {
+        reference: `${mheroentitytype}/${globalid}`
+      }
+    });
     let diseaseCode;
     for (let fieldIndex in orderedFields) {
       let field = orderedFields[fieldIndex];
@@ -148,23 +153,126 @@ router.post('/suspectedCase', (req, res) => {
         resource[field] = caseData[fieldIndex];
       }
     }
-    macm.saveResource(resource, () => {
-      return res.status(201).send();
+    macm.saveResource(resource, (err, saveResp, body) => {
+      if(err || (saveResp && saveResp.statusCode !== 201)) {
+        return res.status(400).send();
+      }
+      return res.status(saveResp.statusCode).send();
     });
-    let diseaseName;
+    let caseDetails = {
+      diseaseName: '',
+      reporterName: '',
+      facility: '',
+      reporterPhone: '',
+      reporterLocation: {}
+    }
     async.parallel({
       getDiseaseName: (callback) => {
         macm.getResource({
           resource: 'CodeSystem',
           id: 'eidsrDiseases'
         }, (err, codeSystem) => {
-          let concept = codeSystem.concept.find((concept) => {
+          let concept = codeSystem.concept && codeSystem.concept.find((concept) => {
             return concept.code === diseaseCode;
           });
-          diseaseName = concept.display;
+          if(concept) {
+            caseDetails.diseaseName = concept.display;
+          }
           return callback(null);
         });
+      },
+      getReporterInfo: (callback) => {
+        macm.getResource({
+          resource: 'PractitionerRole',
+          query: `practitioner=${globalid}&_include=PractitionerRole:practitioner&_include=PractitionerRole:location`
+        }, (err, resources) => {
+          let practRes = resources.entry.find((entry) => {
+            return entry.resource.resourceType === 'Practitioner'
+          })
+          if(practRes.resource.name) {
+            for(let name of practRes.resource.name) {
+              if(name.use === 'official') {
+                if(name.text) {
+                  caseDetails.reporterName = name.text
+                } else {
+                  caseDetails.reporterName = name.given.join(' ')
+                  caseDetails.reporterName += ' ' + name.family
+                }
+                break;
+              } else if(!caseDetails.reporterName) {
+                if(name.text) {
+                  caseDetails.reporterName = name.text
+                } else {
+                  caseDetails.reporterName = name.given.join(' ')
+                  caseDetails.reporterName += ' ' + name.family
+                }
+              }
+            }
+          }
+          if(practRes.resource.telecom) {
+            for(let telecom of practRes.resource.telecom) {
+              if(telecom.system === 'phone' && telecom.use === 'work') {
+                caseDetails.reporterPhone = telecom.value
+                break;
+              } else if(!caseDetails.reporterPhone) {
+                caseDetails.reporterPhone = telecom.value
+              }
+            }
+          }
+          let loc = resources.entry.find((entry) => {
+            return entry.resource.resourceType === 'Location'
+          })
+          if(loc) {
+            caseDetails.facility = loc.resource.name
+          }
+          if(loc && loc.resource.id) {
+            let levels = config.get("eidsr:orgHierarchyLevels")
+            macm.getResource({
+              resource: 'Location',
+              query: `_id=${loc.resource.id}&_include:recurse=Location:partof`
+            }, (err, locHierarchy) => {
+              let total = locHierarchy.entry.length
+              for(let entry of locHierarchy.entry) {
+                for(let locType in levels) {
+                  if(levels[locType] == total) {
+                    caseDetails.reporterLocation[locType] = entry.resource.name
+                    break;
+                  }
+                }
+                --total
+              }
+              return callback(null)
+            })
+          } else {
+            return callback(null)
+          }
+        })
       }
+    }, () => {
+      let notifications = lodash.cloneDeep(config.get("eidsr:notifications"))
+      for(let detType in caseDetails) {
+        if(!caseDetails[detType]) {
+          continue
+        }
+        if(detType === 'reporterLocation') {
+          for(let locType in caseDetails[detType]) {
+            if(locType && caseDetails[detType][locType]) {
+              let re = new RegExp(`{{${locType}}}`, 'gi')
+              notifications.msg = notifications.msg.replace(re, caseDetails[detType][locType])
+              for(let index in notifications.designation) {
+                notifications.designation[index].msg = notifications.designation[index].msg.replace(re, caseDetails[detType][locType])
+              }
+            }
+          }
+        } else {
+          let re = new RegExp(`{{${detType}}}`, 'gi')
+          notifications.msg = notifications.msg.replace(re, caseDetails[detType])
+          for(let index in notifications.designation) {
+            notifications.designation[index].msg = notifications.designation[index].msg.replace(re, caseDetails[detType])
+          }
+        }
+      }
+      logger.error(JSON.stringify(notifications,0,2));
     });
   }).catch((err) => {
     logger.error(err);

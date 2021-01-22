@@ -35,8 +35,8 @@ Description:    "mHero eIDSR Suspected Case"
       specimenCollected 0..1 MS and
       communityDetection 0..1 MS and
       internationalTravel 0..1 MS
-* extension[diseaseCode].value[x] only string
-* extension[diseaseCode].valueString 1..1
+* extension[diseaseCode].value[x] only code
+* extension[diseaseCode].valueCode from MHeroEidsrDieaseValueSet (required)
 * extension[reporterID].value[x] only Reference
 * extension[reporterID].valueReference 1..1
 * extension[reporterID].valueReference only Reference(Practitioner)
@@ -55,12 +55,22 @@ Description:    "mHero eIDSR Suspected Case"
 * extension[internationalTravel].value[x] only boolean
 * extension[internationalTravel].valueBoolean 1..1
 
+CodeSystem:     MHeroEIDSRDieaseCodeSystem
+Id:             mHeroEidsrDiseases
+Title:          "Code system for diseases to be reported as a suspected case."
+* #ML   "Malaria"    "Malaria"
+
+ValueSet:       MHeroEidsrDieaseValueSet
+Id:             mHeroEidsrDiseases
+Title:          "Code system for eidsr diseases."
+* codes from system MHeroEIDSRDieaseCodeSystem
+
 Instance:       a4g95gd4-64ce-69d8-94f3-48ed235e3388
 InstanceOf:     MheroeIDSRPatient
 Title:          "mHero eiDSR Suspected Case Example"
 Usage:          #example
 * gender = #male
-* extension[suspectedCase].extension[diseaseCode].valueString = "covid19"
+* extension[suspectedCase].extension[diseaseCode].valueCode = #ML
 * extension[suspectedCase].extension[reporterID].valueReference = Reference(Practitioner/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899)
 * extension[suspectedCase].extension[age].valueInteger = 32
 * extension[suspectedCase].extension[caseID].valueString = "LB-MND"

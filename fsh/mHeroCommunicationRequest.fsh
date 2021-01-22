@@ -17,8 +17,8 @@ Description:    "Must be a Cron Expression of the Communication Request if the C
 * extension contains
       frequency  1..1 MS and
       sendCategory  1..* MS and
-      cronExpression        1..1 MS
-      cronExpressionParsed        0..1 MS
+      cronExpression        1..1 MS and
+      cronExpressionParsed        1..1 MS
 * extension[frequency].value[x] only string
 * extension[frequency].valueString 1..1
 * extension[sendCategory].value[x] only string
