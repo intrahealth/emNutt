@@ -216,17 +216,11 @@ function appRoutes() {
   app.post('/emNutt/fhir/cancelMessageSchedule', (req, res) => {
     logger.info("Received a request to cancel schedule")
     let schedules = req.body.schedules;
-    let query;
     let errOccured = false
     async.each(schedules, (schedule, nxt) => {
       let schArr = schedule.split('/');
       if(schArr.length === 2) {
         schedule = schArr[1];
-      }
-      if(!query) {
-        query = `_id=${schedule}`;
-      } else {
-        query += `,${schedule}`;
       }
       let patchReq = [{
         op: "replace",
@@ -250,7 +244,7 @@ function appRoutes() {
         json: patchReq
       };
       request.patch(options, (err, res, body) => {
-        if(err || !res.statusCode || res.statusCode < 200 || res.statusCode > 399) {
+        if(err || !res || res.statusCode < 200 || res.statusCode > 399) {
           errOccured = true
         } else {
           if(cronjobs.scheduledCommReqs[schedule]) {
