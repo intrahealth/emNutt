@@ -79,30 +79,18 @@ function appRoutes() {
   });
 
   app.get('/emNutt/fhir/clearProgress', (req, res) => {
+    res.status(200).send();
     const clientIDs = JSON.parse(req.query.clientIDs);
-    let errorOccured = false
-    async.each(clientIDs, (clientId, nxt) => {
+    for(let clientId of clientIDs) {
       logger.info(`Clearing progress data for clientID ${clientId}`);
-      const data = JSON.stringify({
-        status: null,
-        error: null,
-        percent: null,
-        responseData: null,
-      });
+      let data = JSON.stringify({})
       redisClient.set(clientId, data, (err, reply) => {
         if (err) {
-          errorOccured = true
-          logger.error(err);
-          logger.error(`An error has occured while clearing progress data for clientID ${clientId}`);
+          winston.error(err);
+          winston.error(`An error has occured while clearing progress data for ${type} and clientID ${clientId}`);
         }
-        return nxt()
       });
-    }, () => {
-      if(errorOccured) {
-        return res.status(500).send();
-      }
-      res.status(200).send();
-    })
+    }
   });
 
   app.post('/emNutt/fhir/CommunicationRequest', (req, res) => {
@@ -217,6 +205,20 @@ function appRoutes() {
     logger.info("Received a request to cancel schedule")
     let schedules = req.body.schedules;
     let errOccured = false
+    let reqID = uuid4();
+    res.status(200).json({
+      status: 'Processing',
+      reqID: reqID
+    })
+    let statusResData = JSON.stringify({
+      id: reqID,
+      step: 1,
+      totalSteps: 1,
+      status: `Canceling Schedules`,
+      error: null,
+      percent: null,
+    });
+    redisClient.set(reqID, statusResData);
     async.each(schedules, (schedule, nxt) => {
       let schArr = schedule.split('/');
       if(schArr.length === 2) {
@@ -255,10 +257,19 @@ function appRoutes() {
       })
     }, () => {
       dataSyncUtil.cacheFHIR2ES(() => {});
+      let error = null
       if(errOccured) {
-        return res.status(500).send();
+        error = 'Some errors occured while canceling schedule'
       }
-      return res.status(200).send();
+      let statusResData = JSON.stringify({
+        id: reqID,
+        step: 1,
+        totalSteps: 1,
+        status: 'done',
+        error: error,
+        percent: null,
+      });
+      redisClient.set(reqID, statusResData);
     })
   });
 

@@ -1350,7 +1350,7 @@ module.exports = function () {
                             flowBody.urns = [];
                             flowBody.contacts = [];
                             let sendFailed = false
-                            this.sendMessage(tmpFlowBody, 'workflow', (err, res, body) => {
+                            this.sendMessage(tmpFlowBody, 'workflow', 0, (err, res, body) => {
                               let statusResData = JSON.stringify({
                                 id: reqID,
                                 totalRecords,
@@ -1391,7 +1391,7 @@ module.exports = function () {
                         }, () => {
                           if (flowBody.urns.length + flowBody.contacts.length > 0) {
                             let sendFailed = false
-                            this.sendMessage(flowBody, 'workflow', (err, res, body) => {
+                            this.sendMessage(flowBody, 'workflow', 0, (err, res, body) => {
                               processedRecords += flowBody.urns.length + flowBody.contacts.length
                               let statusResData = JSON.stringify({
                                 id: reqID,
@@ -1458,7 +1458,7 @@ module.exports = function () {
                         smsBody.urns = [];
                         smsBody.contacts = [];
                         let sendFailed = false
-                        this.sendMessage(tmpSmsBody, 'sms', (err, res, body) => {
+                        this.sendMessage(tmpSmsBody, 'sms', 0, (err, res, body) => {
                           let statusResData = JSON.stringify({
                             id: reqID,
                             totalRecords,
@@ -1497,7 +1497,7 @@ module.exports = function () {
                     }, () => {
                       if (smsBody.urns.length + smsBody.contacts.length > 0) {
                         let sendFailed = false
-                        this.sendMessage(smsBody, 'sms', (err, res, body) => {
+                        this.sendMessage(smsBody, 'sms', 0, (err, res, body) => {
                           processedRecords += smsBody.urns.length + smsBody.contacts.length
                           let statusResData = JSON.stringify({
                             id: reqID,
@@ -1580,7 +1580,7 @@ module.exports = function () {
         });
       });
     },
-    sendMessage(flowBody, type, callback) {
+    sendMessage(flowBody, type, retryCount, callback) {
       logger.info('Sending message');
       let endPoint;
       if (type === 'sms') {
@@ -1604,9 +1604,10 @@ module.exports = function () {
         json: flowBody,
       };
       request.post(options, (err, res, body) => {
-        if(res.statusCode == 500) {
+        if(res.statusCode == 500 && retryCount < 10) {
+          retryCount++
           logger.warn('Internal server error occured in rapidpro, resending message')
-          this.sendMessage(flowBody, type, (err, res, body) => {
+          this.sendMessage(flowBody, type, retryCount, (err, res, body) => {
             return callback(err, res, body);
           });
         } else {
@@ -1616,7 +1617,7 @@ module.exports = function () {
           }
           this.isThrottled(body, (wasThrottled) => {
             if (wasThrottled) {
-              this.sendMessage(flowBody, type, (err, res, body) => {
+              this.sendMessage(flowBody, type, retryCount, (err, res, body) => {
                 return callback(err, res, body);
               });
             } else {
