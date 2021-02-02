@@ -12,6 +12,7 @@ const uuid4 = require('uuid/v4');
 const isJSON = require('is-json');
 const URI = require('urijs');
 const async = require('async');
+const moment = require('moment');
 const redis = require('redis');
 const redisClient = redis.createClient({
   host: process.env.REDIS_HOST || '127.0.0.1',
@@ -36,6 +37,9 @@ if (config.get('mediator:register')) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 }
 envVars.set();
+
+//this variables tracks processed messages to avoid sending one message to a single practitioner twice
+const processedMessages = {}
 /**
  * @returns {express.app}
  */
@@ -61,13 +65,13 @@ function appRoutes() {
   app.use('/sync', dataSync);
 
   app.get('/emNutt/fhir/getProgress', (req, res) => {
-    const clientIDs = JSON.parse(req.query.clientIDs);
+    const requestIDs = JSON.parse(req.query.requestIDs);
     let progress = []
-    async.each(clientIDs, (clientId, nxt) => {
-      redisClient.get(clientId, (error, results) => {
+    async.each(requestIDs.childrenReqIDs, (requestID, nxt) => {
+      redisClient.get(requestID, (error, results) => {
         if (error) {
           logger.error(error);
-          logger.error(`An error has occured while getting progress for clientID ${clientId}`);
+          logger.error(`An error has occured while getting progress for requestID ${requestID}`);
         }
         results = JSON.parse(results);
         progress.push(results)
@@ -80,14 +84,17 @@ function appRoutes() {
 
   app.get('/emNutt/fhir/clearProgress', (req, res) => {
     res.status(200).send();
-    const clientIDs = JSON.parse(req.query.clientIDs);
-    for(let clientId of clientIDs) {
-      logger.info(`Clearing progress data for clientID ${clientId}`);
+    const requestIDs = JSON.parse(req.query.requestIDs);
+    if(requestIDs.parentReqId) {
+      delete processedMessages[requestIDs.parentReqId]
+    }
+    for(let requestID of requestIDs.childrenReqIDs) {
+      logger.info(`Clearing progress data for clientID ${requestID}`);
       let data = JSON.stringify({})
-      redisClient.set(clientId, data, (err, reply) => {
+      redisClient.set(requestID, data, (err, reply) => {
         if (err) {
           winston.error(err);
-          winston.error(`An error has occured while clearing progress data for ${type} and clientID ${clientId}`);
+          winston.error(`An error has occured while clearing progress data for ${type} and requestID ${requestID}`);
         }
       });
     }
@@ -98,6 +105,17 @@ function appRoutes() {
     resource.id = uuid4();
     if (!resource) {
       return res.status(400).send();
+    }
+    let parentReqId
+    if(resource.meta && resource.meta.tag && Array.isArray(resource.meta.tag)) {
+      for(let index in resource.meta.tag) {
+        let tag = resource.meta.tag[index]
+        if(tag.system === 'parentReqId') {
+          parentReqId = tag.code
+          resource.meta.tag.splice(index, 1)
+          break
+        }
+      }
     }
     res.status(200).json({
       status: 'Processing',
@@ -194,7 +212,13 @@ function appRoutes() {
           resource,
         }]
       };
-      rapidpro.processCommunications(commBundle, (err, status) => {
+      if(!processedMessages[parentReqId]) {
+        processedMessages[parentReqId] = {
+          startTime: moment().format(),
+          recipients: []
+        }
+      }
+      rapidpro.processCommunications(commBundle, processedMessages[parentReqId], (err, status) => {
         logger.info('Done processing communication requests');
         dataSyncUtil.cacheFHIR2ES(() => {});
       });

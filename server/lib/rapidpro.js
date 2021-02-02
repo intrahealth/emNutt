@@ -13,6 +13,7 @@ const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
 const mixin = require('./mixin');
+const winston = require('winston/lib/winston/config');
 module.exports = function () {
   return {
     /**
@@ -1018,7 +1019,7 @@ module.exports = function () {
         });
       });
     },
-    processCommunications(commReqs, callback) {
+    processCommunications(commReqs, processedRecipients, callback) {
       let reqID = ''
       let totalRecords = 0
       let processedRecords = 0
@@ -1096,6 +1097,7 @@ module.exports = function () {
             status[commReq.resource.id][msg] = {
               failed: 0,
               success: 0,
+              ignored: 0,
               descriptions: {}
             }
           }
@@ -1103,6 +1105,7 @@ module.exports = function () {
             status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')] = {
               failed: 0,
               success: 0,
+              ignored: 0,
               descriptions: {}
             }
           }
@@ -1322,6 +1325,7 @@ module.exports = function () {
                           status[commReq.resource.id][workflow] = {
                             failed: 0,
                             success: 0,
+                            ignored: 0,
                             descriptions: {}
                           }
                         }
@@ -1336,10 +1340,43 @@ module.exports = function () {
                         flowBody.contacts = [];
                         let ids = [];
                         async.eachSeries(recipients, (recipient, nxtRec) => {
+                          let ignore = false
+                          let idProcessed = processedRecipients.recipients.find((id) => {
+                            return id === recipient.id
+                          })
+                          if(idProcessed) {
+                            ignore = true
+                          } else {
+                            processedRecipients.recipients.push(recipient.id)
+                          }
                           if(recipient.contact) {
-                            flowBody.contacts.push(recipient.contact);
-                          } else if(recipient.urns) {
+                            let idProcessed = recipient.id !== recipient.contact && processedRecipients.recipients.find((id) => {
+                              return id === recipient.contact
+                            })
+                            if(idProcessed || (recipient.id === recipient.contact && ignore)) {
+                              ignore = true
+                            } else {
+                              processedRecipients.recipients.push(recipient.contact)
+                              flowBody.contacts.push(recipient.contact);
+                            }
+                          } else if(recipient.urns && !ignore) {
                             flowBody.urns.push(recipient.urns);
+                          }
+                          if(ignore) {
+                            status[commReq.resource.id][workflow].ignored++
+                            processedRecords++
+                            let statusResData = JSON.stringify({
+                              id: reqID,
+                              totalRecords,
+                              processedRecords,
+                              step: 2,
+                              totalSteps: 2,
+                              status: 'Starting workflow',
+                              error: null,
+                              sendStatus: status
+                            });
+                            redisClient.set(commReq.resource.id, statusResData);
+                            return nxtRec()
                           }
                           ids.push(recipient.entityType + '/' + recipient.id);
                           if (flowBody.urns.length + flowBody.contacts.length > 90) {
@@ -1351,17 +1388,6 @@ module.exports = function () {
                             flowBody.contacts = [];
                             let sendFailed = false
                             this.sendMessage(tmpFlowBody, 'workflow', 0, (err, res, body) => {
-                              let statusResData = JSON.stringify({
-                                id: reqID,
-                                totalRecords,
-                                processedRecords,
-                                step: 2,
-                                totalSteps: 2,
-                                status: 'Starting workflow',
-                                error: null,
-                                sendStatus: status
-                              });
-                              redisClient.set(commReq.resource.id, statusResData);
                               if (err) {
                                 logger.error('An error has occured while starting a workflow');
                                 logger.error(err);
@@ -1375,12 +1401,27 @@ module.exports = function () {
                               }
                               if (!sendFailed) {
                                 status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                              } else {
+                                status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
+                                return nxtRec()
+                              }
+                              let statusResData = JSON.stringify({
+                                id: reqID,
+                                totalRecords,
+                                processedRecords,
+                                step: 2,
+                                totalSteps: 2,
+                                status: 'Starting workflow',
+                                error: null,
+                                sendStatus: status
+                              });
+                              redisClient.set(commReq.resource.id, statusResData);
+                              if(!sendFailed) {
                                 this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (updCommReqBundle) => {
                                   commReqBundles.push(updCommReqBundle)
                                   return nxtRec()
                                 });
                               } else {
-                                status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
                                 return nxtRec()
                               }
                             });
@@ -1444,10 +1485,43 @@ module.exports = function () {
                     let ids = [];
                     let createNewReq = false;
                     async.eachSeries(recipients, (recipient, nxtRec) => {
+                      let ignore = false
+                      let idProcessed = processedRecipients.recipients.find((id) => {
+                        return id === recipient.id
+                      })
+                      if(idProcessed) {
+                        ignore = true
+                      } else {
+                        processedRecipients.recipients.push(recipient.id)
+                      }
                       if(recipient.contact) {
-                        smsBody.contacts.push(recipient.contact);
+                        let idProcessed = recipient.id !== recipient.contact && processedRecipients.recipients.find((id) => {
+                          return id === recipient.contact
+                        })
+                        if(idProcessed || (recipient.id === recipient.contact && ignore)) {
+                          ignore = true
+                        } else {
+                          processedRecipients.recipients.push(recipient.contact)
+                          smsBody.contacts.push(recipient.contact);
+                        }
                       } else if(recipient.urns) {
                         smsBody.urns.push(recipient.urns);
+                      }
+                      if(ignore) {
+                        status[commReq.resource.id][msg].ignored++
+                        processedRecords++
+                        let statusResData = JSON.stringify({
+                          id: reqID,
+                          totalRecords,
+                          processedRecords,
+                          step: 2,
+                          totalSteps: 2,
+                          status: 'Sending Message',
+                          error: null,
+                          sendStatus: status
+                        });
+                        redisClient.set(commReq.resource.id, statusResData);
+                        return nxtRec()
                       }
                       ids.push(recipient.entityType + '/' + recipient.id);
                       if (smsBody.urns.length + smsBody.contacts.length > 90) {
@@ -1459,17 +1533,6 @@ module.exports = function () {
                         smsBody.contacts = [];
                         let sendFailed = false
                         this.sendMessage(tmpSmsBody, 'sms', 0, (err, res, body) => {
-                          let statusResData = JSON.stringify({
-                            id: reqID,
-                            totalRecords,
-                            processedRecords,
-                            step: 2,
-                            totalSteps: 2,
-                            status: 'Starting workflow',
-                            error: null,
-                            sendStatus: status
-                          });
-                          redisClient.set(commReq.resource.id, statusResData);
                           if (err) {
                             logger.error(err);
                             sendFailed = true;
@@ -1481,12 +1544,26 @@ module.exports = function () {
                           }
                           if (!sendFailed) {
                             status[commReq.resource.id][tmpSmsBody.text].success = status[commReq.resource.id][tmpSmsBody.text].success + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                          } else {
+                            status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
+                          }
+                          let statusResData = JSON.stringify({
+                            id: reqID,
+                            totalRecords,
+                            processedRecords,
+                            step: 2,
+                            totalSteps: 2,
+                            status: 'Sending Message',
+                            error: null,
+                            sendStatus: status
+                          });
+                          redisClient.set(commReq.resource.id, statusResData);
+                          if(!sendFailed) {
                             this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (updCommReqBundle) => {
                               commReqBundles.push(updCommReqBundle)
                               return nxtRec()
                             });
                           } else {
-                            status[commReq.resource.id][tmpSmsBody.text].failed = status[commReq.resource.id][tmpSmsBody.text].failed + tmpSmsBody.urns.length + tmpSmsBody.contacts.length;
                             return nxtRec()
                           }
                         });
@@ -1499,17 +1576,6 @@ module.exports = function () {
                         let sendFailed = false
                         this.sendMessage(smsBody, 'sms', 0, (err, res, body) => {
                           processedRecords += smsBody.urns.length + smsBody.contacts.length
-                          let statusResData = JSON.stringify({
-                            id: reqID,
-                            totalRecords,
-                            processedRecords,
-                            step: 2,
-                            totalSteps: 2,
-                            status: 'Starting workflow',
-                            error: null,
-                            sendStatus: status
-                          });
-                          redisClient.set(commReq.resource.id, statusResData);
                           if (err) {
                             logger.error(err);
                             sendFailed = true;
@@ -1524,12 +1590,26 @@ module.exports = function () {
                           }
                           if (!sendFailed) {
                             status[commReq.resource.id][smsBody.text].success = status[commReq.resource.id][smsBody.text].success + smsBody.urns.length + smsBody.contacts.length;
+                          } else {
+                            status[commReq.resource.id][smsBody.text].failed = status[commReq.resource.id][smsBody.text].failed + smsBody.urns.length + smsBody.contacts.length;
+                          }
+                          let statusResData = JSON.stringify({
+                            id: reqID,
+                            totalRecords,
+                            processedRecords,
+                            step: 2,
+                            totalSteps: 2,
+                            status: 'Starting workflow',
+                            error: null,
+                            sendStatus: status
+                          });
+                          redisClient.set(commReq.resource.id, statusResData);
+                          if(!sendFailed) {
                             this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (updCommReqBundle) => {
                               commReqBundles.push(updCommReqBundle)
                               return callback(null);
                             });
                           } else {
-                            status[commReq.resource.id][smsBody.text].failed = status[commReq.resource.id][smsBody.text].failed + smsBody.urns.length + smsBody.contacts.length;
                             return callback(null);
                           }
                         });
