@@ -86,6 +86,7 @@ module.exports = function () {
             async.eachSeries(flowRuns, (run, nxtRun) => {
               let globalid;
               let entityType;
+              let runCommReq;
               let query = `identifier=http://app.rapidpro.io/contact-uuid|${run.contact.uuid}`;
               async.parallel({
                 definition: (callback) => {
@@ -112,6 +113,19 @@ module.exports = function () {
                   } else {
                     return callback(null)
                   }
+                },
+                commReq: (callback) => {
+                  if(!run.start) {
+                    return callback(null)
+                  }
+                  const query = `rpflowstarts=${run.start.uuid}`;
+                  macm.getResource({
+                    resource: 'CommunicationRequest',
+                    query
+                  }, (err, resourceData) => {
+                    runCommReq = resourceData
+                    return callback(null)
+                  })
                 },
                 practitioner: (callback) => {
                   macm.getResource({
@@ -163,12 +177,14 @@ module.exports = function () {
                   run.contact.globalid = globalid;
                   run.contact.mheroentitytype = entityType;
                   logger.info('Creating communication resources from flow runs');
-                  macm.createCommunicationsFromRPRuns(run, flowDefinition, (err, bundle) => {
+                  macm.createCommunicationsFromRPRuns(run, flowDefinition, runCommReq, (err, bundle) => {
                     if (err) {
                       processingError = true;
                     }
                     runBundle.entry = runBundle.entry.concat(bundle.entry)
+                    logger.error(runBundle.entry.length);
                     if(runBundle.entry.length >= 250) {
+                      logger.info('saving');
                       const tmpBundle = lodash.cloneDeep(runBundle)
                       runBundle.entry = []
                       macm.saveResource(tmpBundle, (err) => {

@@ -316,7 +316,7 @@ module.exports = function () {
       );
     },
 
-    createCommunicationsFromRPRuns(run, definition, callback) {
+    createCommunicationsFromRPRuns(run, definition, runCommReq, callback) {
       const bundle = {};
       bundle.entry = [];
       bundle.type = 'batch';
@@ -325,184 +325,176 @@ module.exports = function () {
         return callback(false, bundle)
       }
       let processingError = false;
-      const query = `rpflowstarts=${run.start.uuid}`;
-      this.getResource({
-        resource: 'CommunicationRequest',
-        query
-      }, (err, resourceData) => {
-        let commReqId
-        if (err) {
-          return callback(true, bundle);
+      let commReqId
+      if (!runCommReq || !runCommReq.entry) {
+        logger.warn('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);
+        return callback(true, bundle);
+      } else  if (runCommReq.entry.length === 0) {
+        logger.warn('No communication request found for flow run ' + run.start.uuid);
+      } else if (runCommReq.entry.length > 1) {
+        logger.warn(`Multiple CommunicationRequest resources found with flow start ${run.start.uuid}`);
+      } else {
+        commReqId = runCommReq.entry[0].resource.id;
+      }
+      // create flowRun resource first
+      const extension = [{
+        url: 'flow',
+        valueReference: {
+          reference: `Basic/${run.flow.uuid}`
         }
-        if (!resourceData.entry) {
-          logger.warn('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);
-        } else  if (resourceData.entry.length === 0) {
-          logger.warn('No communication request found for flow run ' + run.start.uuid);
-        } else if (resourceData.entry.length > 1) {
-          logger.warn(`Multiple CommunicationRequest resources found with flow start ${run.start.uuid}`);
-        } else {
-          commReqId = resourceData.entry[0].resource.id;
+      }, {
+        url: 'recipient',
+        valueReference: {
+          reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
         }
-        // create flowRun resource first
-        const extension = [{
-          url: 'flow',
+      }, {
+        url: 'responded',
+        valueBoolean: run.responded
+      }, {
+        url: 'created_on',
+        valueDateTime: run.created_on
+      }, {
+        url: 'modified_on',
+        valueDateTime: run.modified_on
+      }];
+      if(commReqId) {
+        extension.push({
+          url: 'CommunicationRequest',
           valueReference: {
-            reference: `Basic/${run.flow.uuid}`
+            reference: `${runCommReq.entry[0].resource.resourceType}/${commReqId}`
           }
-        }, {
-          url: 'recipient',
-          valueReference: {
-            reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
-          }
-        }, {
-          url: 'responded',
-          valueBoolean: run.responded
-        }, {
-          url: 'created_on',
-          valueDateTime: run.created_on
-        }, {
-          url: 'modified_on',
-          valueDateTime: run.modified_on
-        }];
-        if(commReqId) {
-          extension.push({
-            url: 'CommunicationRequest',
-            valueReference: {
-              reference: `${resourceData.entry[0].resource.resourceType}/${commReqId}`
-            }
-          })
-        }
-        if (run.exit_type) {
-          extension.push({
-            url: 'exit_type',
-            valueString: run.exit_type
-          });
-          extension.push({
-            url: 'exited_on',
-            valueDateTime: run.exited_on
-          });
-        }
-        bundle.entry.push({
-          resource: {
-            resourceType: 'Basic',
-            id: run.uuid,
-            meta: {
-              profile: [config.get("profiles:WorkflowRun")]
-            },
-            extension: [{
-              url: config.get("extensions:WorkflowRunDetails"),
-              extension
-            }]
-          },
-          request: {
-            method: 'PUT',
-            url: `Basic/${run.uuid}`
-          }
+        })
+      }
+      if (run.exit_type) {
+        extension.push({
+          url: 'exit_type',
+          valueString: run.exit_type
         });
-        for (const path of run.path) {
-          const values = Object.keys(run.values);
-          const texts = [];
-          // these are user replies
-          for (const valueKey of values) {
-            if (run.values[valueKey].node === path.node) {
-              // const id = uuid4();
-              //get question ID
-              let inResponseTo
-              for(let flowDef of definition.flows) {
-                for (const node of flowDef.nodes) {
-                  for(const exit of node.exits) {
-                    if(exit.destination_uuid === path.node && node.actions && Array.isArray(node.actions)) {
-                      for (const action of node.actions) {
-                        if (action.type === 'send_msg') {
-                          inResponseTo = uuid5(action.uuid, run.uuid);
-                        }
+        extension.push({
+          url: 'exited_on',
+          valueDateTime: run.exited_on
+        });
+      }
+      bundle.entry.push({
+        resource: {
+          resourceType: 'Basic',
+          id: run.uuid,
+          meta: {
+            profile: [config.get("profiles:WorkflowRun")]
+          },
+          extension: [{
+            url: config.get("extensions:WorkflowRunDetails"),
+            extension
+          }]
+        },
+        request: {
+          method: 'PUT',
+          url: `Basic/${run.uuid}`
+        }
+      });
+      for (const path of run.path) {
+        const values = Object.keys(run.values);
+        const texts = [];
+        // these are user replies
+        for (const valueKey of values) {
+          if (run.values[valueKey].node === path.node) {
+            // const id = uuid4();
+            //get question ID
+            let inResponseTo
+            for(let flowDef of definition.flows) {
+              for (const node of flowDef.nodes) {
+                for(const exit of node.exits) {
+                  if(exit.destination_uuid === path.node && node.actions && Array.isArray(node.actions)) {
+                    for (const action of node.actions) {
+                      if (action.type === 'send_msg') {
+                        inResponseTo = uuid5(action.uuid, run.uuid);
                       }
                     }
                   }
                 }
               }
-              const id = uuid5(path.node, run.uuid);
-              texts.push({
-                id,
-                nodeUUID: path.node,
-                type: 'reply',
-                inResponseTo,
-                time: run.values[valueKey].time,
-                msg: run.values[valueKey].input
-              });
             }
+            const id = uuid5(path.node, run.uuid);
+            texts.push({
+              id,
+              nodeUUID: path.node,
+              type: 'reply',
+              inResponseTo,
+              time: run.values[valueKey].time,
+              msg: run.values[valueKey].input
+            });
           }
-          if (texts.length === 0) {
-            // these are sent to user from the system
-            const flowDef = definition.flows[0];
-            for (const node of flowDef.nodes) {
-              if (node.uuid === path.node && node.actions && Array.isArray(node.actions)) {
-                let id;
-                for (const action of node.actions) {
-                  if (action.type === 'send_msg') {
-                    id = uuid5(action.uuid, run.uuid);
-                    texts.push({
-                      id,
-                      nodeUUID: action.uuid,
-                      type: 'sent',
-                      time: path.time,
-                      msg: action.text
-                    });
-                  }
+        }
+        if (texts.length === 0) {
+          // these are sent to user from the system
+          const flowDef = definition.flows[0];
+          for (const node of flowDef.nodes) {
+            if (node.uuid === path.node && node.actions && Array.isArray(node.actions)) {
+              let id;
+              for (const action of node.actions) {
+                if (action.type === 'send_msg') {
+                  id = uuid5(action.uuid, run.uuid);
+                  texts.push({
+                    id,
+                    nodeUUID: action.uuid,
+                    type: 'sent',
+                    time: path.time,
+                    msg: action.text
+                  });
                 }
               }
             }
           }
-          for (const text of texts) {
-            const commResource = {};
-            commResource.meta = {};
-            commResource.meta.profile = [];
-            commResource.meta.profile.push(config.get("profiles:Communication"));
-            commResource.resourceType = 'Communication';
-            commResource.id = text.id;
-            commResource.payload = [{
-              contentString: text.msg
-            }];
-            if (text.type === 'sent') {
-              commResource.sent = text.time;
-              commResource.received = text.time;
-              commResource.recipient = [{
-                reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
-              }];
-            } else if (text.type === 'reply') {
-              if(text.inResponseTo) {
-                commResource.inResponseTo = [{
-                  reference: 'Communication/' + text.inResponseTo
-                }]
-              }
-              commResource.received = text.time;
-              commResource.sent = text.time;
-              commResource.sender = {
-                reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
-              };
-            }
-
-            commResource.basedOn = `CommunicationRequest/${commReqId}`;
-            if (!commResource.extension) {
-              commResource.extension = [];
-            }
-            commResource.extension.push({
-              url: config.get("extensions:CommunicationFlowRun"),
-              valueReference: {
-                reference: `Basic/${run.uuid}`
-              }
-            });
-            bundle.entry.push({
-              resource: commResource,
-              request: {
-                method: 'PUT',
-                url: `${commResource.resourceType}/${commResource.id}`
-              }
-            });
-          }
         }
-        return callback(processingError, bundle);
-      });
+        for (const text of texts) {
+          const commResource = {};
+          commResource.meta = {};
+          commResource.meta.profile = [];
+          commResource.meta.profile.push(config.get("profiles:Communication"));
+          commResource.resourceType = 'Communication';
+          commResource.id = text.id;
+          commResource.payload = [{
+            contentString: text.msg
+          }];
+          if (text.type === 'sent') {
+            commResource.sent = text.time;
+            commResource.received = text.time;
+            commResource.recipient = [{
+              reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
+            }];
+          } else if (text.type === 'reply') {
+            if(text.inResponseTo) {
+              commResource.inResponseTo = [{
+                reference: 'Communication/' + text.inResponseTo
+              }]
+            }
+            commResource.received = text.time;
+            commResource.sent = text.time;
+            commResource.sender = {
+              reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
+            };
+          }
+
+          commResource.basedOn = `CommunicationRequest/${commReqId}`;
+          if (!commResource.extension) {
+            commResource.extension = [];
+          }
+          commResource.extension.push({
+            url: config.get("extensions:CommunicationFlowRun"),
+            valueReference: {
+              reference: `Basic/${run.uuid}`
+            }
+          });
+          bundle.entry.push({
+            resource: commResource,
+            request: {
+              method: 'PUT',
+              url: `${commResource.resourceType}/${commResource.id}`
+            }
+          });
+        }
+      }
+      return callback(processingError, bundle);
     }
   };
 };

@@ -41,8 +41,7 @@ async function flowResultsToQuestionnaire(callback) {
         'page[size]': '500' // Adjust page size for memory consumption, up to the limits of server. Larger page sizes will be faster but consume more memory in the converter.
       };
       let questionnaireResponses;
-      await fhirQuestionnaireResponsesFromFlowResultsResponseSet(frPackage,
-        client.getResponsesFromPackage(frPackage, options),  qtnRespnses => {
+      await fhirQuestionnaireResponsesFromFlowResultsResponseSet(frPackage, client.getResponsesFromPackage(frPackage, options),  qtnRespnses => {
           questionnaireResponses = qtnRespnses;
         }
       ).catch((e) => {
