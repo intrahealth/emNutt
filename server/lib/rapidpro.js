@@ -91,7 +91,9 @@ module.exports = function () {
               async.parallel({
                 definition: (callback) => {
                   flowDefinition = flowDefinitions.find((flowDef) => {
-                    return flowDef.flows[0].uuid === run.flow.uuid
+                    return flowDef.flows.find((flow) => {
+                      return flow.uuid === run.flow.uuid
+                    })
                   })
                   if(!flowDefinition) {
                     const flowQuery = [{
@@ -1899,65 +1901,72 @@ module.exports = function () {
             },
           };
           request.get(options, (err, res, body) => {
+            let retrying = false
             if (err) {
-              logger.error('Error occured ' + err);
-              logger.error(res.statusCode);
-              return callback(err);
+              retrying = true
+              logger.error('Error occured with status code ' + err + '. retrying this request');
+              setTimeout(() => {
+                return callback(err, url);
+              }, 2000);
             }
             try {
               JSON.parse(body)
             } catch (error) {
+              retrying = true
               logger.error(url);
-              logger.error(error)
-              url = false
-              return callback(null, url)
+              logger.error(error + '. retrying this request')
+              setTimeout(() => {
+                return callback(null, url)
+              }, 2000);
             }
-            this.isThrottled(JSON.parse(body), (wasThrottled) => {
-              if (wasThrottled) {
-                // reprocess this contact
-                this.getEndPointData({
-                    queries,
-                    url,
-                    endPoint,
-                    hasResultsKey,
-                    getAll
-                  },
-                  (err, data, nxtURL) => {
-                    url = false
-                    nextURL = nxtURL
-                    if (Array.isArray(data)) {
-                      endPointData = endPointData.concat(data);
+            if(!retrying) {
+              this.isThrottled(JSON.parse(body), (wasThrottled) => {
+                if (wasThrottled) {
+                  // reprocess this contact
+                  this.getEndPointData({
+                      queries,
+                      url,
+                      endPoint,
+                      hasResultsKey,
+                      getAll
+                    },
+                    (err, data, nxtURL) => {
+                      url = false
+                      nextURL = nxtURL
+                      if (Array.isArray(data)) {
+                        endPointData = endPointData.concat(data);
+                      }
+                      if (err) {
+                        return callback(err, url);
+                      }
+                      return callback(null, url);
                     }
-                    if (err) {
-                      return callback(err);
-                    }
-                    return callback(null);
+                  );
+                } else {
+                  body = JSON.parse(body);
+                  if (hasResultsKey && !Object.prototype.hasOwnProperty.call(body, 'results')) {
+                    logger.error(JSON.stringify(body));
+                    logger.error(`An error occured while fetching end point data ${endPoint} from rapidpro`);
+                    return callback(true, url);
                   }
-                );
-              } else {
-                body = JSON.parse(body);
-                if (hasResultsKey && !Object.prototype.hasOwnProperty.call(body, 'results')) {
-                  logger.error(JSON.stringify(body));
-                  logger.error(`An error occured while fetching end point data ${endPoint} from rapidpro`);
-                  return callback(true);
+                  if (body.next) {
+                    url = body.next;
+                  } else {
+                    url = false;
+                  }
+                  if(!getAll) {
+                    nextURL = url
+                    url = false
+                  }
+                  if (hasResultsKey) {
+                    endPointData = endPointData.concat(body.results);
+                  } else {
+                    endPointData.push(body);
+                  }
+                  return callback(null, url);
                 }
-                if (body.next) {
-                  url = body.next;
-                } else {
-                  url = false;
-                }
-                if(!getAll) {
-                  nextURL = url
-                  url = false
-                }
-                if (hasResultsKey) {
-                  endPointData = endPointData.concat(body.results);
-                } else {
-                  endPointData.push(body);
-                }
-                return callback(null, url);
-              }
-            });
+              });
+            }
           });
         }, (err) => {
           logger.info(`Done Getting data for end point ${endPoint} from server ${config.get('rapidpro:baseURL')}`);
