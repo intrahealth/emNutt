@@ -401,14 +401,12 @@ module.exports = function () {
             // const id = uuid4();
             //get question ID
             let inResponseTo
-            for(let flowDef of definition.flows) {
-              for (const node of flowDef.nodes) {
-                for(const exit of node.exits) {
-                  if(exit.destination_uuid === path.node && node.actions && Array.isArray(node.actions)) {
-                    for (const action of node.actions) {
-                      if (action.type === 'send_msg') {
-                        inResponseTo = uuid5(action.uuid, run.uuid);
-                      }
+            for (const node of definition.nodes) {
+              for(const exit of node.exits) {
+                if(exit.destination_uuid === path.node && node.actions && Array.isArray(node.actions)) {
+                  for (const action of node.actions) {
+                    if (action.type === 'send_msg') {
+                      inResponseTo = uuid5(action.uuid, run.uuid);
                     }
                   }
                 }
@@ -427,8 +425,7 @@ module.exports = function () {
         }
         if (texts.length === 0) {
           // these are sent to user from the system
-          const flowDef = definition.flows[0];
-          for (const node of flowDef.nodes) {
+          for (const node of definition.nodes) {
             if (node.uuid === path.node && node.actions && Array.isArray(node.actions)) {
               let id;
               for (const action of node.actions) {
@@ -475,7 +472,9 @@ module.exports = function () {
             };
           }
 
-          commResource.basedOn = `CommunicationRequest/${commReqId}`;
+          if(commReqId) {
+            commResource.basedOn = `CommunicationRequest/${commReqId}`;
+          }
           if (!commResource.extension) {
             commResource.extension = [];
           }

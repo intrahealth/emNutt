@@ -90,12 +90,18 @@ module.exports = function () {
               let query = `identifier=http://app.rapidpro.io/contact-uuid|${run.contact.uuid}`;
               async.parallel({
                 definition: (callback) => {
-                  flowDefinition = flowDefinitions.find((flowDef) => {
-                    return flowDef.flows.find((flow) => {
-                      return flow.uuid === run.flow.uuid
-                    })
-                  })
-                  if(!flowDefinition) {
+                  for(let defs of flowDefinitions) {
+                    for(let flow of defs.flows) {
+                      if(flow.uuid === run.flow.uuid) {
+                        flowDefinition = flow
+                        break
+                      }
+                    }
+                    if(flowDefinition) {
+                      break
+                    }
+                  }
+                  if(Object.keys(flowDefinition).length === 0) {
                     const flowQuery = [{
                       name: 'flow',
                       value: run.flow.uuid,
@@ -108,8 +114,18 @@ module.exports = function () {
                       if (err) {
                         processingError = true;
                       }
-                      flowDefinition = definitions[0]
-                      flowDefinitions.push(flowDefinition)
+                      flowDefinitions = flowDefinitions.concat(definitions)
+                      for(let defs of flowDefinitions) {
+                        for(let flow of defs.flows) {
+                          if(flow.uuid === run.flow.uuid) {
+                            flowDefinition = flow
+                            break
+                          }
+                        }
+                        if(flowDefinition) {
+                          break
+                        }
+                      }
                       return callback(null)
                     });
                   } else {
