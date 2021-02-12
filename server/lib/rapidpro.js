@@ -199,7 +199,6 @@ module.exports = function () {
                       processingError = true;
                     }
                     runBundle.entry = runBundle.entry.concat(bundle.entry)
-                    logger.error(runBundle.entry.length);
                     if(runBundle.entry.length >= 250) {
                       const tmpBundle = lodash.cloneDeep(runBundle)
                       runBundle.entry = []
