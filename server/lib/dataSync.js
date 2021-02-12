@@ -9,8 +9,19 @@ const mixin = require('./mixin');
 const floip = require('./floip');
 const rapidpro = require('./rapidpro')();
 const macm = require('./macm')();
-
+const syncStatus = {
+  syncWorkflows: 'not_running',
+  syncContacts: 'not_running',
+  syncContactsGroups: 'not_running',
+  syncWorkflowRunMessages: 'not_running',
+  syncFloipFlowResults: 'not_running',
+  cacheFHIR2ES: 'not_running'
+}
 function syncWorkflows (callback) {
+  if(syncStatus.syncWorkflows === 'running') {
+    return callback()
+  }
+  syncStatus.syncWorkflows = 'running'
   let enabledChannels = config.get("enabledCommChannels");
   let processingError = false;
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
@@ -28,6 +39,7 @@ function syncWorkflows (callback) {
       });
     }
   }, () => {
+    syncStatus.syncWorkflows = 'not_running'
     if (!processingError) {
       mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], newRunsLastSync, () => {});
     }
@@ -36,6 +48,10 @@ function syncWorkflows (callback) {
 }
 
 function syncContacts(callback) {
+  if(syncStatus.syncContacts === 'running') {
+    return callback()
+  }
+  syncStatus.syncContacts = 'running'
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   let runsLastSync = config.get('lastSync:syncContacts:time');
   const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
@@ -99,6 +115,7 @@ function syncContacts(callback) {
         });
       }
     }, () => {
+      syncStatus.syncContacts = 'not_running'
       if(!processingError) {
         mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], newRunsLastSync, () => {});
         cacheFHIR2ES(() => {});
@@ -112,6 +129,10 @@ function syncContacts(callback) {
 }
 
 function syncContactsGroups(callback) {
+  if(syncStatus.syncContactsGroups === 'running') {
+    return callback()
+  }
+  syncStatus.syncContactsGroups = 'running'
   let enabledChannels = config.get("enabledCommChannels");
   let processingError = false;
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
@@ -139,6 +160,7 @@ function syncContactsGroups(callback) {
       }
     }
   }, () => {
+    syncStatus.syncContactsGroups = 'not_running'
     if (!processingError) {
       mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], newRunsLastSync, () => {});
     }
@@ -147,6 +169,10 @@ function syncContactsGroups(callback) {
 }
 
 function syncWorkflowRunMessages(callback) {
+  if(syncStatus.syncWorkflowRunMessages === 'running') {
+    return callback()
+  }
+  syncStatus.syncWorkflowRunMessages = 'running'
   let enabledChannels = config.get("enabledCommChannels");
   let processingError = false;
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
@@ -164,6 +190,7 @@ function syncWorkflowRunMessages(callback) {
       });
     }
   }, () => {
+    syncStatus.syncWorkflowRunMessages = 'not_running'
     if (!processingError) {
       mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], newRunsLastSync, () => {});
     }
@@ -172,8 +199,13 @@ function syncWorkflowRunMessages(callback) {
 }
 
 function syncFloipFlowResults(callback) {
+  if(syncStatus.syncFloipFlowResults === 'running') {
+    return callback()
+  }
+  syncStatus.syncFloipFlowResults = 'running'
   let newRunsLastSync = moment().format('Y-MM-DD HH:mm:ss');
   floip.flowResultsToQuestionnaire((err) => {
+    syncStatus.syncFloipFlowResults = 'not_running'
     logger.info("Done Synchronizing flow results from FLOIP server");
     if(!err) {
       mixin.updateConfigFile(['lastSync', 'syncFloipFlowResults', 'time'], newRunsLastSync, () => {});
@@ -203,6 +235,10 @@ function checkCommunicationRequest(callback) {
 }
 
 function cacheFHIR2ES(callback) {
+  if(syncStatus.cacheFHIR2ES === 'running') {
+    return callback()
+  }
+  syncStatus.cacheFHIR2ES = 'running'
   let caching = new CacheFhirToES({
     ESBaseURL: config.get('elastic:baseURL'),
     ESUsername: config.get('elastic:username'),
@@ -214,6 +250,7 @@ function cacheFHIR2ES(callback) {
     FHIRPassword: config.get('macm:password'),
   });
   caching.cache().then(() => {
+    syncStatus.cacheFHIR2ES = 'not_running'
     return callback();
   });
 }

@@ -13,7 +13,6 @@ const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
 const mixin = require('./mixin');
-const winston = require('winston/lib/winston/config');
 module.exports = function () {
   return {
     /**
@@ -202,18 +201,18 @@ module.exports = function () {
                     runBundle.entry = runBundle.entry.concat(bundle.entry)
                     logger.error(runBundle.entry.length);
                     if(runBundle.entry.length >= 250) {
-                      logger.info('saving');
                       const tmpBundle = lodash.cloneDeep(runBundle)
                       runBundle.entry = []
                       macm.saveResource(tmpBundle, (err) => {
                         if (err) {
                           processingError = true;
                         }
-                        return nxtRun();
+                        // return nxtRun();
                       })
                     } else {
-                      return nxtRun();
+                      // return nxtRun();
                     }
+                    return nxtRun();
                   });
                 } else {
                   return nxtRun();
