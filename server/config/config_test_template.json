@@ -70,35 +70,46 @@
     "broadcastID": "f786a975-32b3-46cb-a4e6-91186aad9cf5"
   },
   "eidsr": {
+    "onlyProvidersCanReport": true,
+    "followUpFlow": "ced1dff5-5377-4eae-899f-3a92bba8defe",
     "orderedFields": [
       "diseaseCode",
       "gender",
       "age",
       "specimenCollected"
     ],
+    "orgHierarchyLevels": {
+      "county": 2,
+      "district": 3
+    },
     "notifications": {
       "groups": [
-        "a7bd90f4-475f-4f64-98b3-f5fe21434694",
-        "462443c1-8600-431b-81e2-e7d2b434bbec"
+        "6474643d-3a39-4fa5-b61d-2998a295282e",
+        "06f35bfc-180d-4aa2-9feb-eddbbef51fd6"
+      ],
+      "individuals": [
+        "96383df0-6b5c-33ea-96b9-e01e6b60ab2d",
+        "46110f28-fd3c-3ff0-b4f8-23d229c126bd",
+        "03718de2-c6f6-3955-8f98-cc2892a23af7"
       ],
       "designation": [
         {
           "name": "District Surveillance Officer",
           "geographicalLocationLimit": true,
-          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} With IDSRID {{caseID}} By {{reporterName}} ({{reporterPhone}}). Please call or visit health facility to verify"
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facility}}, {{district}}, {{county}} With IDSRID {{caseID}} By {{reporterName}} ({{reporterPhone}}). Please call or visit health facility to verify"
         },
         {
           "name": "County Surveillance Officer",
           "geographicalLocationLimit": true,
-          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}}).  Please verify with DSO"
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facility}}, {{district}}, {{county}} By {{reporterName}} ({{reporterPhone}}).  Please verify with DSO"
         },
         {
           "name": "County Diagnostic Officer",
           "geographicalLocationLimit": true,
-          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}})"
+          "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facility}}, {{district}}, {{county}} By {{reporterName}} ({{reporterPhone}})"
         }
       ],
-      "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facilityName}}, {{districtName}}, {{countyName}} By {{reporterName}} ({{reporterPhone}})"
+      "msg": "A suspected case of {{diseaseName}} Has been Reported From {{facility}}, {{district}}, {{county}} By {{reporterName}} ({{reporterPhone}})"
     }
   },
   "communicationChannels": [
@@ -113,31 +124,31 @@
   "lastSync": {
     "syncWorkflows": {
       "time": "1970-11-30T10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "syncContacts": {
       "time": "1970-11-30T10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "syncContactsGroups": {
       "time": "1970-11-30T10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "syncWorkflowRunMessages": {
       "time": "1970-11-30T10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "syncFloipFlowResults": {
       "time": "1970-11-30 10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "checkCommunicationRequest": {
       "time": "1970-02-27T14:14:39",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "fhir2esSync": {
       "time": "1970-02-27T14:14:39",
-      "cronTime": "*/20 * * * *"
+      "cronTime": "*/5 * * * *"
     }
   }
 }

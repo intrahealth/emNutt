@@ -3,10 +3,31 @@ Parent:         Patient
 Id:             mhero-eidsr-patient
 Title:          "mHero eIDSR Patient Profile"
 Description:    "mHero eIDSR profile for Patient."
-* identifier MS
+* identifier 0..* MS
+* identifier ^label = "Identifier"
+* identifier.use MS
+* identifier.use ^label = "Use"
+* identifier.type MS
+* identifier.type ^label = "Type"
+* identifier.type.coding MS
+* identifier.type.coding ^label = "Type"
+* identifier.system MS
+* identifier.system ^label = "System"
+* identifier.value MS
+* identifier.value ^label = "Value"
 * active MS
-* name MS
+* name 0..* MS
+* name ^label = "Name"
+* name.use MS
+* name.use ^label = "Use"
+* name.family MS
+* name.given MS
+* name.prefix MS
+* name.suffix MS
 * telecom MS
+* telecom.system MS
+* telecom.use MS
+* telecom.value MS
 * gender MS
 * birthDate MS
 * deceasedBoolean MS

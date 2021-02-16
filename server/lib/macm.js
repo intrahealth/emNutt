@@ -9,6 +9,46 @@ const logger = require('./winston');
 const config = require('./config');
 module.exports = function () {
   return {
+    populateDataByProfile ({
+      profileDefinition,
+      extensionDefinition,
+      field,
+      fieldValue
+    }, callback) {
+      let dataValues = {};
+      let extType;
+      for (let element of extensionDefinition.differential.element) {
+        if (element.id === "Extension.extension:" + field + ".value[x]") {
+          extType = element.type[0].code.toLowerCase();
+          extType = extType.charAt(0).toUpperCase() + extType.slice(1);
+        }
+      }
+      if (extType) {
+        dataValues.url = field;
+        if (extType === 'Boolean') {
+          if (fieldValue != 'false' && fieldValue != 'true') {
+            fieldValue = fieldValue.toLowerCase();
+            if (fieldValue.startsWith('y')) {
+              dataValues['value' + extType] = true;
+            } else if (fieldValue.startsWith('n')) {
+              dataValues['value' + extType] = false;
+            }
+          } else {
+            dataValues['value' + extType] = fieldValue;
+          }
+        } else {
+          dataValues['value' + extType] = fieldValue;
+        }
+      } else {
+        for(let element of profileDefinition.differential.element) {
+          if(element.id === `${profileDefinition.type}.${field}`) {
+            dataValues[field] = fieldValue
+          }
+        }
+      }
+      return callback(dataValues)
+    },
+
     rpFlowsToFHIR(flows, callback) {
       if (!Array.isArray(flows)) {
         logger.error('Flows isnt an array');
