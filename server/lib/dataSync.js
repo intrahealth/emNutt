@@ -224,7 +224,13 @@ function checkCommunicationRequest(callback) {
     if (err) {
       processingError = true;
     }
-    rapidpro.processCommunications(commReqs, (err) => {
+    let processedRecipients = {
+      recipients: []
+    }
+    rapidpro.processCommunications({
+      commReqs: commReqs,
+      processedRecipients: processedRecipients
+    }, (err) => {
       if (err) {
         processingError = true;
       }

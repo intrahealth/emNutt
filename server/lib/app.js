@@ -13,6 +13,7 @@ const isJSON = require('is-json');
 const URI = require('urijs');
 const async = require('async');
 const moment = require('moment');
+const lodash = require('lodash');
 const redis = require('redis');
 const redisClient = redis.createClient({
   host: process.env.REDIS_HOST || '127.0.0.1',
@@ -29,7 +30,6 @@ const dataSyncUtil = require('./dataSync');
 const macm = require('./macm')();
 const prerequisites = require('./prerequisites');
 const mixin = require('./mixin');
-const winston = require('winston');
 
 const env = process.env.NODE_ENV || 'development';
 const mediatorConfig = require(`${__dirname}/../config/mediator_${env}`);
@@ -93,35 +93,35 @@ function appRoutes() {
       let data = JSON.stringify({})
       redisClient.set(requestID, data, (err, reply) => {
         if (err) {
-          winston.error(err);
-          winston.error(`An error has occured while clearing progress data for ${type} and requestID ${requestID}`);
+          logger.error(err);
+          logger.error(`An error has occured while clearing progress data for ${type} and requestID ${requestID}`);
         }
       });
     }
   });
 
   app.post('/emNutt/fhir/CommunicationRequest', (req, res) => {
-    let resource = req.body;
-    resource.id = uuid4();
-    if (!resource) {
+    let parentResource = req.body;
+    parentResource.id = uuid4();
+    if (!parentResource) {
       return res.status(400).send();
     }
     let parentReqId
-    if(resource.meta && resource.meta.tag && Array.isArray(resource.meta.tag)) {
-      for(let index in resource.meta.tag) {
-        let tag = resource.meta.tag[index]
+    if(parentResource.meta && parentResource.meta.tag && Array.isArray(parentResource.meta.tag)) {
+      for(let index in parentResource.meta.tag) {
+        let tag = parentResource.meta.tag[index]
         if(tag.system === 'parentReqId') {
           parentReqId = tag.code
-          resource.meta.tag.splice(index, 1)
+          parentResource.meta.tag.splice(index, 1)
           break
         }
       }
     }
     res.status(200).json({
       status: 'Processing',
-      reqID: resource.id
+      reqID: parentResource.id
     })
-    let schedule = resource.extension && resource.extension.find((ext) => {
+    let schedule = parentResource.extension && parentResource.extension.find((ext) => {
       return ext.url === config.get("extensions:CommReqSchedule");
     });
     let cronExpression;
@@ -136,80 +136,156 @@ function appRoutes() {
     if(cronExpression) {
       let cronExpressionParsed = cronstrue.toString(cronExpression);
       logger.info('Scheduling to send this message with cron expression ' + cronExpressionParsed);
-      resource.status = 'on-hold';
+      parentResource.status = 'on-hold';
       let schedTask = cron.schedule(cronExpression, () => {
-        logger.info('Processing scheduled communication request with id ' + resource.id);
-        rapidpro.processSchedCommReq(resource.id, (err) => {
+        logger.info('Processing scheduled communication request with id ' + parentResource.id);
+        rapidpro.processSchedCommReq(parentResource.id, (err) => {
           if(err) {
-            logger.error('An error occured while processing scheduled communication request with id ' + resource.id);
+            logger.error('An error occured while processing scheduled communication request with id ' + parentResource.id);
           } else {
-            logger.info(`Scheduled communication request with id ${resource.id} processed successfully`);
+            logger.info(`Scheduled communication request with id ${parentResource.id} processed successfully`);
           }
         });
       });
-      cronjobs.scheduledCommReqs[resource.id] = schedTask;
-      for(let index in resource.extension) {
-        let ext = resource.extension[index];
+      cronjobs.scheduledCommReqs[parentResource.id] = schedTask;
+      for(let index in parentResource.extension) {
+        let ext = parentResource.extension[index];
         if(ext.url === config.get("extensions:CommReqSchedule")) {
           let isParsed = ext.extension.find((sched) => {
             return sched.url === "cronExpressionParsed";
           });
           if(!isParsed) {
-            resource.extension[index].extension.push({
+            parentResource.extension[index].extension.push({
               url: "cronExpressionParsed",
               valueString: cronExpressionParsed
             });
           }
         }
       }
-      let bundle = {
-        resourceType: 'Bundle',
-        type: 'batch',
-        entry: [{
-          resource,
-          request: {
-            method: 'PUT',
-            url: `${resource.resourceType}/${resource.id}`,
-          },
-        }],
-      };
+
       let commType
-      if(resource.payload.contentReference && resource.payload.contentReference.reference) {
+      if(parentResource.payload.contentReference && parentResource.payload.contentReference.reference) {
         commType = 'Workflow'
       } else {
         commType = 'Message'
       }
       let statusResData = JSON.stringify({
-        id: resource.id,
+        id: parentResource.id,
         step: 1,
         totalSteps: 1,
         status: `Saving Scheduled ${commType} To Run ${cronExpressionParsed}`,
         error: null,
         percent: null,
       });
-      redisClient.set(resource.id, statusResData);
-      macm.saveResource(bundle, (err) => {
-        let statusResData = JSON.stringify({
-          id: resource.id,
-          step: 1,
-          totalSteps: 1,
-          status: 'done',
-          error: null,
-          percent: null,
+      redisClient.set(parentResource.id, statusResData);
+
+      if(parentResource.recipient.length > 300) {
+        let processingError = false
+        let recipients = lodash.cloneDeep(parentResource.recipient)
+        delete parentResource.recipient
+        let bundle = {
+          resourceType: 'Bundle',
+          type: 'batch',
+          entry: [{
+            resource: parentResource,
+            request: {
+              method: 'PUT',
+              url: `${parentResource.resourceType}/${parentResource.id}`,
+            },
+          }],
+        };
+        macm.saveResource(bundle, (err) => {
+          if(err) {
+            processingError = true
+          }
+
+          let resourceTemplate = {
+            resourceType: 'CommunicationRequest',
+            recipient: [],
+            status: 'unknown'
+          }
+          // delete resourceTemplate.status
+
+          let promises = []
+          for(let index in recipients) {
+            let recipient = recipients[index]
+            promises.push(new Promise((resolve) => {
+              resourceTemplate.recipient.push(recipient)
+              if(resourceTemplate.recipient.length >= 300 || index == recipients.length - 1) {
+                let tmpResource = lodash.cloneDeep(resourceTemplate)
+                tmpResource.id = uuid4();
+                tmpResource.basedOn = [{
+                  reference: `CommunicationRequest/${parentResource.id}`
+                }]
+                resourceTemplate.recipient = []
+                let bundle = {
+                  resourceType: 'Bundle',
+                  type: 'batch',
+                  entry: [{
+                    resource: tmpResource,
+                    request: {
+                      method: 'PUT',
+                      url: `${tmpResource.resourceType}/${tmpResource.id}`,
+                    },
+                  }],
+                };
+                macm.saveResource(bundle, (err) => {
+                  if(err) {
+                    processingError = true
+                  }
+                  return resolve()
+                });
+              } else {
+                return resolve()
+              }
+            }))
+          }
+
+          Promise.all(promises).then(() => {
+            let statusResData = JSON.stringify({
+              id: parentResource.id,
+              step: 1,
+              totalSteps: 1,
+              status: 'done',
+              error: null,
+              percent: null,
+            });
+            redisClient.set(parentResource.id, statusResData);
+            dataSyncUtil.cacheFHIR2ES(() => {});
+            logger.info('Done processing scheduled communication request');
+          })
         });
-        redisClient.set(resource.id, statusResData);
-        dataSyncUtil.cacheFHIR2ES(() => {});
-        if (err) {
-          return res.status(500).send();
-        }
-        logger.info('Done processing scheduled communication request');
-        res.status(200).send();
-      });
+      } else {
+        let bundle = {
+          resourceType: 'Bundle',
+          type: 'batch',
+          entry: [{
+            resource: parentResource,
+            request: {
+              method: 'PUT',
+              url: `${parentResource.resourceType}/${parentResource.id}`,
+            },
+          }],
+        };
+        macm.saveResource(bundle, (err) => {
+          let statusResData = JSON.stringify({
+            id: parentResource.id,
+            step: 1,
+            totalSteps: 1,
+            status: 'done',
+            error: null,
+            percent: null,
+          });
+          redisClient.set(parentResource.id, statusResData);
+          dataSyncUtil.cacheFHIR2ES(() => {});
+          logger.info('Done processing scheduled communication request');
+        });
+      }
     } else {
       logger.info('Sending message now');
       let commBundle = {
         entry: [{
-          resource,
+          resource: parentResource,
         }]
       };
       if(!processedMessages[parentReqId]) {
@@ -218,7 +294,10 @@ function appRoutes() {
           recipients: []
         }
       }
-      rapidpro.processCommunications(commBundle, processedMessages[parentReqId], (err, status) => {
+      rapidpro.processCommunications({
+        commReqs: commBundle,
+        processedRecipients: processedMessages[parentReqId]
+      }, (err, status) => {
         logger.info('Done processing communication requests');
         dataSyncUtil.cacheFHIR2ES(() => {});
       });

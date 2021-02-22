@@ -1017,41 +1017,83 @@ module.exports = function () {
       });
     },
     processSchedCommReq(id, callback) {
-      macm.getResource({resource: 'CommunicationRequest', id}, (err, commReq) => {
-        if(err) {
-          logger.error(err);
-          return callback(err);
+      let parentCommRequest
+      let childrenCommReqs
+      async.parallel({
+        parentCommReq: (callback) => {
+          macm.getResource({resource: 'CommunicationRequest', id}, (err, commReq) => {
+            if(err) {
+              logger.error(err);
+              return callback(null)
+            }
+            parentCommRequest = commReq
+            return callback(null)
+          })
+        },
+        childrenCommReq: (callback) => {
+          macm.getResource({
+            resource: 'CommunicationRequest',
+            query: `based-on=${id}&status=unknown`
+          }, (err, commReq) => {
+            if(err) {
+              logger.error(err);
+              return callback(null)
+            }
+            childrenCommReqs = commReq
+            return callback(null)
+          })
         }
-        for(let index in commReq.extension) {
-          let ext = commReq.extension[index];
+      }, () => {
+        if(!parentCommRequest) {
+          return callback();
+        }
+        if(!parentCommRequest.recipient) {
+          parentCommRequest.recipient = []
+        }
+        for(let entry of childrenCommReqs.entry) {
+          if(entry.resource.recipient && entry.resource.recipient.length) {
+            parentCommRequest.recipient = parentCommRequest.recipient.concat(entry.resource.recipient)
+          }
+        }
+        for(let index in parentCommRequest.extension) {
+          let ext = parentCommRequest.extension[index];
           if(ext.url === config.get("extensions:CommReqSchedule")) {
-            delete commReq.extension[index];
+            parentCommRequest.extension.splice(index, 1)
+            break
           }
         }
-        for(let index in commReq.extension) {
-          let ext = commReq.extension[index];
+        for(let index in parentCommRequest.extension) {
+          let ext = parentCommRequest.extension[index];
           if(ext.url === config.get("extensions:CommReqFlowStarts") || ext.url === config.get("extensions:CommReqBroadcastStarts")) {
-            delete commReq.extension[index];
+            parentCommRequest.extension.splice(index, 1)
+            break
           }
         }
-        commReq.basedOn = [{
-          reference: `CommunicationRequest/${commReq.id}`
+        logger.error('total Comm Req ' + parentCommRequest.recipient.length + ' id ' + parentCommRequest.id);
+        parentCommRequest.basedOn = [{
+          reference: `CommunicationRequest/${parentCommRequest.id}`
         }];
         let commBundle = {
           entry: [{
-            resource: commReq,
+            resource: parentCommRequest,
           }]
         };
-        this.processCommunications(commBundle, (err) => {
+        let processedRecipients = {
+          recipients: []
+        }
+        this.processCommunications({
+          commReqs: commBundle,
+          processedRecipients: processedRecipients
+        }, (err) => {
           if (err) {
             return callback(true);
           }
           logger.info('Done processing scheduled communication request');
           return callback(false);
         });
-      });
+      })
     },
-    processCommunications(commReqs, processedRecipients, callback) {
+    processCommunications({commReqs, processedRecipients}, callback) {
       let reqID = ''
       let totalRecords = 0
       let processedRecords = 0
@@ -1235,6 +1277,11 @@ module.exports = function () {
                       if(!resource) {
                         processingError = true;
                         logger.error(`Reference ${recipient.reference} was not found on the server`);
+                        if(workflows.length > 0) {
+                          status[commReq.resource.id][workflows.join('and').replace(/Basic\//gi, '')].failed++
+                        } else {
+                          status[commReq.resource.id][msg].failed++
+                        }
                       }
                     }
                     if (resource) {
@@ -1718,10 +1765,16 @@ module.exports = function () {
       request.post(options, (err, res, body) => {
         if(res.statusCode == 500 && retryCount < 10) {
           retryCount++
+          let timeout = 0
+          if(retryCount > 7) {
+            timeout = 10000
+          }
           logger.warn('Internal server error occured in rapidpro, resending message')
-          this.sendMessage(flowBody, type, retryCount, (err, res, body) => {
-            return callback(err, res, body);
-          });
+          setTimeout(() => {
+            this.sendMessage(flowBody, type, retryCount, (err, res, body) => {
+              return callback(err, res, body);
+            });
+          }, timeout);
         } else {
           if (err) {
             logger.error(err);
