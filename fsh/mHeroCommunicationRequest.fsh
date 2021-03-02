@@ -33,24 +33,30 @@ Id:             mhero-comm-req-flow-starts
 Title:          "mHero Communication Request Flow Starts Extension"
 Description:    "Flow starts details of a communication request."
 * extension contains
-      flow_starts_uuid  1..1 MS and
-      contact_globalid  1..* MS and
-      created_on        1..1 MS and
-      modified_on       1..1 MS and
-      flow_uuid         1..1 MS and
-      status            1..1 MS
-* extension[contact_globalid].value[x] only string
-* extension[contact_globalid].valueString 1..1
+      flow_starts_uuid     1..1 MS and
+      created_on           1..1 MS and
+      modified_on          1..1 MS and
+      status               1..1 MS and
+      responded            1..1 MS and
+      exit_type            1..1 MS and
+      exited_on            1..1 MS and
+      rapidpro_contact_id  1..1 MS
 * extension[created_on].value[x] only dateTime
 * extension[created_on].valueDateTime 1..1
 * extension[modified_on].value[x] only dateTime
 * extension[modified_on].valueDateTime 1..1
-* extension[flow_uuid].value[x] only string
-* extension[flow_uuid].valueString 1..1
 * extension[status].value[x] only string
 * extension[status].valueString 1..1
 * extension[flow_starts_uuid].value[x] only string
 * extension[flow_starts_uuid].valueString 1..1
+* extension[responded].value[x] only string
+* extension[responded].valueString 0..1
+* extension[exit_type].value[x] only string
+* extension[exit_type].valueString 0..1
+* extension[exited_on].value[x] only dateTime
+* extension[exited_on].valueDateTime 0..1
+* extension[rapidpro_contact_id].value[x] only string
+* extension[rapidpro_contact_id].valueString 0..1
 
 Extension:      MheroCommReqBroadcastStarts
 Id:             mhero-comm-req-broadcast-starts
@@ -58,12 +64,9 @@ Title:          "mHero Communication Request Broadcast Starts Extension"
 Description:    "Flow starts details of a communication request."
 * extension contains
       broadcast_id      1..1 MS and
-      contact_globalid  1..* MS and
       created_on        1..1 MS
 * extension[broadcast_id].value[x] only string
 * extension[broadcast_id].valueString 1..1
-* extension[contact_globalid].value[x] only string
-* extension[contact_globalid].valueString 1..1
 * extension[created_on].value[x] only dateTime
 * extension[created_on].valueDateTime 1..1
 
@@ -79,11 +82,12 @@ Usage:          #example
 * extension[MheroCommReqRecurrance].extension[cronExpressionParsed].valueString = "At 02:06 PM, on day 05 of the month, only in September"
 * extension[commReqFlowStarts].extension[flow_starts_uuid].valueString = "8d5d23b0-2e67-4bac-af8d-15585bd863d5"
 * extension[commReqFlowStarts].extension[status].valueString = "pending"
-* extension[commReqFlowStarts].extension[flow_uuid].valueString = "b7a4770c-d034-4055-9f21-b17632ef311e"
 * extension[commReqFlowStarts].extension[modified_on].valueDateTime = "2020-03-10T14:17:47.817290Z"
 * extension[commReqFlowStarts].extension[created_on].valueDateTime = "2020-03-10T14:17:47.817188Z"
-* extension[commReqFlowStarts].extension[contact_globalid][0].valueString = "Practitioner/P7344"
-* extension[commReqFlowStarts].extension[contact_globalid][1].valueString = "Practitioner/P7364"
+* extension[commReqFlowStarts].extension[exited_on].valueDateTime = "2020-03-10T00:45:01.647066Z"
+* extension[commReqFlowStarts].extension[exit_type].valueString = "expired"
+* extension[commReqFlowStarts].extension[rapidpro_contact_id].valueString = "00fe8d28-37f0-4e88-83dc-6aa41725301d"
+* extension[commReqFlowStarts].extension[responded].valueString = 'No'
 * recipient[0] = Reference(Practitioner/P7364)
 * recipient[1] = Reference(Practitioner/P7344)
 * payload[0].contentAttachment.url = "b7a4770c-d034-4055-9f21-b17632ef311e"
@@ -98,9 +102,6 @@ Usage:          #example
 * extension[MheroCommReqRecurrance].extension[cronExpression].valueString = "At 02:14 PM, every 3 days"
 * extension[commReqBroadcastStarts].extension[broadcast_id].valueString = "7540339"
 * extension[commReqBroadcastStarts].extension[created_on].valueDateTime = "2020-03-18T12:28:06.768319Z"
-* extension[commReqBroadcastStarts].extension[contact_globalid][0].valueString = "Practitioner/P9359"
-* extension[commReqBroadcastStarts].extension[contact_globalid][1].valueString = "Practitioner/P9354"
-* extension[commReqBroadcastStarts].extension[contact_globalid][2].valueString = "Practitioner/P6209"
 * recipient[0] = Reference(Practitioner/P7344)
 * recipient[1] = Reference(Practitioner/P7364)
 * payload[0].contentString = "Hello World"

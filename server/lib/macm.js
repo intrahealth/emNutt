@@ -365,73 +365,142 @@ module.exports = function () {
         return callback(false, bundle)
       }
       let processingError = false;
-      let commReqId
-      if (!runCommReq || !runCommReq.entry) {
-        logger.warn('Invalid data returned when querying CommunicationRequest resource for flow start ' + run.start.uuid);
-        return callback(true, bundle);
-      } else  if (runCommReq.entry.length === 0) {
-        logger.warn('No communication request found for flow run ' + run.start.uuid);
-      } else if (runCommReq.entry.length > 1) {
-        logger.warn(`Multiple CommunicationRequest resources found with flow start ${run.start.uuid}`);
-      } else {
-        commReqId = runCommReq.entry[0].resource.id;
-      }
-      // create flowRun resource first
-      const extension = [{
-        url: 'flow',
-        valueReference: {
-          reference: `Basic/${run.flow.uuid}`
-        }
-      }, {
-        url: 'recipient',
-        valueReference: {
-          reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
-        }
-      }, {
-        url: 'responded',
-        valueBoolean: run.responded
-      }, {
-        url: 'created_on',
-        valueDateTime: run.created_on
-      }, {
-        url: 'modified_on',
-        valueDateTime: run.modified_on
-      }];
-      if(commReqId) {
-        extension.push({
-          url: 'CommunicationRequest',
-          valueReference: {
-            reference: `${runCommReq.entry[0].resource.resourceType}/${commReqId}`
-          }
-        })
-      }
-      if (run.exit_type) {
-        extension.push({
-          url: 'exit_type',
-          valueString: run.exit_type
-        });
-        extension.push({
-          url: 'exited_on',
-          valueDateTime: run.exited_on
-        });
-      }
-      bundle.entry.push({
-        resource: {
-          resourceType: 'Basic',
+      if (!runCommReq) {
+        runCommReq = {
+          resourceType: "CommunicationRequest",
           id: run.uuid,
           meta: {
-            profile: [config.get("profiles:WorkflowRun")]
+            profile: [config.get("profiles:CommunicationRequest")]
           },
+          status: 'completed',
+          payload: [{
+            contentReference: {
+              reference: `Basic/${run.flow.uuid}`
+            }
+          }],
+          occurrenceDateTime: run.created_on.split('.')[0],
+          recipient: [{
+            reference: `${run.contact.mheroentitytype}/${run.contact.globalid}`
+          }],
           extension: [{
+            url: config.get("extensions:CommReqFlowStarts"),
+            extension: [{
+              url: "flow_starts_uuid",
+              valueString: run.start.uuid
+            }, {
+              url: "rapidpro_contact_id",
+              valueString: run.contact.uuid
+            }]
+          }]
+        }
+      }
+      // create flowRun resource first
+      if(runCommReq) {
+        if(!runCommReq.extension) {
+          runCommReq.extension = []
+        }
+        let responded = 'unknown'
+        if(run.responded == true) {
+          responded = 'Yes'
+        } else if (run.responded == false) {
+          responded = 'No'
+        }
+        let updated = false
+        for(let extInd in runCommReq.extension) {
+          if(runCommReq.extension[extInd].url === config.get("extensions:CommReqFlowStarts")) {
+            updated = true
+            let respInd = runCommReq.extension[extInd].extension.findIndex((runExt) => {
+              return runExt.url === 'responded'
+            })
+            if(respInd !== -1) {
+              runCommReq.extension[extInd].extension[respInd].valueString = responded
+            } else {
+              runCommReq.extension[extInd].extension.push({
+                "url": "responded",
+                "valueString": responded
+              })
+            }
+
+            let crtInd = runCommReq.extension[extInd].extension.findIndex((runExt) => {
+              return runExt.url === 'created_on'
+            })
+            if(crtInd !== -1) {
+              runCommReq.extension[extInd].extension[crtInd].valueDateTime = run.created_on
+            } else {
+              runCommReq.extension[extInd].extension.push({
+                "url": "created_on",
+                "valueDateTime": run.created_on
+              })
+            }
+
+            let modInd = runCommReq.extension[extInd].extension.findIndex((runExt) => {
+              return runExt.url === 'modified_on'
+            })
+            if(modInd !== -1) {
+              runCommReq.extension[extInd].extension[modInd].valueDateTime = run.modified_on
+            } else {
+              runCommReq.extension[extInd].extension.push({
+                "url": "modified_on",
+                "valueDateTime": run.modified_on
+              })
+            }
+
+            if(run.exit_type) {
+              let exTypeInd = runCommReq.extension[extInd].extension.findIndex((runExt) => {
+                return runExt.url === 'exit_type'
+              })
+              if(exTypeInd !== -1) {
+                runCommReq.extension[extInd].extension[exTypeInd].valueString = run.exit_type
+                runCommReq.extension[extInd].extension[exTypeInd].valueDateTime = run.exited_on
+              } else {
+                runCommReq.extension[extInd].extension.push({
+                  "url": "exit_type",
+                  "valueString": run.exit_type
+                }, {
+                  "url": "exited_on",
+                  "valueString": run.exited_on
+                })
+              }
+            }
+          }
+        }
+
+        if(!updated) {
+          let extension = [{
+            url: 'responded',
+            valueString: responded
+          }, {
+            url: 'created_on',
+            valueDateTime: run.created_on
+          }, {
+            url: 'modified_on',
+            valueDateTime: run.modified_on
+          }];
+          if (run.exit_type) {
+            extension.push({
+              url: 'exit_type',
+              valueString: run.exit_type
+            });
+            extension.push({
+              url: 'exited_on',
+              valueDateTime: run.exited_on
+            });
+          }
+          runCommReq.extension.push({
             url: config.get("extensions:WorkflowRunDetails"),
             extension
-          }]
-        },
-        request: {
-          method: 'PUT',
-          url: `Basic/${run.uuid}`
+          })
         }
-      });
+      }
+      if(runCommReq) {
+        bundle.entry.push({
+          resource: runCommReq,
+          request: {
+            method: 'PUT',
+            url: `CommunicationRequest/${runCommReq.id}`
+          }
+        });
+      }
       for (const path of run.path) {
         const values = Object.keys(run.values);
         const texts = [];
@@ -512,18 +581,9 @@ module.exports = function () {
             };
           }
 
-          if(commReqId) {
-            commResource.basedOn = `CommunicationRequest/${commReqId}`;
+          if(runCommReq && runCommReq.id) {
+            commResource.basedOn = `CommunicationRequest/${runCommReq.id}`;
           }
-          if (!commResource.extension) {
-            commResource.extension = [];
-          }
-          commResource.extension.push({
-            url: config.get("extensions:CommunicationFlowRun"),
-            valueReference: {
-              reference: `Basic/${run.uuid}`
-            }
-          });
           bundle.entry.push({
             resource: commResource,
             request: {

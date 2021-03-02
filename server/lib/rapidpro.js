@@ -4,6 +4,7 @@ const request = require('request');
 const async = require('async');
 const moment = require('moment');
 const uuid5 = require('uuid/v5');
+const uuid4 = require('uuid/v4')
 const lodash = require('lodash');
 const redis = require('redis');
 const redisClient = redis.createClient({
@@ -135,12 +136,29 @@ module.exports = function () {
                   if(!run.start) {
                     return callback(null)
                   }
-                  const query = `rpflowstarts=${run.start.uuid}`;
                   macm.getResource({
                     resource: 'CommunicationRequest',
-                    query
+                    query: `rpflowstarts=${run.start.uuid}`
                   }, (err, resourceData) => {
-                    runCommReq = resourceData
+                    let rp_uuid = run.contact.uuid
+                    for(let res of resourceData.entry) {
+                      if(res.resource.extension) {
+                        for(let ext of res.resource.extension) {
+                          if(ext.url === config.get("extensions:CommReqFlowStarts")) {
+                            let matched = ext.extension.find((startExt) => {
+                              return startExt.url === 'rapidpro_contact_id' && startExt.valueString === rp_uuid
+                            })
+                            if(matched) {
+                              runCommReq = res.resource
+                              break
+                            }
+                          }
+                        }
+                        if(runCommReq) {
+                          break
+                        }
+                      }
+                    }
                     return callback(null)
                   })
                 },
@@ -1073,6 +1091,7 @@ module.exports = function () {
         parentCommRequest.basedOn = [{
           reference: `CommunicationRequest/${parentCommRequest.id}`
         }];
+        parentCommRequest.occurrenceDateTime = moment().format("YYYY-MM-DDTHH:mm:ss")
         let commBundle = {
           entry: [{
             resource: parentCommRequest,
@@ -1457,7 +1476,7 @@ module.exports = function () {
                             redisClient.set(commReq.resource.id, statusResData);
                             return nxtRec()
                           }
-                          ids.push(recipient.entityType + '/' + recipient.id);
+                          ids.push(recipient);
                           if (flowBody.urns.length + flowBody.contacts.length > 90) {
                             processedRecords += flowBody.urns.length + flowBody.contacts.length
                             const tmpFlowBody = lodash.cloneDeep(flowBody);
@@ -1473,7 +1492,7 @@ module.exports = function () {
                                 sendFailed = true;
                                 processingError = true;
                               }
-                              if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
+                              if (!res || (res.statusCode && (res.statusCode < 200 || res.statusCode > 299))) {
                                 sendFailed = true;
                                 processingError = true;
                                 logger.error('Send Message Err Code ' + res.statusCode);
@@ -1482,7 +1501,6 @@ module.exports = function () {
                                 status[commReq.resource.id][workflow].success = status[commReq.resource.id][workflow].success + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
                               } else {
                                 status[commReq.resource.id][workflow].failed = status[commReq.resource.id][workflow].failed + tmpFlowBody.urns.length + tmpFlowBody.contacts.length;
-                                return nxtRec()
                               }
                               let statusResData = JSON.stringify({
                                 id: reqID,
@@ -1496,12 +1514,15 @@ module.exports = function () {
                               });
                               redisClient.set(commReq.resource.id, statusResData);
                               if(!sendFailed) {
-                                this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, (updCommReqBundle) => {
+                                this.updateCommunicationRequest(commReq, body, 'workflow', tmpIds, createNewReq, 'completed', (updCommReqBundle) => {
                                   commReqBundles.push(updCommReqBundle)
                                   return nxtRec()
                                 });
                               } else {
-                                return nxtRec()
+                                this.updateCommunicationRequest(commReq, '', 'workflow', tmpIds, createNewReq, 'entered-in-error', (updCommReqBundle) => {
+                                  commReqBundles.push(updCommReqBundle)
+                                  return nxtRec()
+                                });
                               }
                             });
                             createNewReq = true;
@@ -1529,19 +1550,22 @@ module.exports = function () {
                                 sendFailed = true;
                                 processingError = true;
                               }
-                              if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
+                              if (!res || (res.statusCode && (res.statusCode < 200 || res.statusCode > 299))) {
                                 sendFailed = true;
                                 processingError = true;
                               }
                               if (!sendFailed) {
                                 status[commReq.resource.id][workflow].success += flowBody.urns.length + flowBody.contacts.length;
-                                this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, (updCommReqBundle) => {
+                                this.updateCommunicationRequest(commReq, body, 'workflow', ids, createNewReq, 'completed', (updCommReqBundle) => {
                                   commReqBundles.push(updCommReqBundle)
                                   return callback(null);
                                 });
                               } else {
                                 status[commReq.resource.id][workflow].failed += flowBody.urns.length + flowBody.contacts.length;
-                                return callback(null);
+                                this.updateCommunicationRequest(commReq, '', 'workflow', ids, createNewReq, 'entered-in-error', (updCommReqBundle) => {
+                                  commReqBundles.push(updCommReqBundle)
+                                  return callback(null);
+                                });
                               }
                             });
                           } else {
@@ -1602,7 +1626,7 @@ module.exports = function () {
                         redisClient.set(commReq.resource.id, statusResData);
                         return nxtRec()
                       }
-                      ids.push(recipient.entityType + '/' + recipient.id);
+                      ids.push(recipient);
                       if (smsBody.urns.length + smsBody.contacts.length > 90) {
                         processedRecords += smsBody.urns.length + smsBody.contacts.length
                         const tmpSmsBody = lodash.cloneDeep(smsBody)
@@ -1617,7 +1641,7 @@ module.exports = function () {
                             sendFailed = true;
                             processingError = true;
                           }
-                          if ((res.statusCode && res.statusCode < 200) || res.statusCode > 299) {
+                          if (!res || (res.statusCode && (res.statusCode < 200 || res.statusCode > 299))) {
                             sendFailed = true;
                             processingError = true;
                           }
@@ -1638,12 +1662,15 @@ module.exports = function () {
                           });
                           redisClient.set(commReq.resource.id, statusResData);
                           if(!sendFailed) {
-                            this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, (updCommReqBundle) => {
+                            this.updateCommunicationRequest(commReq, body, 'sms', tmpIds, createNewReq, 'completed', (updCommReqBundle) => {
                               commReqBundles.push(updCommReqBundle)
                               return nxtRec()
                             });
                           } else {
-                            return nxtRec()
+                            this.updateCommunicationRequest(commReq, '', 'sms', tmpIds, createNewReq, 'entered-in-error', (updCommReqBundle) => {
+                              commReqBundles.push(updCommReqBundle)
+                              return nxtRec()
+                            });
                           }
                         });
                         createNewReq = true;
@@ -1660,10 +1687,7 @@ module.exports = function () {
                             sendFailed = true;
                             processingError = true;
                           }
-                          if (
-                            res.statusCode &&
-                            (res.statusCode < 200 || res.statusCode > 299)
-                          ) {
+                          if (!res || (res.statusCode && (res.statusCode < 200 || res.statusCode > 299))) {
                             sendFailed = true;
                             processingError = true;
                           }
@@ -1684,12 +1708,15 @@ module.exports = function () {
                           });
                           redisClient.set(commReq.resource.id, statusResData);
                           if(!sendFailed) {
-                            this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, (updCommReqBundle) => {
+                            this.updateCommunicationRequest(commReq, body, 'sms', ids, createNewReq, 'completed', (updCommReqBundle) => {
                               commReqBundles.push(updCommReqBundle)
                               return callback(null);
                             });
                           } else {
-                            return callback(null);
+                            this.updateCommunicationRequest(commReq, '', 'sms', ids, createNewReq, 'entered-in-error', (updCommReqBundle) => {
+                              commReqBundles.push(updCommReqBundle)
+                              return callback(null);
+                            });
                           }
                         });
                       } else {
@@ -1763,7 +1790,7 @@ module.exports = function () {
         json: flowBody,
       };
       request.post(options, (err, res, body) => {
-        if(res.statusCode == 500 && retryCount < 10) {
+        if(res && res.statusCode == 500 && retryCount < 10) {
           retryCount++
           let timeout = 0
           if(retryCount > 7) {
@@ -1831,6 +1858,7 @@ module.exports = function () {
       type,
       ids,
       createNewReq,
+      commReqStatus,
       callback
     ) {
       let commReq = lodash.cloneDeep(communReq)
@@ -1839,10 +1867,17 @@ module.exports = function () {
       let extUrl;
       if (type === 'sms') {
         extUrl = config.get("extensions:CommReqBroadcastStarts");
-        commReq.resource.id = uuid5(rpRunStatus.id.toString(), config.get("namespaces:broadcastID"));
+        if(rpRunStatus && Object.keys(rpRunStatus).length > 0) {
+          commReq.resource.id = uuid5(rpRunStatus.id.toString(), config.get("namespaces:broadcastID"));
+        }
       } else if (type === 'workflow') {
         extUrl = config.get("extensions:CommReqFlowStarts");
-        commReq.resource.id = rpRunStatus.uuid;
+        if(rpRunStatus && Object.keys(rpRunStatus).length > 0) {
+          commReq.resource.id = rpRunStatus.uuid;
+        }
+      }
+      if(!commReq.resource.id) {
+        commReq.resource.id = uuid4()
       }
       if (!commReq.resource.meta) {
         commReq.resource.meta = {};
@@ -1860,7 +1895,7 @@ module.exports = function () {
       if (!commReq.resource.extension) {
         commReq.resource.extension = [];
       }
-      commReq.resource.status = 'completed';
+      commReq.resource.status = commReqStatus
       let extIndex = 0;
       for (const index in commReq.resource.extension) {
         const ext = commReq.resource.extension[index];
@@ -1870,52 +1905,64 @@ module.exports = function () {
         }
       }
 
-      commReq.resource.extension[extIndex] = {
-        url: extUrl,
-        extension: [{
-          url: 'created_on',
-          valueDateTime: rpRunStatus.created_on,
-        }],
-      };
-      if (type === 'workflow') {
-        commReq.resource.extension[extIndex].extension.push({
-          url: 'modified_on',
-          valueDateTime: rpRunStatus.modified_on,
-        }, {
-          url: 'flow_uuid',
-          valueString: rpRunStatus.flow.uuid,
-        }, {
-          url: 'status',
-          valueString: rpRunStatus.status,
-        }, {
-          url: 'flow_starts_uuid',
-          valueString: rpRunStatus.uuid,
-        });
-      } else if (type === 'sms') {
-        commReq.resource.extension[extIndex].extension.push({
-          url: "broadcast_id",
-          valueString: rpRunStatus.id
-        });
-      }
-      for (const id of ids) {
-        commReq.resource.recipient.push({
-          reference: id
-        })
-        // commReq.resource.extension[extIndex].extension.push({
-        //   url: 'contact_globalid',
-        //   valueString: id
-        // });
+      if(rpRunStatus && Object.keys(rpRunStatus).length > 0) {
+        commReq.resource.extension[extIndex] = {
+          url: extUrl,
+          extension: [{
+            url: 'created_on',
+            valueDateTime: rpRunStatus.created_on,
+          }],
+        };
+        if (type === 'workflow') {
+          commReq.resource.extension[extIndex].extension.push({
+            url: 'modified_on',
+            valueDateTime: rpRunStatus.modified_on,
+          }, {
+            url: 'status',
+            valueString: rpRunStatus.status,
+          }, {
+            url: 'flow_starts_uuid',
+            valueString: rpRunStatus.uuid,
+          });
+        } else if (type === 'sms') {
+          commReq.resource.extension[extIndex].extension.push({
+            url: "broadcast_id",
+            valueString: rpRunStatus.id
+          });
+        }
+      } else {
+        commReq.resource.extension[extIndex] = {
+          url: extUrl,
+          extension: [{
+            url: 'created_on',
+            valueDateTime: commReq.resource.occurrenceDateTime
+          }]
+        };
       }
       const bundle = {};
       bundle.type = 'batch';
       bundle.resourceType = 'Bundle';
-      bundle.entry = [{
-        resource: commReq.resource,
-        request: {
-          method: 'PUT',
-          url: `CommunicationRequest/${commReq.resource.id}`,
-        },
-      }];
+      bundle.entry = []
+      for (const id of ids) {
+        let res = lodash.cloneDeep(commReq)
+        res.resource.id = uuid4()
+        if(id.contact && rpRunStatus && Object.keys(rpRunStatus).length > 0) {
+          res.resource.extension[extIndex].extension.push({
+            url: 'rapidpro_contact_id',
+            valueString: id.contact
+          })
+        }
+        res.resource.recipient.push({
+          reference: id.entityType + '/' + id.id
+        })
+        bundle.entry.push({
+          resource: res.resource,
+          request: {
+            method: 'PUT',
+            url: `CommunicationRequest/${res.resource.id}`,
+          }
+        })
+      }
       return callback(bundle)
     },
 

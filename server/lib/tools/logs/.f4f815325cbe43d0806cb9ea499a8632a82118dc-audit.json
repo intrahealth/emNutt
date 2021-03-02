@@ -1,0 +1,14 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "logs/.f4f815325cbe43d0806cb9ea499a8632a82118dc-audit.json",
+    "files": [
+        {
+            "date": 1614361995457,
+            "name": "logs/emNutt-2021-02-26-20.log",
+            "hash": "e6fd5683de41f8a0314aaffe3b35e51d"
+        }
+    ]
+}

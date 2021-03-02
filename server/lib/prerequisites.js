@@ -288,5 +288,6 @@ const init = (callback) => {
 
 module.exports = {
   init,
+  addRapidproDefaultData,
   checkDependencies
 };
