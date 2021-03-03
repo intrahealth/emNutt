@@ -9,6 +9,8 @@ const mixin = require('./mixin');
 const floip = require('./floip');
 const rapidpro = require('./rapidpro')();
 const macm = require('./macm')();
+const postFHIR2ES = require('./es/postFHIR2ES')
+
 const syncStatus = {
   syncWorkflows: 'not_running',
   syncContacts: 'not_running',
@@ -257,7 +259,9 @@ function cacheFHIR2ES(callback) {
   });
   caching.cache().then(() => {
     syncStatus.cacheFHIR2ES = 'not_running'
-    return callback();
+    postFHIR2ES.populateAll(() => {
+      return callback()
+    })
   });
 }
 
