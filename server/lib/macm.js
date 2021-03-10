@@ -458,7 +458,7 @@ module.exports = function () {
                   "valueString": run.exit_type
                 }, {
                   "url": "exited_on",
-                  "valueString": run.exited_on
+                  "valueDateTime": run.exited_on
                 })
               }
             }

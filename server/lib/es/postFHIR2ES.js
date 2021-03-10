@@ -11,7 +11,7 @@ const config = require('../config')
 const logger = require('../winston')
 
 const populateMessageSendingSummary = (reset, callback) => {
-  let config = {
+  let modConfig = {
     ESBaseURL: config.get('elastic:baseURL'),
     ESUsername: config.get('elastic:username'),
     ESPassword: config.get('elastic:password'),
@@ -22,9 +22,9 @@ const populateMessageSendingSummary = (reset, callback) => {
     FHIRPassword: config.get('macm:password'),
   }
   if(reset === true) {
-    config.reset = reset
+    modConfig.reset = reset
   }
-  let caching = new CacheFhirToES(config);
+  let caching = new CacheFhirToES(modConfig);
   const cacheToIndex = 'mheromessagesendsummary'
   const cacheFromIndex = 'mheromessagesendbreakdown'
   caching.getLastIndexingTime(cacheToIndex).then(() => {
@@ -109,7 +109,7 @@ const populateMessageSendingSummary = (reset, callback) => {
 }
 
 const populateFlowRunSummary = (reset, callback) => {
-  let config = {
+  let modConfig = {
     ESBaseURL: config.get('elastic:baseURL'),
     ESUsername: config.get('elastic:username'),
     ESPassword: config.get('elastic:password'),
@@ -120,9 +120,9 @@ const populateFlowRunSummary = (reset, callback) => {
     FHIRPassword: config.get('macm:password'),
   }
   if(reset === true) {
-    config.reset = reset
+    modConfig.reset = reset
   }
-  let caching = new CacheFhirToES(config);
+  let caching = new CacheFhirToES(modConfig);
   const cacheToIndex = 'mheroflowrunsummary'
   const cacheFromIndex = 'mheroflowrunbreakdown'
   caching.getLastIndexingTime(cacheToIndex).then(() => {
@@ -243,16 +243,16 @@ const populateFlowRunSummary = (reset, callback) => {
   })
 }
 
-const populateAll = (callback) => {
+const populateAll = (reset, callback) => {
   async.series([
-    (callback) => {
-      populateMessageSendingSummary(() => {
-        return callback(null)
+    (cb) => {
+      populateMessageSendingSummary(reset, () => {
+        return cb(null)
       })
     },
-    (callback) => {
-      populateFlowRunSummary(() => {
-        return callback(null)
+    (cb) => {
+      populateFlowRunSummary(reset, () => {
+        return cb(null)
       })
     }
   ], () => {
