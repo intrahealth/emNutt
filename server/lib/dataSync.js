@@ -259,7 +259,7 @@ function cacheFHIR2ES(callback) {
   });
   caching.cache().then(() => {
     syncStatus.cacheFHIR2ES = 'not_running'
-    postFHIR2ES.populateAll(() => {
+    postFHIR2ES.populateAll(false, () => {
       return callback()
     })
   });

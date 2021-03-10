@@ -11,6 +11,7 @@
   "dependencies": {
     "@floip/flow-results-utils": "^1.0.5",
     "antlr4": "^4.8.0",
+    "uuid": "3.4.0",
     "async": "^3.2.0",
     "axios": "^0.19.2",
     "cors": "^2.8.5",

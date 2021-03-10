@@ -10,18 +10,21 @@ const axios = require('axios');
 const config = require('../config')
 const logger = require('../winston')
 
-let caching = new CacheFhirToES({
-  ESBaseURL: config.get('elastic:baseURL'),
-  ESUsername: config.get('elastic:username'),
-  ESPassword: config.get('elastic:password'),
-  ESMaxCompilationRate: config.get('elastic:max_compilations_rate'),
-  ESMaxScrollContext: config.get('elastic:max_scroll_context'),
-  FHIRBaseURL: config.get('macm:baseURL'),
-  FHIRUsername: config.get('macm:username'),
-  FHIRPassword: config.get('macm:password'),
-});
-
-const populateMessageSendingSummary = (callback) => {
+const populateMessageSendingSummary = (reset, callback) => {
+  let config = {
+    ESBaseURL: config.get('elastic:baseURL'),
+    ESUsername: config.get('elastic:username'),
+    ESPassword: config.get('elastic:password'),
+    ESMaxCompilationRate: config.get('elastic:max_compilations_rate'),
+    ESMaxScrollContext: config.get('elastic:max_scroll_context'),
+    FHIRBaseURL: config.get('macm:baseURL'),
+    FHIRUsername: config.get('macm:username'),
+    FHIRPassword: config.get('macm:password'),
+  }
+  if(reset === true) {
+    config.reset = reset
+  }
+  let caching = new CacheFhirToES(config);
   const cacheToIndex = 'mheromessagesendsummary'
   const cacheFromIndex = 'mheromessagesendbreakdown'
   caching.getLastIndexingTime(cacheToIndex).then(() => {
@@ -105,7 +108,21 @@ const populateMessageSendingSummary = (callback) => {
   })
 }
 
-const populateFlowRunSummary = (callback) => {
+const populateFlowRunSummary = (reset, callback) => {
+  let config = {
+    ESBaseURL: config.get('elastic:baseURL'),
+    ESUsername: config.get('elastic:username'),
+    ESPassword: config.get('elastic:password'),
+    ESMaxCompilationRate: config.get('elastic:max_compilations_rate'),
+    ESMaxScrollContext: config.get('elastic:max_scroll_context'),
+    FHIRBaseURL: config.get('macm:baseURL'),
+    FHIRUsername: config.get('macm:username'),
+    FHIRPassword: config.get('macm:password'),
+  }
+  if(reset === true) {
+    config.reset = reset
+  }
+  let caching = new CacheFhirToES(config);
   const cacheToIndex = 'mheroflowrunsummary'
   const cacheFromIndex = 'mheroflowrunbreakdown'
   caching.getLastIndexingTime(cacheToIndex).then(() => {
