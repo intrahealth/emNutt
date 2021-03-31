@@ -75,7 +75,11 @@ function deleteOldLogs() {
           return kp === file;
         });
         if(!exist) {
-          fs.unlinkSync(`${logDir}/${file}`);
+          try {
+            fs.unlinkSync(`${logDir}/${file}`);
+          } catch {
+            continue;
+          }
         }
       }
     }
