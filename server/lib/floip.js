@@ -14,7 +14,12 @@ async function flowResultsToQuestionnaire(callback) {
   bundle.type = 'batch';
   bundle.resourceType = 'Bundle';
   bundle.entry = [];
-  let runsLastSync = config.get('lastSync:syncFloipFlowResults:time');
+  let runsLastSync
+  await mixin.getLastIndexingTime('syncFloipFlowResults', false).then((time) => {
+    runsLastSync = time
+  }).catch((time) => {
+    runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+  })
   const isValid = moment(runsLastSync, 'Y-MM-DD HH:mm:ss').isValid();
   if (!isValid) {
     runsLastSync = moment('1970-01-01').format('Y-MM-DD HH:mm:ss');

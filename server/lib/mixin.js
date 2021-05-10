@@ -1,9 +1,146 @@
 const fs = require('fs');
 const medUtils = require('openhim-mediator-utils');
 const request = require('request');
+const axios = require('axios');
+const URI = require('urijs');
 const logger = require('./winston');
 const config = require('./config');
 const env = process.env.NODE_ENV || 'development';
+
+const updateLastIndexingTime = (time, syncType) => {
+  return new Promise((resolve, reject) => {
+    logger.info('Updating lastIndexingTime')
+    axios({
+      url: URI(config.get("elastic:baseURL")).segment('emnuttsyncdata').segment("_doc").segment(syncType).toString(),
+      method: 'PUT',
+      auth: {
+        username: config.get("elastic:username"),
+        password: config.get("elastic:password")
+      },
+      data: {
+        "lastIndexingTime": time
+      }
+    }).then((response) => {
+      if(response.status < 200 && response.status > 299) {
+        logger.error('An error occured while updating lastIndexingTime')
+        return reject()
+      }
+      return resolve(false)
+    }).catch((err) => {
+      logger.error(err)
+      logger.error('An error occured while updating lastIndexingTime')
+      return reject(true)
+    })
+  })
+}
+
+const getLastIndexingTime = (syncType, reset) => {
+  return new Promise((resolve, reject) => {
+    logger.info('Getting lastIndexingTime')
+    let query = {
+      query: {
+        term: {
+          _id: syncType
+        }
+      }
+    }
+    axios({
+      method: "GET",
+      url: URI(config.get("elastic:baseURL")).segment('emnuttsyncdata').segment("_search").toString(),
+      data: query,
+      auth: {
+        username: config.get("elastic:username"),
+        password: config.get("elastic:password")
+      }
+    }).then((response) => {
+      if(reset) {
+        logger.info('Returning lastIndexingTime of 1970-01-01T00:00:00')
+        return resolve('1970-01-01T00:00:00')
+      }
+      if(response.data.hits.hits.length === 0) {
+        logger.info('Returning lastIndexingTime of 1970-01-01T00:00:00')
+        return resolve('1970-01-01T00:00:00')
+      }
+      logger.info('Returning lastIndexingTime of ' + response.data.hits.hits[0]._source.lastIndexingTime)
+      return resolve(response.data.hits.hits[0]._source.lastIndexingTime)
+    }).catch((err) => {
+      if (err.response && err.response.status && err.response.status === 404) {
+        logger.info('Index not found, creating index syncData');
+        let mappings = {
+          mappings: {
+            properties: {
+              lastIndexingTime: {
+                type: "text"
+              }
+            },
+          },
+        };
+        axios({
+            method: 'PUT',
+            url: URI(config.get("elastic:baseURL")).segment('emnuttsyncdata').toString(),
+            data: mappings,
+            auth: {
+              username: config.get("elastic:username"),
+              password: config.get("elastic:password")
+            }
+          })
+          .then(response => {
+            if (response.status !== 200) {
+              logger.error('Something went wrong and index was not created');
+              logger.error(response.data);
+              logger.info('Returning lastIndexingTime of 1970-01-01T00:00:00')
+              return reject()
+            } else {
+              logger.info('Index syncdata created successfully');
+              logger.info('Adding default lastIndexTime which is 1970-01-01T00:00:00')
+              axios({
+                method: 'PUT',
+                auth: {
+                  username: config.get("elastic:username"),
+                  password: config.get("elastic:password")
+                },
+                url: URI(config.get("elastic:baseURL")).segment('emnuttsyncdata').segment("_doc").segment(syncType).toString(),
+                data: {
+                  "lastIndexingTime": "1970-01-01T00:00:00"
+                }
+              }).then((response) => {
+                if(response.status >= 200 && response.status <= 299) {
+                  logger.info('Default lastIndexTime added')
+                } else {
+                  logger.error('An error has occured while saving default lastIndexTime');
+                  return reject("1970-01-01T00:00:00")
+                }
+                logger.info('Returning lastIndexingTime of 1970-01-01T00:00:00')
+                return resolve("1970-01-01T00:00:00")
+              }).catch((err) => {
+                logger.error('An error has occured while saving default lastIndexTime');
+                if (err.response && err.response.data) {
+                  logger.error(err.response.data);
+                }
+                if (err.error) {
+                  logger.error(err.error);
+                }
+                if (!err.response) {
+                  logger.error(err);
+                }
+                return reject("1970-01-01T00:00:00")
+              })
+            }
+          })
+          .catch(err => {
+            logger.error('Error: ' + err);
+            logger.info('Returning lastIndexingTime of 1970-01-01T00:00:00')
+            return reject("1970-01-01T00:00:00")
+          });
+      } else {
+        logger.error('Error occured while getting last indexing time in ES');
+        logger.error(err);
+        logger.info('Returning lastIndexingTime of 1970-01-01T00:00:00')
+        return reject("1970-01-01T00:00:00")
+      }
+    })
+  })
+}
 
 const setNestedKey = (obj, path, value, callback) => {
   if (path.length === 1) {
@@ -130,6 +267,8 @@ const getNameFromResource = (resource) => {
 }
 
 module.exports = {
+  updateLastIndexingTime,
+  getLastIndexingTime,
   updateConfigFile,
   updateopenHIMConfig,
   updatePhoneNumber,

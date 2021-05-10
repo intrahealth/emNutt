@@ -71,7 +71,7 @@ router.post('/syncContacts', (req, res) => {
 });
 
 router.get('/syncContactsGroups', (req, res) => {
-  logger.info('Received a request to sync workflow messages');
+  logger.info('Received a request to sync contacts groups');
   dataSync.syncContactsGroups((error) => {
     if (error) {
       return res.status(500).send('Some errors occured');

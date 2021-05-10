@@ -43,19 +43,26 @@ function syncWorkflows (callback) {
   }, () => {
     syncStatus.syncWorkflows = 'not_running'
     if (!processingError) {
-      mixin.updateConfigFile(['lastSync', 'syncWorkflows', 'time'], newRunsLastSync, () => {});
+      mixin.updateLastIndexingTime(newRunsLastSync, 'syncWorkflows')
     }
     return callback(processingError);
   });
 }
 
-function syncContacts(callback) {
+async function syncContacts(callback) {
   if(syncStatus.syncContacts === 'running') {
     return callback()
   }
   syncStatus.syncContacts = 'running'
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
-  let runsLastSync = config.get('lastSync:syncContacts:time');
+
+  let runsLastSync
+  await mixin.getLastIndexingTime('syncContacts', false).then((time) => {
+    runsLastSync = time
+  }).catch((time) => {
+    runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+  })
+
   const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
   if (!isValid) {
     runsLastSync = moment('1970-01-01').format('Y-MM-DD');
@@ -119,7 +126,7 @@ function syncContacts(callback) {
     }, () => {
       syncStatus.syncContacts = 'not_running'
       if(!processingError) {
-        mixin.updateConfigFile(['lastSync', 'syncContacts', 'time'], newRunsLastSync, () => {});
+        mixin.updateLastIndexingTime(newRunsLastSync, 'syncContacts')
         cacheFHIR2ES(() => {});
         logger.info('Contacts Sync Done');
         return callback()
@@ -164,7 +171,7 @@ function syncContactsGroups(callback) {
   }, () => {
     syncStatus.syncContactsGroups = 'not_running'
     if (!processingError) {
-      mixin.updateConfigFile(['lastSync', 'syncContactsGroups', 'time'], newRunsLastSync, () => {});
+      mixin.updateLastIndexingTime(newRunsLastSync, 'syncContactsGroups')
     }
     return callback(processingError);
   });
@@ -194,7 +201,7 @@ function syncWorkflowRunMessages(callback) {
   }, () => {
     syncStatus.syncWorkflowRunMessages = 'not_running'
     if (!processingError) {
-      mixin.updateConfigFile(['lastSync', 'syncWorkflowRunMessages', 'time'], newRunsLastSync, () => {});
+      mixin.updateLastIndexingTime(newRunsLastSync, 'syncWorkflowRunMessages')
     }
     return callback(processingError);
   });
@@ -210,7 +217,7 @@ function syncFloipFlowResults(callback) {
     syncStatus.syncFloipFlowResults = 'not_running'
     logger.info("Done Synchronizing flow results from FLOIP server");
     if(!err) {
-      mixin.updateConfigFile(['lastSync', 'syncFloipFlowResults', 'time'], newRunsLastSync, () => {});
+      mixin.updateLastIndexingTime(newRunsLastSync, 'syncFloipFlowResults')
     }
     return callback(err);
   });

@@ -21,9 +21,14 @@ module.exports = function () {
      * @param {Object} param0
      * @param {*} callback
      */
-    syncWorkflows(callback) {
+    async syncWorkflows(callback) {
       let processingError = false;
-      let runsLastSync = config.get('lastSync:syncWorkflows:time');
+      let runsLastSync
+      await mixin.getLastIndexingTime('syncWorkflows', false).then((time) => {
+        runsLastSync = time
+      }).catch((time) => {
+        runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+      })
       const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
       if (!isValid) {
         runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
@@ -47,8 +52,13 @@ module.exports = function () {
         }
       );
     },
-    syncWorkflowRunMessages(callback) {
-      let runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+    async syncWorkflowRunMessages(callback) {
+      let runsLastSync
+      await mixin.getLastIndexingTime('syncWorkflowRunMessages', false).then((time) => {
+        runsLastSync = time
+      }).catch((time) => {
+        runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+      })
       let processingError = false;
       let runBundle = {};
       runBundle.type = 'batch';
@@ -60,7 +70,6 @@ module.exports = function () {
       let nextRunURL = false
       async.doWhilst(
         (callback) => {
-          runsLastSync = config.get('lastSync:syncWorkflowRunMessages:time');
           const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
           if (!isValid) {
             runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
@@ -448,10 +457,15 @@ module.exports = function () {
       }
     },
 
-    POSContactGroupsSync(callback) {
+    async POSContactGroupsSync(callback) {
       let failed = false;
       logger.info('Received a request to sync POS Contacts Groups');
-      let runsLastSync = config.get('lastSync:syncContactsGroups:time');
+      let runsLastSync
+      await mixin.getLastIndexingTime('syncContactsGroups', false).then((time) => {
+        runsLastSync = time
+      }).catch((time) => {
+        runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+      })
       const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
       if (!isValid) {
         runsLastSync = moment('1970-01-01').format('Y-MM-DD');
@@ -635,8 +649,13 @@ module.exports = function () {
       });
     },
 
-    RPContactGroupsSync(callback) {
-      let runsLastSync = config.get('lastSync:syncContactsGroups:time');
+    async RPContactGroupsSync(callback) {
+      let runsLastSync
+      await mixin.getLastIndexingTime('syncContactsGroups', false).then((time) => {
+        runsLastSync = time
+      }).catch((time) => {
+        runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+      })
       const isValid = moment(runsLastSync, 'Y-MM-DD').isValid();
       if (!isValid) {
         runsLastSync = moment('1970-01-01').format('Y-MM-DD');
