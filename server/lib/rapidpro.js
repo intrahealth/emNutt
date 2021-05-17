@@ -621,7 +621,7 @@ module.exports = function () {
             entry: [],
           };
           async.eachSeries(modifiedGroups.entry, (group, nxt) => {
-            groupsBundle.push(group)
+            groupsBundle.entry.push(group)
             if(groupsBundle.entry.length > 200) {
               const tmpBundle = lodash.cloneDeep(groupsBundle)
               groupsBundle.entry = []
