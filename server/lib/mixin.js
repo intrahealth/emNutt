@@ -7,6 +7,19 @@ const logger = require('./winston');
 const config = require('./config');
 const env = process.env.NODE_ENV || 'development';
 
+const getEnabledChannel = (type, name) => {
+  let enabledChannels = config.get("enabledCommChannels");
+  let channel = enabledChannels.filter((ch) => {
+    return ch.type === type
+  })
+  if(name && channel) {
+    return channel.find((ch) => {
+      return ch.name === name
+    })
+  } else {
+    return channel
+  }
+}
 const updateLastIndexingTime = (time, syncType) => {
   return new Promise((resolve, reject) => {
     logger.info('Updating lastIndexingTime')
@@ -273,5 +286,6 @@ module.exports = {
   updateopenHIMConfig,
   updatePhoneNumber,
   validatePhone,
-  getNameFromResource
+  getNameFromResource,
+  getEnabledChannel
 };

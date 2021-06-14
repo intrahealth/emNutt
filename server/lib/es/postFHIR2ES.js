@@ -55,7 +55,7 @@ const populateMessageSendingSummary = (reset, callback) => {
             query: {
               range: {
                 started: {
-                  gt: caching.lastIndexingTime
+                  gt: caching.lastBeganIndexingTime
                 }
               }
             }
@@ -64,7 +64,7 @@ const populateMessageSendingSummary = (reset, callback) => {
             let mergedDocs = []
             let mergedDocsByCadre = []
             let mergedDocsByCounty = []
-            let recentRun = caching.lastIndexingTime
+            let recentRun = caching.lastBeganIndexingTime
             for(let doc of documents) {
               //high level summary
               let exist = mergedDocs.findIndex((merged) => {
@@ -179,7 +179,8 @@ const populateMessageSendingSummary = (reset, callback) => {
                     return nxt()
                   })
                 }, () => {
-                  caching.updateLastIndexingTime(recentRun, cacheToIndex.highLevel)
+                  let newLastEndedIndexingTime = moment().format('Y-MM-DDTHH:mm:ss');
+                  caching.updateLastIndexingTime(recentRun, newLastEndedIndexingTime, cacheToIndex.highLevel)
                   return callback(null)
                 })
               },
@@ -236,8 +237,14 @@ const populateMessageSendingSummary = (reset, callback) => {
             })
           })
         })
+      }).catch((err) => {
+        logger.error(err);
+        return callback()
       })
     })
+  }).catch((err) => {
+    logger.error(err);
+    return callback()
   })
 }
 
@@ -573,6 +580,9 @@ const populateFlowRunSummary = (reset, callback) => {
         })
       })
     })
+  }).catch((err) => {
+    logger.error(err);
+    return callback()
   })
 }
 

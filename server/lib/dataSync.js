@@ -19,17 +19,17 @@ const syncStatus = {
   syncFloipFlowResults: 'not_running',
   cacheFHIR2ES: 'not_running'
 }
-function syncWorkflows (callback) {
+async function syncWorkflows (callback) {
   if(syncStatus.syncWorkflows === 'running') {
     return callback()
   }
   syncStatus.syncWorkflows = 'running'
-  let enabledChannels = config.get("enabledCommChannels");
+  let rpChEnabled = mixin.getEnabledChannel('flow', 'rapidpro')
   let processingError = false;
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   async.parallel({
     rapidpro: (callback) => {
-      if (!enabledChannels.includes('rapidpro')) {
+      if (!rpChEnabled) {
         logger.warn('Rapidpro is not enabled, not syncing workflows');
         return callback(null);
       }
@@ -142,12 +142,12 @@ function syncContactsGroups(callback) {
     return callback()
   }
   syncStatus.syncContactsGroups = 'running'
-  let enabledChannels = config.get("enabledCommChannels");
+  let rpChEnabled = mixin.getEnabledChannel('flow', 'rapidpro')
   let processingError = false;
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   async.parallel({
     rapidpro: (callback) => {
-      if (!enabledChannels.includes('rapidpro')) {
+      if (!rpChEnabled) {
         logger.warn('Rapidpro is not enabled, not syncing contacts groups for rapidpro');
         return callback(null);
       }
@@ -182,12 +182,12 @@ function syncWorkflowRunMessages(callback) {
     return callback()
   }
   syncStatus.syncWorkflowRunMessages = 'running'
-  let enabledChannels = config.get("enabledCommChannels");
+  let rpChEnabled = mixin.getEnabledChannel('flow', 'rapidpro')
   let processingError = false;
   let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   async.parallel({
     rapidpro: (callback) => {
-      if (!enabledChannels.includes('rapidpro')) {
+      if (!rpChEnabled) {
         logger.warn('Rapidpro is not enabled, not syncing workflows');
         return callback(null);
       }

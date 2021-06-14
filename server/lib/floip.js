@@ -1,6 +1,8 @@
 const macm = require('./macm')();
 const moment = require('moment');
 const async = require('async');
+
+const mixin = require('./mixin')
 const config = require('./config');
 const logger = require('./winston');
 const { FlowResultsClient, fhirQuestionnaireResponsesFromFlowResultsResponseSet } = require('@floip/flow-results-utils');

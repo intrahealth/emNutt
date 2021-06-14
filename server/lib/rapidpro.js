@@ -631,6 +631,8 @@ module.exports = function () {
                 }
                 return nxt();
               });
+            } else {
+              return nxt()
             }
           }, () => {
             if(groupsBundle.entry.length > 0) {
@@ -1106,7 +1108,6 @@ module.exports = function () {
             break
           }
         }
-        logger.error('total Comm Req ' + parentCommRequest.recipient.length + ' id ' + parentCommRequest.id);
         parentCommRequest.basedOn = [{
           reference: `CommunicationRequest/${parentCommRequest.id}`
         }];
