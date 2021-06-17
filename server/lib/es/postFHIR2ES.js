@@ -293,7 +293,7 @@ const populateFlowRunSummary = (reset, callback) => {
             query: {
               range: {
                 started: {
-                  gt: caching.lastIndexingTime
+                  gt: caching.lastBeganIndexingTime
                 }
               }
             }
@@ -302,7 +302,7 @@ const populateFlowRunSummary = (reset, callback) => {
             let mergedDocs = []
             let mergedDocsByCadre = []
             let mergedDocsByCounty = []
-            let recentRun = caching.lastIndexingTime
+            let recentRun = caching.lastBeganIndexingTime
             for(let doc of documents) {
               if(!doc._source.workflow) {
                 continue
@@ -521,7 +521,8 @@ const populateFlowRunSummary = (reset, callback) => {
                     return nxt()
                   })
                 }, () => {
-                  caching.updateLastIndexingTime(recentRun, cacheToIndex.highLevel)
+                  let newLastEndedIndexingTime = moment().format('Y-MM-DDTHH:mm:ss');
+                  caching.updateLastIndexingTime(recentRun, newLastEndedIndexingTime, cacheToIndex.highLevel)
                   return callback(null)
                 })
               },

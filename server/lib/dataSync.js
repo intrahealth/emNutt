@@ -188,7 +188,7 @@ function syncWorkflowRunMessages(callback) {
   async.parallel({
     rapidpro: (callback) => {
       if (!rpChEnabled) {
-        logger.warn('Rapidpro is not enabled, not syncing workflows');
+        logger.warn('Rapidpro is not enabled, not syncing flow run messages');
         return callback(null);
       }
       rapidpro.syncWorkflowRunMessages((err) => {
@@ -205,6 +205,27 @@ function syncWorkflowRunMessages(callback) {
     }
     return callback(processingError);
   });
+}
+
+function syncRPInboxMessages(callback) {
+  if(syncStatus.syncWorkflowRunMessages === 'running') {
+    return callback()
+  }
+  syncStatus.syncRPInboxMessages = 'running'
+  let rpChEnabled = mixin.getEnabledChannel('flow', 'rapidpro')
+  let processingError = false;
+  let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
+  if (!rpChEnabled) {
+    logger.warn('Rapidpro is not enabled, not syncing inbox messages');
+    return callback(null);
+  }
+  rapidpro.syncInboxMessages().then(() => {
+    syncStatus.syncRPInboxMessages = 'not_running'
+    mixin.updateLastIndexingTime(newRunsLastSync, 'syncRPInboxMessages')
+    return callback();
+  }).catch(() => {
+    return callback(processingError);
+  })
 }
 
 function syncFloipFlowResults(callback) {
@@ -275,6 +296,7 @@ function cacheFHIR2ES(callback) {
 module.exports = {
   syncWorkflows,
   syncWorkflowRunMessages,
+  syncRPInboxMessages,
   syncFloipFlowResults,
   checkCommunicationRequest,
   syncContacts,

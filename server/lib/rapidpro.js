@@ -52,6 +52,157 @@ module.exports = function () {
         }
       );
     },
+    syncInboxMessages() {
+      return new Promise(async(resolve, reject) => {
+        let runsLastSync
+        await mixin.getLastIndexingTime('syncRPInboxMessages', false).then((time) => {
+          runsLastSync = time
+        }).catch((time) => {
+          runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+        })
+
+        let processingError = false;
+        let bundle = {};
+        bundle.type = 'batch';
+        bundle.resourceType = 'Bundle';
+        bundle.entry = [];
+        let nextURL = false
+        async.doWhilst(
+          (callback) => {
+            const isValid = moment(runsLastSync, 'Y-MM-DDTHH:mm:ss').isValid();
+            if (!isValid) {
+              runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
+            }
+            runsLastSync = '2021-06-01T00:00:00'
+            const queries = [{
+              name: 'folder',
+              value: 'inbox'
+            }, {
+              name: 'after',
+              value: runsLastSync
+            }];
+            this.getEndPointData({
+              endPoint: 'messages.json',
+              queries,
+              url: nextURL,
+              getAll: false
+            }, (err, messages, url) => {
+              nextURL = url
+              if(!nextURL) {
+                nextURL = false
+              }
+              if (err) {
+                processingError = true;
+              }
+              let practitioners = []
+              let queries = []
+              let counter = 0
+              let qry = ''
+              for(let msg of messages) {
+                if(!qry) {
+                  qry = `http://app.rapidpro.io/contact-uuid|${msg.contact.uuid}`
+                } else {
+                  qry += `,http://app.rapidpro.io/contact-uuid|${msg.contact.uuid}`
+                }
+                counter++
+                if(counter === 100) {
+                  queries.push(qry)
+                  qry = ''
+                }
+              }
+              if(qry) {
+                queries.push(qry)
+                qry = ''
+              }
+              async.eachSeries(queries, (qry, nxtQry) => {
+                macm.getResource({
+                  resource: 'Practitioner',
+                  query: `identifier=${qry}`
+                }, (err, resourceData) => {
+                  if(err) {
+                    processingError = true
+                    return nxtQry()
+                  }
+                  practitioners = practitioners.concat(resourceData.entry)
+                  return nxtQry()
+                })
+              }, () => {
+                async.eachSeries(messages, (message, nxtMsg) => {
+                  let pract = practitioners.find((prac) => {
+                    return prac.resource.identifier && prac.resource.identifier.find((ident) => {
+                      return ident.system === 'http://app.rapidpro.io/contact-uuid' && ident.value === message.contact.uuid
+                    })
+                  })
+                  if(!pract) {
+                    return nxtMsg()
+                  }
+                  let communication = {
+                    id: uuid5(message.id.toString(), config.get("namespaces:rpinboxmsgs")),
+                    resourceType: 'Communication',
+                    payload: [{
+                      contentString: message.text
+                    }],
+                    category: [{
+                      coding: [{
+                        system: 'http://ihris.org/fhir/CodeSystem/message-category',
+                        code: 'inbox',
+                        display: 'Inbox'
+                      }]
+                    }],
+                    sender: {
+                      reference: `Practitioner/${pract.resource.id}`
+                    },
+                    received: message.created_on
+                  }
+                  bundle.entry.push({
+                    resource: communication,
+                    request: {
+                      method: 'PUT',
+                      url: `Communication/${communication.id}`
+                    }
+                  })
+                  if(bundle.entry.length >= 200) {
+                    macm.saveResource(bundle, (err) => {
+                      if(err) {
+                        processingError = true
+                      }
+                      bundle.entry = []
+                      return nxtMsg()
+                    })
+                  } else {
+                    return nxtMsg()
+                  }
+                }, () => {
+                  return callback(null)
+                })
+              })
+            })
+          },
+          (callback) => {
+            return callback(null, nextURL !== false)
+          },
+          () => {
+            if(bundle.entry.length > 0) {
+              macm.saveResource(bundle, (err) => {
+                bundle.entry = []
+                if (err) {
+                  processingError = true;
+                }
+                if(processingError) {
+                  return reject(processingError)
+                }
+                return resolve()
+              })
+            } else {
+              if(processingError) {
+                return reject(processingError)
+              }
+              return resolve()
+            }
+          }
+        )
+      })
+    },
     async syncWorkflowRunMessages(callback) {
       let runsLastSync
       await mixin.getLastIndexingTime('syncWorkflowRunMessages', false).then((time) => {

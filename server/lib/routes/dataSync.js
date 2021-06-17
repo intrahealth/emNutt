@@ -100,6 +100,16 @@ router.get('/syncWorkflowRunMessages', (req, res) => {
   });
 });
 
+router.get('/syncRPInboxMessages', (req, res) => {
+  logger.info('Received a request to sync rapidpro inbox messages');
+  dataSync.syncRPInboxMessages((error) => {
+    if (error) {
+      return res.status(500).send('Internal error occured');
+    }
+    res.status(200).send('Done');
+  });
+});
+
 router.get('/checkCommunicationRequest', (req, res) => {
   logger.info("Received a request to check communication requests");
   dataSync.checkCommunicationRequest((error) => {
