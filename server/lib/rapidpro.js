@@ -73,7 +73,6 @@ module.exports = function () {
             if (!isValid) {
               runsLastSync = moment('1970-01-01').format('Y-MM-DDTHH:mm:ss');
             }
-            runsLastSync = '2021-06-01T00:00:00'
             const queries = [{
               name: 'folder',
               value: 'inbox'
@@ -105,9 +104,10 @@ module.exports = function () {
                   qry += `,http://app.rapidpro.io/contact-uuid|${msg.contact.uuid}`
                 }
                 counter++
-                if(counter === 100) {
+                if(counter === 90) {
                   queries.push(qry)
                   qry = ''
+                  counter = 0
                 }
               }
               if(qry) {
@@ -518,13 +518,24 @@ module.exports = function () {
           if(!contact.name || contact.urns.length === 0 || contact.fields.globalid) {
             return nxt()
           }
+          let name = contact.name.split(' ')
+          let family
+          if(name.length > 1) {
+            family = name.pop()
+          }
+          let given = name
+          let humanName = {
+            use: 'official',
+            text: contact.name,
+            given
+          }
+          if(family) {
+            humanName.family = family
+          }
           let resource = {
             resourceType: "Practitioner",
             id: contact.uuid,
-            name: [{
-              use: 'official',
-              text: contact.name
-            }],
+            name: [humanName],
             identifier: [{
               system: "http://app.rapidpro.io/contact-uuid",
               value: contact.uuid

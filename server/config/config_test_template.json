@@ -67,7 +67,8 @@
     "CommReqSchedule": "http://mhero.org/fhir/StructureDefinition/sms-cron-expression-schedule"
   },
   "namespaces": {
-    "broadcastID": "f786a975-32b3-46cb-a4e6-91186aad9cf5"
+    "broadcastID": "f786a975-32b3-46cb-a4e6-91186aad9cf5",
+    "rpinboxmsgs": "8883e3fc-1480-4eaa-b976-d2bdd67cd144"
   },
   "eidsr": {
     "onlyProvidersCanReport": true,
