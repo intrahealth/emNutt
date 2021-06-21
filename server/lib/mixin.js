@@ -220,6 +220,9 @@ const updatePhoneNumber = (phone) => {
   if (phone.startsWith(countryCode)) {
     return phone;
   }
+  if (phone.startsWith(countryCode.replace('+', ''))) {
+    return '+' + phone;
+  }
   if (phone.startsWith('0')) {
     phone = phone.replace('0', countryCode);
     return phone;
