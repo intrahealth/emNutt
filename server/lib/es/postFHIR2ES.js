@@ -28,7 +28,8 @@ const populateMessageSendingSummary = (reset, callback) => {
   const cacheToIndex = {
     highLevel: 'mheromessagesendsummary',
     byCadre: 'mheromessagesendsummarybycadre',
-    byRegion: 'mheromessagesendsummarybyregion'
+    byRegion: 'mheromessagesendsummarybyregion',
+    byGender: 'mheromessagesendsummarybygender'
   }
   const cacheFromIndex = 'mheromessagesendbreakdown'
   caching.getLastIndexingTime(cacheToIndex.highLevel).then(() => {
@@ -45,6 +46,11 @@ const populateMessageSendingSummary = (reset, callback) => {
       },
       (callback) => {
         caching.createESIndex(cacheToIndex.byRegion, [], (err) => {
+          return callback(null)
+        })
+      },
+      (callback) => {
+        caching.createESIndex(cacheToIndex.byGender, [], (err) => {
           return callback(null)
         })
       }
@@ -64,17 +70,18 @@ const populateMessageSendingSummary = (reset, callback) => {
             let mergedDocs = []
             let mergedDocsByCadre = []
             let mergedDocsByCounty = []
+            let mergedDocsByGender = []
             let recentRun = caching.lastBeganIndexingTime
             for(let doc of documents) {
               //high level summary
               let exist = mergedDocs.findIndex((merged) => {
                 let started = merged.startedDate + 'T' + merged.startedTime
-                return merged.flowID === doc._source.workflow && started == doc._source.started
+                return merged.message === doc._source.message && started == doc._source.started
               })
               if(exist !== -1) {
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   mergedDocs[exist].failed++
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   mergedDocs[exist].sent++
                 }
               } else {
@@ -85,9 +92,9 @@ const populateMessageSendingSummary = (reset, callback) => {
                   failed: 0,
                   sent: 0
                 }
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   flattened.failed = 1
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   flattened.sent = 1
                 }
                 mergedDocs.push(flattened)
@@ -96,12 +103,12 @@ const populateMessageSendingSummary = (reset, callback) => {
               //summary by cadre
               let existByCadre = mergedDocsByCadre.findIndex((merged) => {
                 let started = merged.startedDate + 'T' + merged.startedTime
-                return merged.flowID === doc._source.workflow && started == doc._source.started && merged.cadre === doc._source.cadre
+                return merged.message === doc._source.message && started == doc._source.started && merged.cadre === doc._source.cadre
               })
               if(existByCadre !== -1) {
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   mergedDocsByCadre[existByCadre].failed++
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   mergedDocsByCadre[existByCadre].sent++
                 }
               } else {
@@ -113,9 +120,9 @@ const populateMessageSendingSummary = (reset, callback) => {
                   failed: 0,
                   sent: 0
                 }
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   flattened.failed = 1
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   flattened.sent = 1
                 }
                 mergedDocsByCadre.push(flattened)
@@ -124,12 +131,12 @@ const populateMessageSendingSummary = (reset, callback) => {
               //summary by region/county
               let existByRegion = mergedDocsByCounty.findIndex((merged) => {
                 let started = merged.startedDate + 'T' + merged.startedTime
-                return merged.flowID === doc._source.workflow && started == doc._source.started && merged.regionName === doc._source.regionName
+                return merged.message === doc._source.message && started == doc._source.started && merged.regionName === doc._source.regionName
               })
               if(existByRegion !== -1) {
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   mergedDocsByCounty[existByRegion].failed++
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   mergedDocsByCounty[existByRegion].sent++
                 }
               } else {
@@ -141,12 +148,40 @@ const populateMessageSendingSummary = (reset, callback) => {
                   failed: 0,
                   sent: 0
                 }
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   flattened.failed = 1
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   flattened.sent = 1
                 }
                 mergedDocsByCounty.push(flattened)
+              }
+
+              //summary by gender
+              let existByGender = mergedDocsByGender.findIndex((merged) => {
+                let started = merged.startedDate + 'T' + merged.startedTime
+                return merged.message === doc._source.message && started == doc._source.started && merged.gender === doc._source.gender
+              })
+              if(existByGender !== -1) {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
+                  mergedDocsByGender[existByGender].failed++
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
+                  mergedDocsByGender[existByGender].sent++
+                }
+              } else {
+                let flattened = {
+                  message: doc._source.message,
+                  gender: doc._source.gender,
+                  startedDate: doc._source.started.split('T')[0],
+                  startedTime: doc._source.started.split('T')[1],
+                  failed: 0,
+                  sent: 0
+                }
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
+                  flattened.failed = 1
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
+                  flattened.sent = 1
+                }
+                mergedDocsByGender.push(flattened)
               }
 
               let flowRunDate = moment(doc._source.started)
@@ -161,7 +196,7 @@ const populateMessageSendingSummary = (reset, callback) => {
               highlevel: (callback) => {
                 async.eachSeries(mergedDocs, (mergedDoc, nxt) => {
                   mergedDoc.lastUpdated = moment().format('Y-MM-DDTHH:mm:ss');
-                  let id = uuid5(mergedDoc.flowID + mergedDoc.startedDate + 'T' + mergedDoc.startedTime, config.get("namespaces:broadcastID"));
+                  let id = uuid5(mergedDoc.message + mergedDoc.startedDate + 'T' + mergedDoc.startedTime, config.get("namespaces:broadcastID"));
                   let url = URI(config.get('elastic:baseURL')).segment(cacheToIndex.highLevel).segment('_doc').segment(id).toString()
                   axios({
                     method: 'POST',
@@ -187,7 +222,7 @@ const populateMessageSendingSummary = (reset, callback) => {
               byCadre: (callback) => {
                 async.eachSeries(mergedDocsByCadre, (mergedDoc, nxt) => {
                   mergedDoc.lastUpdated = moment().format('Y-MM-DDTHH:mm:ss');
-                  let id = uuid5(mergedDoc.flowID + mergedDoc.startedDate + 'T' + mergedDoc.startedTime + mergedDoc.cadre, config.get("namespaces:broadcastID"));
+                  let id = uuid5(mergedDoc.message + mergedDoc.startedDate + 'T' + mergedDoc.startedTime + mergedDoc.cadre, config.get("namespaces:broadcastID"));
                   let url = URI(config.get('elastic:baseURL')).segment(cacheToIndex.byCadre).segment('_doc').segment(id).toString()
                   axios({
                     method: 'POST',
@@ -211,8 +246,32 @@ const populateMessageSendingSummary = (reset, callback) => {
               byRegion: (callback) => {
                 async.eachSeries(mergedDocsByCounty, (mergedDoc, nxt) => {
                   mergedDoc.lastUpdated = moment().format('Y-MM-DDTHH:mm:ss');
-                  let id = uuid5(mergedDoc.flowID + mergedDoc.startedDate + 'T' + mergedDoc.startedTime + mergedDoc.regionName, config.get("namespaces:broadcastID"));
+                  let id = uuid5(mergedDoc.message + mergedDoc.startedDate + 'T' + mergedDoc.startedTime + mergedDoc.regionName, config.get("namespaces:broadcastID"));
                   let url = URI(config.get('elastic:baseURL')).segment(cacheToIndex.byRegion).segment('_doc').segment(id).toString()
+                  axios({
+                    method: 'POST',
+                    url,
+                    auth: {
+                      username: config.get('elastic:username'),
+                      password: config.get('elastic:password'),
+                    },
+                    data: mergedDoc
+                  }).then((response) => {
+                    return nxt()
+                  }).catch((err) => {
+                    logger.error(err);
+                    logger.error('Req Data: ' + JSON.stringify(mergedDoc,0,2));
+                    return nxt()
+                  })
+                }, () => {
+                  return callback(null)
+                })
+              },
+              byGender: (callback) => {
+                async.eachSeries(mergedDocsByGender, (mergedDoc, nxt) => {
+                  mergedDoc.lastUpdated = moment().format('Y-MM-DDTHH:mm:ss');
+                  let id = uuid5(mergedDoc.message + mergedDoc.startedDate + 'T' + mergedDoc.startedTime + mergedDoc.gender, config.get("namespaces:broadcastID"));
+                  let url = URI(config.get('elastic:baseURL')).segment(cacheToIndex.byGender).segment('_doc').segment(id).toString()
                   axios({
                     method: 'POST',
                     url,
@@ -266,7 +325,8 @@ const populateFlowRunSummary = (reset, callback) => {
   const cacheToIndex = {
     highLevel: 'mheroflowrunsummary',
     byCadre: 'mheroflowrunsummarybycadre',
-    byRegion: 'mheroflowrunsummarybyregion'
+    byRegion: 'mheroflowrunsummarybyregion',
+    byGender: 'mheroflowrunsummarybygender'
   }
   const cacheFromIndex = 'mheroflowrunbreakdown'
   caching.getLastIndexingTime(cacheToIndex.highLevel).then(() => {
@@ -283,6 +343,11 @@ const populateFlowRunSummary = (reset, callback) => {
       },
       (callback) => {
         caching.createESIndex(cacheToIndex.byRegion, [], (err) => {
+          return callback(null)
+        })
+      },
+      (callback) => {
+        caching.createESIndex(cacheToIndex.byGender, [], (err) => {
           return callback(null)
         })
       }
@@ -302,6 +367,7 @@ const populateFlowRunSummary = (reset, callback) => {
             let mergedDocs = []
             let mergedDocsByCadre = []
             let mergedDocsByCounty = []
+            let mergedDocsByGender = []
             let recentRun = caching.lastBeganIndexingTime
             for(let doc of documents) {
               if(!doc._source.workflow) {
@@ -313,9 +379,9 @@ const populateFlowRunSummary = (reset, callback) => {
                 return merged.flowID === doc._source.workflow && started == doc._source.started
               })
               if(exist !== -1) {
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   mergedDocs[exist].failed++
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   mergedDocs[exist].sent++
                 }
 
@@ -346,9 +412,9 @@ const populateFlowRunSummary = (reset, callback) => {
                   completed: 0,
                   expired: 0
                 }
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   flattened.failed = 1
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   flattened.sent = 1
                 }
 
@@ -374,9 +440,9 @@ const populateFlowRunSummary = (reset, callback) => {
                 return merged.flowID === doc._source.workflow && started == doc._source.started && merged.cadre === doc._source.cadre
               })
               if(existByCadre !== -1) {
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   mergedDocsByCadre[existByCadre].failed++
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   mergedDocsByCadre[existByCadre].sent++
                 }
 
@@ -408,9 +474,9 @@ const populateFlowRunSummary = (reset, callback) => {
                   completed: 0,
                   expired: 0
                 }
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   flattened.failed = 1
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   flattened.sent = 1
                 }
 
@@ -436,9 +502,9 @@ const populateFlowRunSummary = (reset, callback) => {
                 return merged.flowID === doc._source.workflow && started == doc._source.started && merged.regionName === doc._source.regionName
               })
               if(existByRegion !== -1) {
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   mergedDocsByCounty[existByRegion].failed++
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   mergedDocsByCounty[existByRegion].sent++
                 }
 
@@ -470,9 +536,9 @@ const populateFlowRunSummary = (reset, callback) => {
                   completed: 0,
                   expired: 0
                 }
-                if(doc._source.send_status === 'entered-in-error') {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
                   flattened.failed = 1
-                } else if(doc._source.send_status === 'completed') {
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
                   flattened.sent = 1
                 }
 
@@ -491,6 +557,69 @@ const populateFlowRunSummary = (reset, callback) => {
                 }
                 mergedDocsByCounty.push(flattened)
               }
+
+              //summary by gender
+              let existByGender = mergedDocsByGender.findIndex((merged) => {
+                let started = merged.startedDate + 'T' + merged.startedTime
+                return merged.flowID === doc._source.workflow && started == doc._source.started && merged.gender === doc._source.gender
+              })
+              if(existByGender !== -1) {
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
+                  mergedDocsByGender[existByGender].failed++
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
+                  mergedDocsByGender[existByGender].sent++
+                }
+
+                if(doc._source.responded === 'Yes') {
+                  mergedDocsByGender[existByGender].responded++
+                } else if(doc._source.responded === 'No') {
+                  mergedDocsByGender[existByGender].didntRespond++
+                }
+
+                if(doc._source.exit_type === 'interrupted') {
+                  mergedDocsByGender[existByGender].interrupted++
+                } else if(doc._source.exit_type === 'completed') {
+                  mergedDocsByGender[existByGender].completed++
+                } else if(doc._source.exit_type === 'expired') {
+                  mergedDocsByGender[existByGender].expired++
+                }
+              } else {
+                let flattened = {
+                  flowID: doc._source.workflow,
+                  flowName: doc._source.WorkflowName,
+                  gender: doc._source.gender,
+                  startedDate: doc._source.started.split('T')[0],
+                  startedTime: doc._source.started.split('T')[1],
+                  failed: 0,
+                  sent: 0,
+                  responded: 0,
+                  didntRespond: 0,
+                  interrupted: 0,
+                  completed: 0,
+                  expired: 0
+                }
+                if(doc._source.send_status === 'entered-in-error' || doc._source.send_status === 'Failed') {
+                  flattened.failed = 1
+                } else if(doc._source.send_status === 'completed' || doc._source.send_status === 'Sent') {
+                  flattened.sent = 1
+                }
+
+                if(doc._source.responded === 'Yes') {
+                  flattened.responded = 1
+                } else if(doc._source.responded === 'No') {
+                  flattened.didntRespond = 1
+                }
+
+                if(doc._source.exit_type === 'interrupted') {
+                  flattened.interrupted = 1
+                } else if(doc._source.exit_type === 'completed') {
+                  flattened.completed = 1
+                } else if(doc._source.exit_type === 'expired') {
+                  flattened.expired = 1
+                }
+                mergedDocsByGender.push(flattened)
+              }
+
               let flowRunDate = moment(doc._source.started)
               let recent = moment(recentRun)
               if(flowRunDate > recent) {
@@ -555,6 +684,30 @@ const populateFlowRunSummary = (reset, callback) => {
                   mergedDoc.lastUpdated = moment().format('Y-MM-DDTHH:mm:ss');
                   let id = uuid5(mergedDoc.flowID + mergedDoc.startedDate + 'T' + mergedDoc.startedTime + mergedDoc.regionName, config.get("namespaces:broadcastID"));
                   let url = URI(config.get('elastic:baseURL')).segment(cacheToIndex.byRegion).segment('_doc').segment(id).toString()
+                  axios({
+                    method: 'POST',
+                    url,
+                    auth: {
+                      username: config.get('elastic:username'),
+                      password: config.get('elastic:password'),
+                    },
+                    data: mergedDoc
+                  }).then((response) => {
+                    return nxt()
+                  }).catch((err) => {
+                    logger.error(err);
+                    logger.error('Req Data: ' + JSON.stringify(mergedDoc,0,2));
+                    return nxt()
+                  })
+                }, () => {
+                  return callback(null)
+                })
+              },
+              byGender: (callback) => {
+                async.eachSeries(mergedDocsByGender, (mergedDoc, nxt) => {
+                  mergedDoc.lastUpdated = moment().format('Y-MM-DDTHH:mm:ss');
+                  let id = uuid5(mergedDoc.flowID + mergedDoc.startedDate + 'T' + mergedDoc.startedTime + mergedDoc.gender, config.get("namespaces:broadcastID"));
+                  let url = URI(config.get('elastic:baseURL')).segment(cacheToIndex.byGender).segment('_doc').segment(id).toString()
                   axios({
                     method: 'POST',
                     url,
