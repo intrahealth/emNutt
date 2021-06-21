@@ -124,32 +124,28 @@
   ],
   "lastSync": {
     "syncWorkflows": {
-      "time": "1970-11-30T10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "syncContacts": {
-      "time": "1970-11-30T10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "syncContactsGroups": {
-      "time": "1970-11-30T10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "syncWorkflowRunMessages": {
-      "time": "1970-11-30T10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
+    },
+    "syncRPInboxMessages": {
+      "cronTime": "*/5 * * * *"
     },
     "syncFloipFlowResults": {
-      "time": "1970-11-30 10:00:00",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "checkCommunicationRequest": {
-      "time": "1970-02-27T14:14:39",
-      "cronTime": "*/15 * * * *"
+      "cronTime": "*/5 * * * *"
     },
     "fhir2esSync": {
-      "time": "1970-02-27T14:14:39",
-      "cronTime": "*/20 * * * *"
+      "cronTime": "*/5 * * * *"
     }
   }
 }

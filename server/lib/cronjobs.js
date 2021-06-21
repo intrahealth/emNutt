@@ -57,6 +57,7 @@ function scheduleDataSync() {
   let cronContactsSync = config.get("lastSync:syncContacts:cronTime");
   let cronContactGroupsSync = config.get("lastSync:syncContactsGroups:cronTime");
   let cronRunMsgsSync = config.get("lastSync:syncWorkflowRunMessages:cronTime");
+  let cronRPInboxMsgsSync = config.get("lastSync:syncRPInboxMessages:cronTime");
   let cronFloipFlowResSync = config.get("lastSync:syncFloipFlowResults:cronTime");
   let cronFHIR2ESSync = config.get("lastSync:fhir2esSync:cronTime");
 
@@ -85,6 +86,13 @@ function scheduleDataSync() {
     logger.info('Running cron job for workflows run messages synchronization');
     dataSync.syncWorkflowRunMessages(() => {
       logger.info('Done running cron job for workflows run messages synchronization');
+    });
+  });
+
+  cron.schedule(cronRPInboxMsgsSync, () => {
+    logger.info('Running cron job for RP inbox messages synchronization');
+    dataSync.syncRPInboxMessages(() => {
+      logger.info('Done running cron job for RP inbox messages synchronization');
     });
   });
 
