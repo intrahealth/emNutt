@@ -82,6 +82,57 @@ function appRoutes() {
     })
   });
 
+  app.put('/optout', (req, res) => {
+    let globalid = req.query.globalid
+    let resourceType = req.query.entitytype
+    if(!globalid || !resourceType) {
+      return res.status(400).send()
+    }
+    macm.getResource({
+      resource: resourceType,
+      id: globalid
+    }, (err, resourceData) => {
+      if(err || !resourceData) {
+        return res.status(400).send()
+      }
+      if(!resourceData.meta) {
+        resourceData.meta = {}
+      }
+      if(!resourceData.meta.tag) {
+        resourceData.meta.tag = []
+      }
+      for(let index in resourceData.meta.tag) {
+        let tag = resourceData.meta.tag[index]
+        if(tag.system === 'http://mhero.org/codesystem' && tag.code === 'optedout') {
+          resourceData.meta.tag.splice(index, 1)
+          break
+        }
+      }
+      resourceData.meta.tag.push({
+        system: 'http://mhero.org/codesystem',
+        code: 'optedout',
+        display: 'Opted Out'
+      })
+      const bundle = {
+        resourceType: 'Bundle',
+        type: 'batch',
+        entry: [{
+          resource: resourceData,
+          request: {
+            method: 'PUT',
+            url: `${resourceType}/${globalid}`
+          }
+        }]
+      };
+      macm.saveResource(bundle, (err) => {
+        if(err) {
+          return res.status(500).send()
+        }
+        return res.status(201).send()
+      })
+    })
+  })
+
   app.get('/emNutt/fhir/clearProgress', (req, res) => {
     res.status(200).send();
     const requestIDs = JSON.parse(req.query.requestIDs);

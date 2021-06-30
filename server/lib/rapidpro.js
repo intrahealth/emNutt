@@ -1486,6 +1486,14 @@ module.exports = function () {
                       }
                     }
                     if (resource) {
+                      //check if opted out
+                      let optedout = false
+                      let isOptedOut = resource.meta && resource.meta.tag && resource.meta.tag.find((tag) => {
+                        return tag.system === 'http://mhero.org/codesystem' && tag.code === 'optedout'
+                      })
+                      if(isOptedOut) {
+                        optedout = true
+                      }
                       if (resource.telecom && Array.isArray(resource.telecom) && resource.telecom.length > 0) {
                         let rpuuid = resource.identifier && resource.identifier.find((ident) => {
                           return ident.system === 'http://app.rapidpro.io/contact-uuid';
@@ -1494,7 +1502,8 @@ module.exports = function () {
                           recipients.push({
                             contact: rpuuid.value,
                             id: resource.id,
-                            entityType: resource.resourceType
+                            entityType: resource.resourceType,
+                            optedout
                           });
                         } else if(isContained) {
                           for (const telecom of resource.telecom) {
@@ -1507,7 +1516,8 @@ module.exports = function () {
                               recipients.push({
                                 urns: 'tel:' + telecom.value,
                                 id: resource.id,
-                                entityType: resource.resourceType
+                                entityType: resource.resourceType,
+                                optedout
                               });
                             }
                           }
@@ -1620,6 +1630,22 @@ module.exports = function () {
                         flowBody.contacts = [];
                         let ids = [];
                         async.eachSeries(recipients, (recipient, nxtRec) => {
+                          if(recipient.optedout) {
+                            status[commReq.resource.id][workflow].ignored++
+                            processedRecords++
+                            let statusResData = JSON.stringify({
+                              id: reqID,
+                              totalRecords,
+                              processedRecords,
+                              step: 2,
+                              totalSteps: 2,
+                              status: 'Starting workflow',
+                              error: null,
+                              sendStatus: status
+                            });
+                            redisClient.set(commReq.resource.id, statusResData);
+                            return nxtRec()
+                          }
                           let ignore = false
                           let idProcessed = processedRecipients.recipients.find((id) => {
                             return id === recipient.id
