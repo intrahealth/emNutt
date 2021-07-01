@@ -82,53 +82,122 @@ function appRoutes() {
     })
   });
 
-  app.put('/optout', (req, res) => {
+  app.put('/emNutt/optout', (req, res) => {
+    let processingError = false
     let globalid = req.query.globalid
     let resourceType = req.query.entitytype
-    if(!globalid || !resourceType) {
+    if((!globalid || !resourceType) && !Array.isArray(req.body)) {
       return res.status(400).send()
     }
-    macm.getResource({
-      resource: resourceType,
-      id: globalid
-    }, (err, resourceData) => {
-      if(err || !resourceData) {
-        return res.status(400).send()
-      }
-      if(!resourceData.meta) {
-        resourceData.meta = {}
-      }
-      if(!resourceData.meta.tag) {
-        resourceData.meta.tag = []
-      }
-      for(let index in resourceData.meta.tag) {
-        let tag = resourceData.meta.tag[index]
-        if(tag.system === 'http://mhero.org/codesystem' && tag.code === 'optedout') {
-          resourceData.meta.tag.splice(index, 1)
-          break
-        }
-      }
-      resourceData.meta.tag.push({
-        system: 'http://mhero.org/codesystem',
-        code: 'optedout',
-        display: 'Opted Out'
+    let practitioners = []
+    if(globalid) {
+      practitioners.push({
+        entitytype: resourceType,
+        globalid: globalid
       })
-      const bundle = {
-        resourceType: 'Bundle',
-        type: 'batch',
-        entry: [{
-          resource: resourceData,
-          request: {
-            method: 'PUT',
-            url: `${resourceType}/${globalid}`
+    }
+    if(req.body) {
+      practitioners = practitioners.concat(req.body)
+    }
+    let practitionersResources = []
+    let ids = []
+    async.eachSeries(practitioners, (practitioner, nxt) => {
+      let id = `${practitioner.entitytype}/${practitioner.globalid}`
+      ids.push(id)
+      if(ids.length >= 100) {
+        macm.getResource({
+          resource: practitioner.entitytype,
+          query: ids.join(',')
+        }, (err, resourceData) => {
+          if(err) {
+            processingError = true
+            return nxt()
           }
-        }]
-      };
-      macm.saveResource(bundle, (err) => {
-        if(err) {
-          return res.status(500).send()
+          practitionersResources = practitionersResources.concat(resourceData.entry)
+          return nxt()
+        })
+      } else {
+        return nxt()
+      }
+    }, () => {
+      let promise = new Promise((resolve) => {
+        if(ids.length > 0) {
+          macm.getResource({
+            resource: practitioners[0].entitytype,
+            query: `_id=${ids.join(',')}`
+          }, (err, resourceData) => {
+            if(err) {
+              processingError = true
+            }
+            practitionersResources = practitionersResources.concat(resourceData.entry)
+            return resolve()
+          })
+        } else {
+          return resolve()
         }
-        return res.status(201).send()
+      })
+      promise.then(() => {
+        const bundle = {
+          resourceType: 'Bundle',
+          type: 'batch',
+          entry: []
+        };
+        async.eachSeries(practitionersResources, (resourceData, nxt) => {
+          if(!resourceData.resource.meta) {
+            resourceData.resource.meta = {}
+          }
+          if(!resourceData.resource.meta.tag) {
+            resourceData.resource.meta.tag = []
+          }
+          for(let index in resourceData.resource.meta.tag) {
+            let tag = resourceData.resource.meta.tag[index]
+            if(tag.system === 'http://mhero.org/codesystem' && tag.code === 'optedout') {
+              resourceData.resource.meta.tag.splice(index, 1)
+              break
+            }
+          }
+          resourceData.resource.meta.tag.push({
+            system: 'http://mhero.org/codesystem',
+            code: 'optedout',
+            display: 'Opted Out'
+          })
+          bundle.entry.push({
+            resource: resourceData.resource,
+            request: {
+              method: 'PUT',
+              url: `${resourceData.resource.resourceType}/${resourceData.resource.id}`
+            }
+          })
+          if(bundle.entry.length >= 200) {
+            macm.saveResource(bundle, (err) => {
+              if(err) {
+                processingError = true
+              }
+              return nxt()
+            })
+          } else {
+            return nxt()
+          }
+        }, () => {
+          let promise = new Promise((resolve) => {
+            if(bundle.entry.length > 0) {
+              macm.saveResource(bundle, (err) => {
+                if(err) {
+                  processingError = true
+                }
+                return resolve()
+              })
+            } else {
+              return resolve()
+            }
+          })
+          promise.then(() => {
+            if(processingError) {
+              return res.status(500).send()
+            }
+            return res.status(200).send()
+          })
+        })
       })
     })
   })
