@@ -229,6 +229,38 @@ module.exports = function () {
       });
     },
 
+    '$meta-delete'({
+      resourceParameters,
+      resourceType,
+      resourceID
+    }) {
+      return new Promise((resolve) => {
+        const url = URI(config.get('macm:baseURL'))
+          .segment(resourceType)
+          .segment(resourceID)
+          .segment('$meta-delete')
+          .toString();
+        const options = {
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          withCredentials: true,
+          auth: {
+            username: config.get('macm:username'),
+            password: config.get('macm:password'),
+          },
+          json: resourceParameters,
+        };
+        request.post(options, (err, res, body) => {
+          if(err || !res.statusCode || (res.statusCode < 200 && res.statusCode > 299)) {
+            return reject();
+          }
+          return resolve();
+        });
+      });
+    },
+
     /**
      *
      * @param {FHIRResource} resource

@@ -96,7 +96,7 @@ function appRoutes() {
         globalid: globalid
       })
     }
-    if(req.body) {
+    if(req.body && Array.isArray(req.body) && req.body.length > 0) {
       practitioners = practitioners.concat(req.body)
     }
     let practitionersResources = []
@@ -199,6 +199,61 @@ function appRoutes() {
           })
         })
       })
+    })
+  })
+
+  app.put('/emNutt/undoOptout', (req, res) => {
+    let processingError = false
+    let globalid = req.query.globalid
+    let resourceType = req.query.entitytype
+    if((!globalid || !resourceType) && !Array.isArray(req.body)) {
+      return res.status(400).send()
+    }
+    let practitioners = []
+    if(globalid) {
+      practitioners.push({
+        entitytype: resourceType,
+        globalid: globalid
+      })
+    }
+    if(req.body && Array.isArray(req.body) && req.body.length > 0) {
+      practitioners = practitioners.concat(req.body)
+    }
+
+    let parameters = {
+      resourceType: 'Parameters',
+      parameter: [{
+        name: 'meta',
+        valueMeta: {
+          tag: {
+            system: 'http://mhero.org/codesystem',
+            code: 'optedout'
+          }
+        }
+      }]
+    };
+    async.eachSeries(practitioners, (practitioner, nxt) => {
+      logger.error(JSON.stringify({
+        resourceParameters: parameters,
+        resourceType: practitioner.entitytype,
+        resourceID: practitioner.globalid
+      },0,2));
+      macm["$meta-delete"]({
+        resourceParameters: parameters,
+        resourceType: practitioner.entitytype,
+        resourceID: practitioner.globalid
+      }).then(() => {
+        return nxt();
+      }).catch((err) => {
+        logger.error(err);
+        processingError = true;
+        return nxt();
+      });
+    }, () => {
+      if(processingError) {
+        return res.status(500).send()
+      }
+      return res.status(200).send()
     })
   })
 
