@@ -14,6 +14,7 @@ const macm = require('./macm')();
 const config = require('./config');
 const logger = require('./winston');
 const mixin = require('./mixin');
+const fhirAudit = require('./modules/fhirAudit')
 module.exports = function () {
   return {
     /**
@@ -536,6 +537,7 @@ module.exports = function () {
             resourceType: "Practitioner",
             id: contact.uuid,
             name: [humanName],
+            active: true,
             identifier: [{
               system: "http://app.rapidpro.io/contact-uuid",
               value: contact.uuid
@@ -1965,7 +1967,7 @@ module.exports = function () {
           }
           redisClient.set(reqID, statusResData);
           async.eachSeries(commReqBundles, (bundle, nxtBundle) => {
-            macm.saveResource(bundle, () => {
+            macm.saveResource(bundle, (error, response, body) => {
               return nxtBundle()
             })
           }, () => {
@@ -2104,7 +2106,7 @@ module.exports = function () {
         commReq.resource.extension = [];
       }
       commReq.resource.status = commReqStatus
-      let extIndex = 0;
+      let extIndex = 1;
       for (const index in commReq.resource.extension) {
         const ext = commReq.resource.extension[index];
         if (ext.url === extUrl) {
@@ -2112,7 +2114,6 @@ module.exports = function () {
           break;
         }
       }
-
       if(rpRunStatus && Object.keys(rpRunStatus).length > 0) {
         commReq.resource.extension[extIndex] = {
           url: extUrl,

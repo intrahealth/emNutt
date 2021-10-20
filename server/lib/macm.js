@@ -254,9 +254,9 @@ module.exports = function () {
         };
         request.post(options, (err, res, body) => {
           if(err || !res.statusCode || (res.statusCode < 200 && res.statusCode > 299)) {
-            return reject();
+            return reject(err, res, body);
           }
-          return resolve();
+          return resolve(err, res, body);
         });
       });
     },
@@ -533,6 +533,7 @@ module.exports = function () {
           }
         });
       }
+      let dialog = []
       for (const path of run.path) {
         const values = Object.keys(run.values);
         const texts = [];
@@ -554,14 +555,16 @@ module.exports = function () {
               }
             }
             const id = uuid5(path.node, run.uuid);
-            texts.push({
+            let text = {
               id,
               nodeUUID: path.node,
               type: 'reply',
               inResponseTo,
               time: run.values[valueKey].time,
               msg: run.values[valueKey].input
-            });
+            }
+            texts.push(text);
+            dialog.push(text)
           }
         }
         if (texts.length === 0) {
@@ -572,13 +575,15 @@ module.exports = function () {
               for (const action of node.actions) {
                 if (action.type === 'send_msg') {
                   id = uuid5(action.uuid, run.uuid);
-                  texts.push({
+                  let text = {
                     id,
                     nodeUUID: action.uuid,
                     type: 'sent',
                     time: path.time,
                     msg: action.text
-                  });
+                  }
+                  texts.push(text);
+                  dialog.push(text)
                 }
               }
             }
@@ -625,6 +630,44 @@ module.exports = function () {
           });
         }
       }
+      //create questionnaire response resource
+      let qnresponse = {
+        resourceType: "QuestionnaireResponse",
+        id: run.uuid,
+        authored: run.created_on,
+        item: []
+      }
+      if(run.exit_type === 'interrupted' || run.exit_type === 'expired') {
+        qnresponse.status = 'stopped'
+      } else if(run.exit_type === 'completed') {
+        qnresponse.status = 'completed'
+      } else {
+        qnresponse.status = 'in-progress'
+      }
+      for(let text of dialog) {
+        if(text.type !== 'sent') {
+          continue
+        }
+        let reply = dialog.find((txt) => {
+          return txt.type === 'reply' && txt.inResponseTo === text.id
+        })
+        let link = {}
+        link.linkId = text.nodeUUID
+        link.text = text.msg
+        if(reply) {
+          link.answer = [{
+            valueString: reply.msg
+          }]
+        }
+        qnresponse.item.push(link)
+      }
+      bundle.entry.push({
+        resource: qnresponse,
+        request: {
+          method: 'PUT',
+          url: `${qnresponse.resourceType}/${qnresponse.id}`
+        }
+      });
       return callback(processingError, bundle);
     }
   };

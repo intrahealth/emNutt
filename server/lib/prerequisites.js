@@ -40,6 +40,9 @@ const checkDependencies = (callback) => {
 
   function isRunning(dependence, callback) {
     logger.info('Checking if ' + dependence.name + ' is running');
+    if(dependence.name === 'kibana') {
+      return callback(true)
+    }
     const options = {
       url: dependence.url,
       auth: dependence.auth

@@ -84,6 +84,7 @@ function appRoutes() {
 
   app.put('/emNutt/optout', (req, res) => {
     let processingError = false
+    let responseBody = []
     let globalid = req.query.globalid
     let resourceType = req.query.entitytype
     if((!globalid || !resourceType) && !Array.isArray(req.body)) {
@@ -169,7 +170,10 @@ function appRoutes() {
             }
           })
           if(bundle.entry.length >= 200) {
-            macm.saveResource(bundle, (err) => {
+            macm.saveResource(bundle, (err, response, body) => {
+              if(body.entry) {
+                responseBody = responseBody.concat(body.entry)
+              }
               if(err) {
                 processingError = true
               }
@@ -181,7 +185,10 @@ function appRoutes() {
         }, () => {
           let promise = new Promise((resolve) => {
             if(bundle.entry.length > 0) {
-              macm.saveResource(bundle, (err) => {
+              macm.saveResource(bundle, (err, response, body) => {
+                if(body.entry) {
+                  responseBody = responseBody.concat(body.entry)
+                }
                 if(err) {
                   processingError = true
                 }
@@ -193,9 +200,9 @@ function appRoutes() {
           })
           promise.then(() => {
             if(processingError) {
-              return res.status(500).send()
+              return res.status(500).json(responseBody)
             }
-            return res.status(200).send()
+            return res.status(200).json(responseBody)
           })
         })
       })
@@ -204,6 +211,7 @@ function appRoutes() {
 
   app.put('/emNutt/undoOptout', (req, res) => {
     let processingError = false
+    let responseBody = []
     let globalid = req.query.globalid
     let resourceType = req.query.entitytype
     if((!globalid || !resourceType) && !Array.isArray(req.body)) {
@@ -233,16 +241,14 @@ function appRoutes() {
       }]
     };
     async.eachSeries(practitioners, (practitioner, nxt) => {
-      logger.error(JSON.stringify({
-        resourceParameters: parameters,
-        resourceType: practitioner.entitytype,
-        resourceID: practitioner.globalid
-      },0,2));
       macm["$meta-delete"]({
         resourceParameters: parameters,
         resourceType: practitioner.entitytype,
         resourceID: practitioner.globalid
-      }).then(() => {
+      }).then((err, response, body) => {
+        if(body.entry) {
+          responseBody = responseBody.concat(body.entry)
+        }
         return nxt();
       }).catch((err) => {
         logger.error(err);
@@ -251,9 +257,9 @@ function appRoutes() {
       });
     }, () => {
       if(processingError) {
-        return res.status(500).send()
+        return res.status(500).json(responseBody)
       }
-      return res.status(200).send()
+      return res.status(200).json(responseBody)
     })
   })
 
@@ -263,15 +269,17 @@ function appRoutes() {
     if(requestIDs.parentReqId) {
       delete processedMessages[requestIDs.parentReqId]
     }
-    for(let requestID of requestIDs.childrenReqIDs) {
-      logger.info(`Clearing progress data for clientID ${requestID}`);
-      let data = JSON.stringify({})
-      redisClient.set(requestID, data, (err, reply) => {
-        if (err) {
-          logger.error(err);
-          logger.error(`An error has occured while clearing progress data for ${type} and requestID ${requestID}`);
-        }
-      });
+    if(Array.isArray(requestIDs.childrenReqIDs)) {
+      for(let requestID of requestIDs.childrenReqIDs) {
+        logger.info(`Clearing progress data for clientID ${requestID}`);
+        let data = JSON.stringify({})
+        redisClient.set(requestID, data, (err, reply) => {
+          if (err) {
+            logger.error(err);
+            logger.error(`An error has occured while clearing progress data for ${type} and requestID ${requestID}`);
+          }
+        });
+      }
     }
   });
 
