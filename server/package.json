@@ -18,7 +18,7 @@
     "eslint-plugin-jsx-a11y": "^6.4.1",
     "express": "^4.17.1",
     "fhir": "^4.8.2",
-    "fhir2es": ">3.0.0",
+    "fhir2es": "^4.0.2",
     "fhirpath": "^2.7.4",
     "formidable": "^1.2.2",
     "is-json": "^2.0.1",
