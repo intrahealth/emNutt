@@ -119,9 +119,13 @@
       "name": "Rapidpro"
     }
   ],
-  "enabledCommChannels": [
-    "rapidpro"
-  ],
+  "enabledCommChannels": [{
+    "type": "flow",
+    "name": "rapidpro"
+  }, {
+    "type": "whatsapp",
+    "name": "turn"
+  }],
   "lastSync": {
     "syncWorkflows": {
       "cronTime": "*/5 * * * *"

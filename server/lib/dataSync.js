@@ -233,7 +233,7 @@ function syncFloipFlowResults(callback) {
     return callback()
   }
   syncStatus.syncFloipFlowResults = 'running'
-  let newRunsLastSync = moment().format('Y-MM-DD HH:mm:ss');
+  let newRunsLastSync = moment().format('Y-MM-DDTHH:mm:ss');
   floip.flowResultsToQuestionnaire((err) => {
     syncStatus.syncFloipFlowResults = 'not_running'
     logger.info("Done Synchronizing flow results from FLOIP server");
