@@ -2229,18 +2229,20 @@ module.exports = function () {
               retrying = true
               logger.error('Error occured with status code ' + err + '. retrying this request');
               setTimeout(() => {
-                return callback(err, url);
+                return callback(null, url);
               }, 2000);
             }
-            try {
-              JSON.parse(body)
-            } catch (error) {
-              retrying = true
-              logger.error(url);
-              logger.error(error + '. retrying this request')
-              setTimeout(() => {
-                return callback(null, url)
-              }, 2000);
+            if(!retrying) {
+              try {
+                JSON.parse(body)
+              } catch (error) {
+                retrying = true
+                logger.error(url);
+                logger.error(error + '. retrying this request')
+                setTimeout(() => {
+                  return callback(null, url)
+                }, 2000);
+              }
             }
             if(!retrying) {
               this.isThrottled(JSON.parse(body), (wasThrottled) => {
