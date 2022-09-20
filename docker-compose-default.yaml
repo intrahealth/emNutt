@@ -1,4 +1,3 @@
-
   version: "3.3"
   networks:
     emnutt:
@@ -34,8 +33,6 @@
         MEDIATOR_API_TRUST_SELF_SIGNED: "true"
         MEDIATOR_ROUTER_URL:
         MEDIATOR_REGISTER: "true"
-        MEDIATOR_API_USERNAME: root@openhim.org
-        MEDIATOR_API_PASSWORD: openhim-password
 
     fhir:
       container_name: hapi-fhir

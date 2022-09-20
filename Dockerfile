@@ -1,8 +1,7 @@
-FROM node:dubnium
+FROM node:18-slim
 
 # Create app directory
 WORKDIR /srv/emNutt
-
 
 COPY . .
 
