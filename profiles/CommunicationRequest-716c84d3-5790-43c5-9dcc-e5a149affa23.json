@@ -1,0 +1,54 @@
+{
+  "resourceType": "CommunicationRequest",
+  "id": "716c84d3-5790-43c5-9dcc-e5a149affa23",
+  "meta": {
+    "profile": [
+      "http://mHero.org/fhir/StructureDefinition/mhero-communication-request"
+    ]
+  },
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Generated Narrative</b></p><p><b>id</b>: 716c84d3-5790-43c5-9dcc-e5a149affa23</p><p><b>meta</b>: </p><p><b>status</b>: completed</p><h3>Payloads</h3><table class=\"grid\"><tr><td>-</td><td><b>Content[x]</b></td></tr><tr><td>*</td><td>Hello World</td></tr></table><p><b>recipient</b>: </p><ul><li><a href=\"Practitioner/P7344\">Practitioner/P7344</a></li><li><a href=\"Practitioner/P7364\">Practitioner/P7364</a></li></ul></div>"
+  },
+  "extension": [
+    {
+      "extension": [
+        {
+          "url": "broadcast_id",
+          "valueString": "7540339"
+        },
+        {
+          "url": "contact_globalid",
+          "valueString": "Practitioner/P9359"
+        },
+        {
+          "url": "created_on",
+          "valueDateTime": "2020-03-18T12:28:06.768319Z"
+        },
+        {
+          "url": "contact_globalid",
+          "valueString": "Practitioner/P9354"
+        },
+        {
+          "url": "contact_globalid",
+          "valueString": "Practitioner/P6209"
+        }
+      ],
+      "url": "http://mHero.org/fhir/StructureDefinition/mhero-comm-req-broadcast-starts"
+    }
+  ],
+  "status": "completed",
+  "payload": [
+    {
+      "contentString": "Hello World"
+    }
+  ],
+  "recipient": [
+    {
+      "reference": "Practitioner/P7344"
+    },
+    {
+      "reference": "Practitioner/P7364"
+    }
+  ]
+}

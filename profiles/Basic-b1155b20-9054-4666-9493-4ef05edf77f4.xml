@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Basic xmlns="http://hl7.org/fhir">
+  <id value="b1155b20-9054-4666-9493-4ef05edf77f4"/>
+  <meta>
+    <profile value="http://mHero.org/fhir/StructureDefinition/mhero-workflows"/>
+  </meta>
+  <text>
+    <status value="generated"/><div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative</b></p><p><b>id</b>: b1155b20-9054-4666-9493-4ef05edf77f4</p><p><b>meta</b>: </p><p><b>code</b>: <span title="Codes: ">mHero Workflow</span></p></div>
+  </text>
+  <extension url="http://mHero.org/fhir/StructureDefinition/mhero-workflows-details">
+    <extension url="name">
+      <valueString value="Sample Flow - Order Status Checker"/>
+    </extension>
+    <extension url="uuid">
+      <valueString value="b1155b20-9054-4666-9493-4ef05edf77f4"/>
+    </extension>
+    <extension url="flow_type">
+      <valueString value="message"/>
+    </extension>
+    <extension url="archived">
+      <valueBoolean value="false"/>
+    </extension>
+    <extension url="expires">
+      <valueInteger value="720"/>
+    </extension>
+    <extension url="created_on">
+      <valueDateTime value="2019-12-30T11:45:36.694585Z"/>
+    </extension>
+    <extension url="modified_on">
+      <valueDateTime value="2019-12-30T11:45:37.229399Z"/>
+    </extension>
+    <extension url="http://mHero.org/fhir/StructureDefinition/mhero-run-summary">
+      <extension url="active">
+        <valueInteger value="0"/>
+      </extension>
+      <extension url="completed">
+        <valueInteger value="5"/>
+      </extension>
+      <extension url="interrupted">
+        <valueInteger value="12"/>
+      </extension>
+      <extension url="expired">
+        <valueInteger value="0"/>
+      </extension>
+    </extension>
+  </extension>
+  <code>
+    <text value="mHero Workflow"/>
+  </code>
+</Basic>

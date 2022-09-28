@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CommunicationRequest xmlns="http://hl7.org/fhir">
+  <id value="8d5d23b0-2e67-4bac-af8d-15585bd863d5"/>
+  <meta>
+    <profile value="http://mHero.org/fhir/StructureDefinition/mhero-communication-request"/>
+  </meta>
+  <text>
+    <status value="generated"/><div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative</b></p><p><b>id</b>: 8d5d23b0-2e67-4bac-af8d-15585bd863d5</p><p><b>meta</b>: </p><p><b>status</b>: completed</p><h3>Payloads</h3><table class="grid"><tr><td>-</td><td><b>Content[x]</b></td></tr><tr><td>*</td><td></td></tr></table><p><b>recipient</b>: </p><ul><li><a href="Practitioner/P7364">Practitioner/P7364</a></li><li><a href="Practitioner/P7344">Practitioner/P7344</a></li></ul></div>
+  </text>
+  <extension url="http://mHero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts">
+    <extension url="flow_starts_uuid">
+      <valueString value="8d5d23b0-2e67-4bac-af8d-15585bd863d5"/>
+    </extension>
+    <extension url="contact_globalid">
+      <valueString value="Practitioner/P7344"/>
+    </extension>
+    <extension url="created_on">
+      <valueDateTime value="2020-03-10T14:17:47.817188Z"/>
+    </extension>
+    <extension url="modified_on">
+      <valueDateTime value="2020-03-10T14:17:47.817290Z"/>
+    </extension>
+    <extension url="flow_uuid">
+      <valueString value="b7a4770c-d034-4055-9f21-b17632ef311e"/>
+    </extension>
+    <extension url="status">
+      <valueString value="pending"/>
+    </extension>
+    <extension url="contact_globalid">
+      <valueString value="Practitioner/P7364"/>
+    </extension>
+  </extension>
+  <status value="completed"/>
+  <payload>
+    <contentAttachment>
+      <url value="b7a4770c-d034-4055-9f21-b17632ef311e"/>
+    </contentAttachment>
+  </payload>
+  <recipient>
+    <reference value="Practitioner/P7364"/>
+  </recipient>
+  <recipient>
+    <reference value="Practitioner/P7344"/>
+  </recipient>
+</CommunicationRequest>

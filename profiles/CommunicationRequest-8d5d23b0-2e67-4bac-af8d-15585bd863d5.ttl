@@ -1,0 +1,78 @@
+@prefix fhir: <http://hl7.org/fhir/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# - resource -------------------------------------------------------------------
+
+<http://mHero.org/fhir/CommunicationRequest/8d5d23b0-2e67-4bac-af8d-15585bd863d5> a fhir:CommunicationRequest;
+  fhir:nodeRole fhir:treeRoot;
+  fhir:Resource.id [ fhir:value "8d5d23b0-2e67-4bac-af8d-15585bd863d5"];
+  fhir:Resource.meta [
+     fhir:Meta.profile [
+       fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-communication-request";
+       fhir:index 0;
+       fhir:link <http://mHero.org/fhir/StructureDefinition/mhero-communication-request>
+     ]
+  ];
+  fhir:DomainResource.text [
+     fhir:Narrative.status [ fhir:value "generated" ];
+     fhir:Narrative.div "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Generated Narrative</b></p><p><b>id</b>: 8d5d23b0-2e67-4bac-af8d-15585bd863d5</p><p><b>meta</b>: </p><p><b>status</b>: completed</p><h3>Payloads</h3><table class=\"grid\"><tr><td>-</td><td><b>Content[x]</b></td></tr><tr><td>*</td><td></td></tr></table><p><b>recipient</b>: </p><ul><li><a href=\"Practitioner/P7364\">Practitioner/P7364</a></li><li><a href=\"Practitioner/P7344\">Practitioner/P7344</a></li></ul></div>"
+  ];
+  fhir:DomainResource.extension [
+     fhir:index 0;
+     fhir:Element.extension [
+       fhir:index 0;
+       fhir:Extension.url [ fhir:value "flow_starts_uuid" ];
+       fhir:Extension.valueString [ fhir:value "8d5d23b0-2e67-4bac-af8d-15585bd863d5" ]
+     ], [
+       fhir:index 1;
+       fhir:Extension.url [ fhir:value "contact_globalid" ];
+       fhir:Extension.valueString [ fhir:value "Practitioner/P7344" ]
+     ], [
+       fhir:index 2;
+       fhir:Extension.url [ fhir:value "created_on" ];
+       fhir:Extension.valueDateTime [ fhir:value "2020-03-10T14:17:47.817188Z"^^xsd:dateTime ]
+     ], [
+       fhir:index 3;
+       fhir:Extension.url [ fhir:value "modified_on" ];
+       fhir:Extension.valueDateTime [ fhir:value "2020-03-10T14:17:47.817290Z"^^xsd:dateTime ]
+     ], [
+       fhir:index 4;
+       fhir:Extension.url [ fhir:value "flow_uuid" ];
+       fhir:Extension.valueString [ fhir:value "b7a4770c-d034-4055-9f21-b17632ef311e" ]
+     ], [
+       fhir:index 5;
+       fhir:Extension.url [ fhir:value "status" ];
+       fhir:Extension.valueString [ fhir:value "pending" ]
+     ], [
+       fhir:index 6;
+       fhir:Extension.url [ fhir:value "contact_globalid" ];
+       fhir:Extension.valueString [ fhir:value "Practitioner/P7364" ]
+     ];
+     fhir:Extension.url [ fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-comm-req-flow-starts" ]
+  ];
+  fhir:CommunicationRequest.status [ fhir:value "completed"];
+  fhir:CommunicationRequest.payload [
+     fhir:index 0;
+     fhir:CommunicationRequest.payload.contentAttachment [
+       fhir:Attachment.url [ fhir:value "b7a4770c-d034-4055-9f21-b17632ef311e" ]
+     ]
+  ];
+  fhir:CommunicationRequest.recipient [
+     fhir:index 0;
+     fhir:link <http://mHero.org/fhir/Practitioner/P7364>;
+     fhir:Reference.reference [ fhir:value "Practitioner/P7364" ]
+  ], [
+     fhir:index 1;
+     fhir:link <http://mHero.org/fhir/Practitioner/P7344>;
+     fhir:Reference.reference [ fhir:value "Practitioner/P7344" ]
+  ] .
+
+# - ontology header ------------------------------------------------------------
+
+<http://mHero.org/fhir/CommunicationRequest/8d5d23b0-2e67-4bac-af8d-15585bd863d5.ttl> a owl:Ontology;
+  owl:imports fhir:fhir.ttl .
+
+# -------------------------------------------------------------------------------------
+

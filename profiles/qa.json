@@ -1,0 +1,12 @@
+{
+  "url": "http://mHero.org/fhir/ImplementationGuide/mhero",
+  "name": "mHeroImplementationGuide",
+  "package-id": "mhero",
+  "ig-ver": "0.1.0",
+  "date": "Tue, 21 Jul, 2020 09:33:18 +0300",
+  "errs": 9,
+  "warnings": 7,
+  "hints": 0,
+  "version": "4.0.1",
+  "tool": "4.4.0 (3)"
+}

@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ImplementationGuide xmlns="http://hl7.org/fhir">
+  <id value="mhero"/>
+  <text>
+    <status value="extensions"/><div xmlns="http://www.w3.org/1999/xhtml"><h2>mHeroImplementationGuide</h2><p>The official URL for this implementation guide is: </p><pre>http://mHero.org/fhir/ImplementationGuide/mhero</pre><div><p>Conformance resources that define the base installation of mHero</p>
+</div></div>
+  </text>
+  <url value="http://mHero.org/fhir/ImplementationGuide/mhero"/>
+  <version value="0.1.0"/>
+  <name value="mHeroImplementationGuide"/>
+  <title value="mHero Implementation Guide"/>
+  <status value="active"/>
+  <date value="2020-07-21T09:33:18+03:00"/>
+  <publisher value="Ally Shaban"/>
+  <contact>
+    <name value="Ally Shaban"/>
+    <telecom>
+      <system value="email"/>
+      <value value="ashaban@intrahealth.org"/>
+    </telecom>
+  </contact>
+  <description value="Conformance resources that define the base installation of mHero"/>
+  <packageId value="mhero"/>
+  <license value="CC0-1.0"/>
+  <fhirVersion value="4.0.1"/>
+  <definition>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="copyrightyear"/>
+      </extension>
+      <extension url="value">
+        <valueString value="2020+"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="releaselabel"/>
+      </extension>
+      <extension url="value">
+        <valueString value="CI Build"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="show-inherited-invariants"/>
+      </extension>
+      <extension url="value">
+        <valueString value="false"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="path-liquid"/>
+      </extension>
+      <extension url="value">
+        <valueString value="template/liquid"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="path-liquid"/>
+      </extension>
+      <extension url="value">
+        <valueString value="input/liquid"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="path-qa"/>
+      </extension>
+      <extension url="value">
+        <valueString value="temp/qa"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="path-temp"/>
+      </extension>
+      <extension url="value">
+        <valueString value="temp/pages"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="path-output"/>
+      </extension>
+      <extension url="value">
+        <valueString value="output"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="path-suppressed-warnings"/>
+      </extension>
+      <extension url="value">
+        <valueString value="input/ignoreWarnings.txt"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="path-history"/>
+      </extension>
+      <extension url="value">
+        <valueString value="http://mHero.org/fhir/history.html"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="template-html"/>
+      </extension>
+      <extension url="value">
+        <valueString value="template-page.html"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="template-md"/>
+      </extension>
+      <extension url="value">
+        <valueString value="template-page-md.html"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="apply-contact"/>
+      </extension>
+      <extension url="value">
+        <valueString value="true"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="apply-context"/>
+      </extension>
+      <extension url="value">
+        <valueString value="true"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="apply-copyright"/>
+      </extension>
+      <extension url="value">
+        <valueString value="true"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="apply-jurisdiction"/>
+      </extension>
+      <extension url="value">
+        <valueString value="true"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="apply-license"/>
+      </extension>
+      <extension url="value">
+        <valueString value="true"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="apply-publisher"/>
+      </extension>
+      <extension url="value">
+        <valueString value="true"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="apply-version"/>
+      </extension>
+      <extension url="value">
+        <valueString value="true"/>
+      </extension>
+    </extension>
+    <extension url="http://hl7.org/fhir/tools/StructureDefinition/ig-parameter">
+      <extension url="code">
+        <valueString value="active-tables"/>
+      </extension>
+      <extension url="value">
+        <valueString value="true"/>
+      </extension>
+    </extension>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:resource"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-communication.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-communication"/>
+      </reference>
+      <name value="mHero Communication Profile"/>
+      <description value="mHero profile for Communication."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:resource"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-communication-request.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-communication-request"/>
+      </reference>
+      <name value="mHero Communication Request Profile"/>
+      <description value="mHero profile for Communication Request."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:resource"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-flow-run.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-flow-run"/>
+      </reference>
+      <name value="mHero Workflow Run Profile"/>
+      <description value="mHero profile for Workflows run details."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:resource"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-workflows.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-workflows"/>
+      </reference>
+      <name value="mHero Workflows Profile"/>
+      <description value="mHero profile of Workflows."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:resource"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-eidsr-patient.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-eidsr-patient"/>
+      </reference>
+      <name value="mHero eIDSR Patient Profile"/>
+      <description value="mHero eIDSR profile for Patient."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:extension"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-comm-flow-run.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-comm-flow-run"/>
+      </reference>
+      <name value="mHero Communication Flow Run Extension"/>
+      <description value="Link to flow run for a communication."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:extension"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-comm-req-broadcast-starts.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-comm-req-broadcast-starts"/>
+      </reference>
+      <name value="mHero Communication Request Broadcast Starts Extension"/>
+      <description value="Flow starts details of a communication request."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:extension"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-comm-req-flow-starts.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-comm-req-flow-starts"/>
+      </reference>
+      <name value="mHero Communication Request Flow Starts Extension"/>
+      <description value="Flow starts details of a communication request."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:extension"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-flow-run-details.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-flow-run-details"/>
+      </reference>
+      <name value="mHero Workflow Run Details Extension"/>
+      <description value="Details of a workflow run."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:extension"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-run-summary.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-run-summary"/>
+      </reference>
+      <name value="mHero Workflow Run Summary Extension"/>
+      <description value="Highlevel Run Summary of a Workflow"/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:extension"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-workflows-details.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-workflows-details"/>
+      </reference>
+      <name value="mHero Workflow Details Extension"/>
+      <description value="Details of mHero workflow."/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="StructureDefinition:extension"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="StructureDefinition-mhero-eidsr-suspected-case.html"/>
+      </extension>
+      <reference>
+        <reference value="StructureDefinition/mhero-eidsr-suspected-case"/>
+      </reference>
+      <name value="mHero eIDSR Suspected Case Extension"/>
+      <description value="mHero eIDSR Suspected Case"/>
+      <exampleBoolean value="false"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="Basic"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="Basic-3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.html"/>
+      </extension>
+      <reference>
+        <reference value="Basic/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899"/>
+      </reference>
+      <name value="mHero Workflow Run Details Example"/>
+      <exampleCanonical value="http://mHero.org/fhir/StructureDefinition/mhero-flow-run"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="CommunicationRequest"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="CommunicationRequest-716c84d3-5790-43c5-9dcc-e5a149affa23.html"/>
+      </extension>
+      <reference>
+        <reference value="CommunicationRequest/716c84d3-5790-43c5-9dcc-e5a149affa23"/>
+      </reference>
+      <name value="mHero Communication Request (Broadcast) Example"/>
+      <exampleCanonical value="http://mHero.org/fhir/StructureDefinition/mhero-communication-request"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="CommunicationRequest"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="CommunicationRequest-8d5d23b0-2e67-4bac-af8d-15585bd863d5.html"/>
+      </extension>
+      <reference>
+        <reference value="CommunicationRequest/8d5d23b0-2e67-4bac-af8d-15585bd863d5"/>
+      </reference>
+      <name value="mHero Communication Request (Flow) Example"/>
+      <exampleCanonical value="http://mHero.org/fhir/StructureDefinition/mhero-communication-request"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="Patient"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="Patient-a4g95gd4-64ce-69d8-94f3-48ed235e3388.html"/>
+      </extension>
+      <reference>
+        <reference value="Patient/a4g95gd4-64ce-69d8-94f3-48ed235e3388"/>
+      </reference>
+      <name value="mHero eiDSR Suspected Case Example"/>
+      <exampleCanonical value="http://mHero.org/fhir/StructureDefinition/mhero-eidsr-patient"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="Communication"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="Communication-a9c91fc1-20ce-59d8-94e3-48ed235e3379.html"/>
+      </extension>
+      <reference>
+        <reference value="Communication/a9c91fc1-20ce-59d8-94e3-48ed235e3379"/>
+      </reference>
+      <name value="mHero Communication Example"/>
+      <exampleCanonical value="http://mHero.org/fhir/StructureDefinition/mhero-communication"/>
+    </resource>
+    <resource>
+      <extension url="http://hl7.org/fhir/tools/StructureDefinition/resource-information">
+        <valueString value="Basic"/>
+      </extension>
+      <extension url="http://hl7.org/fhir/StructureDefinition/implementationguide-page">
+        <valueUri value="Basic-b1155b20-9054-4666-9493-4ef05edf77f4.html"/>
+      </extension>
+      <reference>
+        <reference value="Basic/b1155b20-9054-4666-9493-4ef05edf77f4"/>
+      </reference>
+      <name value="mHero Workflow Example"/>
+      <exampleCanonical value="http://mHero.org/fhir/StructureDefinition/mhero-workflows"/>
+    </resource>
+    <page>
+      <nameUrl value="toc.html"/>
+      <title value="Table of Contents"/>
+      <generation value="html"/>
+      <page>
+        <nameUrl value="index.html"/>
+        <title value="Home"/>
+        <generation value="markdown"/>
+      </page>
+    </page>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/capabilities"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/examples"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/extensions"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/models"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/operations"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/profiles"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/resources"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/vocabulary"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/maps"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/testing"/>
+    </parameter>
+    <parameter>
+      <code value="path-resource"/>
+      <value value="input/history"/>
+    </parameter>
+    <parameter>
+      <code value="path-pages"/>
+      <value value="template/config"/>
+    </parameter>
+    <parameter>
+      <code value="path-pages"/>
+      <value value="input/images"/>
+    </parameter>
+    <parameter>
+      <code value="path-tx-cache"/>
+      <value value="input-cache/txcache"/>
+    </parameter>
+  </definition>
+</ImplementationGuide>

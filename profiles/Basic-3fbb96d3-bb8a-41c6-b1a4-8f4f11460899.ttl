@@ -1,0 +1,78 @@
+@prefix fhir: <http://hl7.org/fhir/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# - resource -------------------------------------------------------------------
+
+<http://mHero.org/fhir/Basic/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899> a fhir:Basic;
+  fhir:nodeRole fhir:treeRoot;
+  fhir:Resource.id [ fhir:value "3fbb96d3-bb8a-41c6-b1a4-8f4f11460899"];
+  fhir:Resource.meta [
+     fhir:Meta.profile [
+       fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-flow-run";
+       fhir:index 0;
+       fhir:link <http://mHero.org/fhir/StructureDefinition/mhero-flow-run>
+     ]
+  ];
+  fhir:DomainResource.text [
+     fhir:Narrative.status [ fhir:value "generated" ];
+     fhir:Narrative.div "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Generated Narrative</b></p><p><b>id</b>: 3fbb96d3-bb8a-41c6-b1a4-8f4f11460899</p><p><b>meta</b>: </p><p><b>code</b>: <span title=\"Codes: \">mHero Workflow Run Details</span></p></div>"
+  ];
+  fhir:DomainResource.extension [
+     fhir:index 0;
+     fhir:Element.extension [
+       fhir:index 0;
+       fhir:Extension.url [ fhir:value "CommunicationRequest" ];
+       fhir:Extension.valueReference [
+         fhir:link <http://mHero.org/fhir/CommunicationRequest/feb3de06-a5e4-4a76-8a50-fe32cb209de1>;
+         fhir:Reference.reference [ fhir:value "CommunicationRequest/feb3de06-a5e4-4a76-8a50-fe32cb209de1" ]
+       ]
+     ], [
+       fhir:index 1;
+       fhir:Extension.url [ fhir:value "flow" ];
+       fhir:Extension.valueReference [
+         fhir:link <http://mHero.org/fhir/Basic/b7a4770c-d034-4055-9f21-b17632ef311e>;
+         fhir:Reference.reference [ fhir:value "Basic/b7a4770c-d034-4055-9f21-b17632ef311e" ]
+       ]
+     ], [
+       fhir:index 2;
+       fhir:Extension.url [ fhir:value "recipient" ];
+       fhir:Extension.valueReference [
+         fhir:link <http://mHero.org/fhir/Practitioner/P7479>;
+         fhir:Reference.reference [ fhir:value "Practitioner/P7479" ]
+       ]
+     ], [
+       fhir:index 3;
+       fhir:Extension.url [ fhir:value "responded" ];
+       fhir:Extension.valueBoolean [ fhir:value "false"^^xsd:boolean ]
+     ], [
+       fhir:index 4;
+       fhir:Extension.url [ fhir:value "created_on" ];
+       fhir:Extension.valueDateTime [ fhir:value "2020-03-09T12:44:51.122549Z"^^xsd:dateTime ]
+     ], [
+       fhir:index 5;
+       fhir:Extension.url [ fhir:value "modified_on" ];
+       fhir:Extension.valueDateTime [ fhir:value "2020-03-10T00:45:01.647066Z"^^xsd:dateTime ]
+     ], [
+       fhir:index 6;
+       fhir:Extension.url [ fhir:value "exit_type" ];
+       fhir:Extension.valueString [ fhir:value "expired" ]
+     ], [
+       fhir:index 7;
+       fhir:Extension.url [ fhir:value "exited_on" ];
+       fhir:Extension.valueDateTime [ fhir:value "2020-03-10T00:45:01.647066Z"^^xsd:dateTime ]
+     ];
+     fhir:Extension.url [ fhir:value "http://mHero.org/fhir/StructureDefinition/mhero-flow-run-details" ]
+  ];
+  fhir:Basic.code [
+     fhir:CodeableConcept.text [ fhir:value "mHero Workflow Run Details" ]
+  ] .
+
+# - ontology header ------------------------------------------------------------
+
+<http://mHero.org/fhir/Basic/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899.ttl> a owl:Ontology;
+  owl:imports fhir:fhir.ttl .
+
+# -------------------------------------------------------------------------------------
+

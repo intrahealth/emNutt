@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Communication xmlns="http://hl7.org/fhir">
+  <id value="a9c91fc1-20ce-59d8-94e3-48ed235e3379"/>
+  <meta>
+    <profile value="http://mHero.org/fhir/StructureDefinition/mhero-communication"/>
+  </meta>
+  <text>
+    <status value="generated"/><div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative</b></p><p><b>id</b>: a9c91fc1-20ce-59d8-94e3-48ed235e3379</p><p><b>meta</b>: </p><p><b>status</b>: completed</p><p><b>sent</b>: Mar 9, 2020, 5:20:59 PM</p><p><b>received</b>: Mar 9, 2020, 5:20:59 PM</p><p><b>recipient</b>: <a href="Practitioner/P97111">Practitioner/P97111</a></p><h3>Payloads</h3><table class="grid"><tr><td>-</td><td><b>Content[x]</b></td></tr><tr><td>*</td><td>The most important treatment that can be given to a patient with Ebola to help them survive is? 1)Fluids 2)Antibiotics 3)Antivirals 4)Anti-pyretics/Anti-fever medications 5)There is no care that has been found to increase survival of patients with Ebola</td></tr></table></div>
+  </text>
+  <extension url="http://mHero.org/fhir/StructureDefinition/mhero-comm-flow-run">
+    <valueReference>
+      <reference value="Basic/3fbb96d3-bb8a-41c6-b1a4-8f4f11460899"/>
+    </valueReference>
+  </extension>
+  <status value="completed"/>
+  <sent value="2020-03-09T14:20:59.685600Z"/>
+  <received value="2020-03-09T14:20:59.685600Z"/>
+  <recipient>
+    <reference value="Practitioner/P97111"/>
+  </recipient>
+  <payload>
+    <contentString value="The most important treatment that can be given to a patient with Ebola to help them survive is? 1)Fluids 2)Antibiotics 3)Antivirals 4)Anti-pyretics/Anti-fever medications 5)There is no care that has been found to increase survival of patients with Ebola"/>
+  </payload>
+</Communication>
