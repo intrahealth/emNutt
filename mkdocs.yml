@@ -39,6 +39,7 @@ nav:
       - 'dev/configuration.md'
       - 'dev/endpoints.md'
       - mHero FHIR Profiles: 'profiles/toc.html'
+      - 'dev/roadmap.md'
 
 markdown_extensions:
   - admonition
